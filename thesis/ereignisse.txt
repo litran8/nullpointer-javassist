@@ -1,0 +1,5 @@
+2.12.
+nevana, boris meeting:
+	trello board alle sichtbar gemacht und können nun darauf zugreifen (boris)
+	task:
+		javassist in eclipse integrieren + zum Laufen bringen, repository erstellen, tutorial durchgehen, 
