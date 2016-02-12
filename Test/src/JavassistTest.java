@@ -19,7 +19,7 @@ public class JavassistTest {
 		CtMethod m = cc.getDeclaredMethod("say");
 		m.insertBefore("{ System.out.println(\"Hello.say():\");a(); }");
 
-		Class c = cc.toClass();
+		Class<?> c = cc.toClass();
 		HelloWorld h = (HelloWorld) c.newInstance();
 		h.say();
 

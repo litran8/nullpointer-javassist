@@ -1,9 +1,13 @@
 package isFieldOrLocalVariableNull;
 
 public class TestClass {
-	public void a() {
+	public static void a() {
 		Integer x = null;
 		int j = 0;
 		Integer i = 0;
+	}
+
+	public static void main(String[] args) {
+		a();
 	}
 }
