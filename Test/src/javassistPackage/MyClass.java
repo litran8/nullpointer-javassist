@@ -2,6 +2,9 @@ package javassistPackage;
 
 import java.util.HashMap;
 
+import javassist.CannotCompileException;
+import javassist.CtClass;
+import javassist.CtField;
 import javassist.CtMethod;
 import javassist.expr.FieldAccess;
 
@@ -10,14 +13,41 @@ public class MyClass {
 	private static HashMap<Field, FieldAccess> fieldMap = new HashMap<Field, FieldAccess>();
 	private static HashMap<LocalVar, Integer> locVarMap = new HashMap<LocalVar, Integer>();
 
-	public static void test(String className, Object objValue, int lineNumber) {
-		if (isFieldNull(objValue)) {
+	public static void printOriginalClassTime(CtClass cc)
+			throws CannotCompileException {
 
-			System.out.println(getNullLink(className, lineNumber));
+		for (CtMethod m : cc.getDeclaredMethods()) {
+			if (m.getName().equals("main")) {
+				CtField f = CtField.make("public static long startTime;", cc);
+				cc.addField(f);
+				m.insertBefore("startTime = System.currentTimeMillis();");
+				m.insertAfter("System.out.println(\"\\nOriginal class time: \" +(System.currentTimeMillis() - startTime));");
+			}
+		}
+
+	}
+
+	public static void test(String className, Object objValue, int lineNr,
+			String objName) {
+		if (isNull(objValue)) {
+
+			System.out.print(isField(lineNr) ? "Field " : "Local variable ");
+			System.out.print(objName + " at line " + lineNr + " is null: ");
+			System.out.println(getNullLink(className, lineNr));
 		}
 	}
 
-	public static boolean isFieldNull(Object o) {
+	private static boolean isField(int lineNr) {
+		for (Field f : fieldMap.keySet()) {
+			if (f.getFieldLineNumber() == lineNr)
+				return true;
+		}
+
+		return false;
+
+	}
+
+	public static boolean isNull(Object o) {
 		return o == null;
 	}
 

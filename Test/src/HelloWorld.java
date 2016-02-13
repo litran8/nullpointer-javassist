@@ -1,6 +1,19 @@
 public class HelloWorld {
 
-	public void say() {
+	private static int i = 9;
+
+	public static void say() {
 		System.out.println("Hello World");
+
+		Object a = new Object();
+
+		System.out.println("" + a);
+		System.out.println(i);
+		int i = 0;
+
+	}
+
+	public static void main(String[] args) {
+		say();
 	}
 }

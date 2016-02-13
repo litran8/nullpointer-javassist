@@ -23,25 +23,18 @@ public class RegexNullAssignment {
 	// public static String className =
 	// "isFieldOrLocalVariableNull.NullPointerException";
 
+	static long startTime;
+	static long endTime;
+
 	// public static String className = "isFieldOrLocalVariableNull.TestClass";
 
 	public static void main(String[] args) throws Exception {
+		startTime = System.currentTimeMillis();
+
 		CtClass cc = ClassPool.getDefault().get(className);
 		cc.stopPruning(true);
 
-		// not possible, because the WHOLE main method will be in the try
-		// block...
-		// final String beforeMethod =
-		// "{long startTime = System.currentTimeMillis(); System.out.println(\"Before Foo\");";
-		// final String afterMethod =
-		// "finally {long diff = System.currentTimeMillis() - startTime; System.out.println(\"Foo completed in:\" + diff);}}";
-		// CtMethod m = cc.getDeclaredMethod("main");
-		// m.insertBefore("try{");
-		// m.insertAfter("}");
-		// CtClass eType = ClassPool.getDefault().get("java.lang.Throwable");
-		// // m.setBody(beforeMethod + " try {$proceed($$); } " + afterMethod);
-		// m.addCatch("{System.out.println(\"Java ERROR: \"+$e); throw $e;}",
-		// eType);
+		MyClass.printOriginalClassTime(cc);
 
 		// Field/InsanceVar
 		searchAndStoreField(cc);
@@ -51,7 +44,7 @@ public class RegexNullAssignment {
 					f.getFieldLineNumber() + 1,
 					"javassistPackage.MyClass.test( \"" + cc.getName() + "\","
 							+ f.getFieldName() + "," + f.getFieldLineNumber()
-							+ ");");
+							+ ",\"" + f.getFieldName() + "\");");
 		}
 
 		// LocVar
@@ -94,13 +87,23 @@ public class RegexNullAssignment {
 					v.getLocalVarLineNr() + 1,
 					"javassistPackage.MyClass.test( \"" + cc.getName() + "\","
 							+ v.getLocalVarName() + "," + v.getLocalVarLineNr()
-							+ ");");
+							+ ",\"" + v.getLocalVarName() + "\");");
 		}
 
+		// run
 		Class<?> c = cc.toClass();
-		if (hasMainMethod(cc.getDeclaredMethods()))
+		cc.defrost();
+
+		if (hasMainMethod(cc.getDeclaredMethods())) {
+
 			c.getDeclaredMethod("main", new Class[] { String[].class }).invoke(
 					null, new Object[] { args });
+
+			endTime = System.currentTimeMillis();
+
+			System.out.println("Changed class time: " + (endTime - startTime)
+					+ " ms");
+		}
 
 	}
 
@@ -125,45 +128,30 @@ public class RegexNullAssignment {
 			if (isLocVar(op)) {
 
 				// check if it's NOT a primitive one
-				if (isLocVarObject(op)) {
-					if (!Mnemonic.OPCODE[instrBeforeOp].matches("goto.*")
-							&& index <= lineNrTableList.get(lineNrTableList
-									.size() - 1)) {
+				if (isLocVarObject(op)
+						&& (!Mnemonic.OPCODE[instrBeforeOp].matches("goto.*") && index <= lineNrTableList
+								.get(lineNrTableList.size() - 1))) {
+					int r = getLocVarTableIndex(codeIterator, localVarTable,
+							index, op);
 
-						int r = getLocVarTableIndex(codeIterator,
-								localVarTable, index, op);
-
-						MyClass.storeLocVar(
-								localVarTable.variableName(r),
-								getLocVarLineNr(lineNrTableList,
-										lineNrTableValue, index), method, r);
-					}
+					MyClass.storeLocVar(
+							localVarTable.variableName(r),
+							getLocVarLineNr(lineNrTableList, lineNrTableValue,
+									index), method, r);
 				}
 			}
 		}
 	}
 
-	private static boolean hasMainMethod(CtMethod[] methods) {
+	private static boolean hasMainMethod(CtMethod[] methods)
+			throws CannotCompileException {
 		for (CtMethod m : methods) {
-			if (m.getName().equals("main"))
+			if (m.getName().equals("main")) {
 				return true;
+			}
 		}
 		return false;
 
-	}
-
-	private static int getLocVarTableIndex(CodeIterator codeIterator,
-			LocalVariableAttribute localVarTable, int index, int op) {
-		int r = 0;
-		boolean b = true;
-		while (b) {
-			if (localVarTable.index(r) == getLocVarIndex(codeIterator, index,
-					op))
-				b = false;
-			else
-				r++;
-		}
-		return r;
 	}
 
 	private static boolean isLocVarObject(int op) {
@@ -201,6 +189,20 @@ public class RegexNullAssignment {
 		});
 	}
 
+	private static int getLocVarTableIndex(CodeIterator codeIterator,
+			LocalVariableAttribute localVarTable, int index, int op) {
+		int r = 0;
+		boolean b = true;
+		while (b) {
+			if (localVarTable.index(r) == getLocVarIndex(codeIterator, index,
+					op))
+				b = false;
+			else
+				r++;
+		}
+		return r;
+	}
+
 	private static int getLocVarLineNr(ArrayList<Integer> lineNrTableList,
 			ArrayList<Integer> lineNrTableValue, int index) {
 		int res = 0;
@@ -223,6 +225,9 @@ public class RegexNullAssignment {
 	// get index of locVar in locVarStack
 	private static int getLocVarIndex(CodeIterator codeIterator, int index,
 			int op) {
+		// check if locVar is stored in astore_0..._3 (one byte)
+		// if not it calculates the slot in which it stored by getting the
+		// number in the second byte (two bytes)
 		if (op >= 75 && op <= 78)
 			return Integer.parseInt(Mnemonic.OPCODE[op].substring(
 					Mnemonic.OPCODE[op].length() - 1,

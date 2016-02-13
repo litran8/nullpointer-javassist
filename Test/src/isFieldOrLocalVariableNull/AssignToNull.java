@@ -36,7 +36,7 @@ public class AssignToNull {
 		double d = 9.0;
 		double dd = d;
 		i = null;
-		Object f = setNull(); // not shown yet: local var indirectly set to null
+		Object f = setNull();
 		Object h = null;
 		int v = getInt();
 		getInt();
