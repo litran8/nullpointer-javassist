@@ -27,7 +27,9 @@ public class AssignToNull {
 		c = p.say();
 		b = setNull();
 		NullObject nO = (NullObject) NullObject.setToNullMethod();
-		System.out.println("Method mein ends.\n");
+		nO = (NullObject) p.say();
+		Object u = nullObject.setToNullMethod();
+		System.out.println("Method main ends.\n");
 	}
 
 	public static void x(int j) {
