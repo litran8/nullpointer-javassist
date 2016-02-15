@@ -28,8 +28,6 @@ public class RegexNullAssignment implements Opcode {
 		// cc.setName("isFieldOrLocalVariableNull.Javassist_AssignToNull");
 		cc.stopPruning(true);
 
-		MyClass.printOriginalClassTime(cc);
-
 		for (CtMethod m : cc.getDeclaredMethods()) {
 			if (m.getName().equals("main")) {
 				CtField f = CtField.make("public static long startTime;", cc);
@@ -50,7 +48,7 @@ public class RegexNullAssignment implements Opcode {
 
 		// run
 		cc.writeFile();
-		cc = ClassPool.getDefault().get(className);
+		// cc = ClassPool.getDefault().get(className);
 		Class<?> c = cc.toClass();
 		cc.defrost();
 

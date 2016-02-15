@@ -1,4 +1,4 @@
-package javassistPackage;
+package Modell;
 
 import javassist.CtMethod;
 

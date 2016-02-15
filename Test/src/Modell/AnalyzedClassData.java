@@ -3,8 +3,6 @@ package Modell;
 import java.util.ArrayList;
 import java.util.List;
 
-import javassistPackage.MyClass;
-
 public class AnalyzedClassData {
 
 	private List<MyClass> listOfAnalyzedClassData;
