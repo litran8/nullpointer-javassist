@@ -1,152 +1,77 @@
 package javassistPackage;
 
-import java.util.ArrayList;
-
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.CtField;
 import javassist.CtMethod;
 import javassist.NotFoundException;
-import javassist.bytecode.BadBytecode;
-import javassist.bytecode.CodeAttribute;
-import javassist.bytecode.CodeIterator;
-import javassist.bytecode.LineNumberAttribute;
-import javassist.bytecode.LocalVariableAttribute;
-import javassist.bytecode.Mnemonic;
-import javassist.expr.ExprEditor;
-import javassist.expr.FieldAccess;
+import javassist.bytecode.Opcode;
+import Controller.Iteration;
 
-public class RegexNullAssignment {
+public class RegexNullAssignment implements Opcode {
 
 	public static String className = "isFieldOrLocalVariableNull.AssignToNull";
+	// public static String className =
+	// "isFieldOrLocalVariableNull.Javassist_AssignToNull";
 
 	// public static String className =
 	// "isFieldOrLocalVariableNull.NullPointerException";
 
+	// public static String className = "isFieldOrLocalVariableNull.TestClass";
+
 	static long startTime;
 	static long endTime;
 
-	// public static String className = "isFieldOrLocalVariableNull.TestClass";
-
 	public static void main(String[] args) throws Exception {
-		startTime = System.currentTimeMillis();
-
 		CtClass cc = ClassPool.getDefault().get(className);
+		// cc.setName("isFieldOrLocalVariableNull.Javassist_AssignToNull");
 		cc.stopPruning(true);
 
 		MyClass.printOriginalClassTime(cc);
 
-		// Field/InsanceVar
-		searchAndStoreField(cc);
-
-		for (Field f : MyClass.getFieldMap().keySet()) {
-			f.getMethod().insertAt(
-					f.getFieldLineNumber() + 1,
-					"javassistPackage.MyClass.test( \"" + cc.getName() + "\","
-							+ f.getFieldName() + "," + f.getFieldLineNumber()
-							+ ",\"" + f.getFieldName() + "\");");
-		}
-
-		// LocVar
-		for (CtMethod method : cc.getDeclaredMethods()) {
-
-			// get everything what is needed bellow
-			CodeAttribute codeAttribute = method.getMethodInfo()
-					.getCodeAttribute();
-			CodeIterator codeIterator = codeAttribute.iterator();
-			codeIterator.begin();
-
-			LocalVariableAttribute localVarTable = (LocalVariableAttribute) codeAttribute
-					.getAttribute(javassist.bytecode.LocalVariableAttribute.tag);
-
-			LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttribute
-					.getAttribute(LineNumberAttribute.tag);
-
-			// store lineNrTable into ArrayLists (because directly get lineNr
-			// changed the lineNrTable somehow...
-			ArrayList<Integer> lineNrTableList = new ArrayList<Integer>();
-			ArrayList<Integer> lineNrTableValue = new ArrayList<Integer>();
-
-			for (int j = 0; j < lineNrTable.tableLength(); j++) {
-				lineNrTableList.add(lineNrTable.startPc(j));
-				lineNrTableValue.add(lineNrTable.lineNumber(j));
+		for (CtMethod m : cc.getDeclaredMethods()) {
+			if (m.getName().equals("main")) {
+				CtField f = CtField.make("public static long startTime;", cc);
+				cc.addField(f);
+				m.insertBefore("startTime = System.nanoTime();");
+				m.insertAfter("System.out.println(\"\\nOriginal class time: \" +((System.nanoTime() - startTime)/1000000) + \" ms\");");
 			}
-
-			// store current instruction and the one before
-			ArrayList<Integer> instrIndex = new ArrayList<Integer>();
-			int instrCounter = 0;
-			int instrBeforeOp = 0;
-
-			searchAndStorLocVar(method, codeIterator, localVarTable,
-					lineNrTableList, lineNrTableValue, instrIndex,
-					instrCounter, instrBeforeOp);
 		}
 
-		for (LocalVar v : MyClass.getLocalVarMap().keySet()) {
-			v.getCtMethod().insertAt(
-					v.getLocalVarLineNr() + 1,
-					"javassistPackage.MyClass.test( \"" + cc.getName() + "\","
-							+ v.getLocalVarName() + "," + v.getLocalVarLineNr()
-							+ ",\"" + v.getLocalVarName() + "\");");
-		}
+		Iteration iter = Iteration.getInstance();
+
+		iter.goThrough(cc);
+
+		// String destination = "bin/isFieldOrLocalVariableNull/" + className
+		// + ".class";
+		// (cc.getClassFile()).write(new DataOutputStream(new FileOutputStream(
+		// destination)));
 
 		// run
+		cc.writeFile();
+		cc = ClassPool.getDefault().get(className);
 		Class<?> c = cc.toClass();
 		cc.defrost();
 
 		if (hasMainMethod(cc.getDeclaredMethods())) {
-
+			startTime = System.nanoTime();
 			c.getDeclaredMethod("main", new Class[] { String[].class }).invoke(
 					null, new Object[] { args });
-
-			endTime = System.currentTimeMillis();
-
-			System.out.println("Changed class time: " + (endTime - startTime)
-					+ " ms");
+			System.out.println("Changed class time: "
+					+ ((System.nanoTime() - startTime) / 1000000) + " ms");
 		}
 
-	}
-
-	private static void searchAndStorLocVar(CtMethod method,
-			CodeIterator codeIterator, LocalVariableAttribute localVarTable,
-			ArrayList<Integer> lineNrTableList,
-			ArrayList<Integer> lineNrTableValue, ArrayList<Integer> instrIndex,
-			int instrCounter, int instrBeforeOp) throws BadBytecode {
-
-		while (codeIterator.hasNext()) {
-			int index = codeIterator.next();
-			instrIndex.add(index);
-
-			int op = codeIterator.byteAt(index);
-
-			if (instrCounter > 0)
-				instrBeforeOp = codeIterator.byteAt(instrIndex
-						.get(instrCounter - 1));
-			instrCounter++;
-
-			// check if it's a locVar
-			if (isLocVar(op)) {
-
-				// check if it's NOT a primitive one
-				if (isLocVarObject(op)
-						&& (!Mnemonic.OPCODE[instrBeforeOp].matches("goto.*") && index <= lineNrTableList
-								.get(lineNrTableList.size() - 1))) {
-					int r = getLocVarTableIndex(codeIterator, localVarTable,
-							index, op);
-
-					MyClass.storeLocVar(
-							localVarTable.variableName(r),
-							getLocVarLineNr(lineNrTableList, lineNrTableValue,
-									index), method, r);
-				}
-			}
-		}
 	}
 
 	private static boolean hasMainMethod(CtMethod[] methods)
-			throws CannotCompileException {
+			throws CannotCompileException, NotFoundException {
 		for (CtMethod m : methods) {
 			if (m.getName().equals("main")) {
+				CtClass etype = ClassPool.getDefault().get(
+						"java.lang.NullPointerException");
+				m.addCatch("{  System.out.println(\"HIIII\");throw $e; }",
+						etype);
 				return true;
 			}
 		}
@@ -154,85 +79,4 @@ public class RegexNullAssignment {
 
 	}
 
-	private static boolean isLocVarObject(int op) {
-		return Mnemonic.OPCODE[op].matches("a{1,2}store.*");
-	}
-
-	private static boolean isLocVar(int op) {
-		return Mnemonic.OPCODE[op].matches(".*store.*");
-	}
-
-	// search all fields; store fieldLineNumbers and fieldNames
-	private static void searchAndStoreField(CtClass cc)
-			throws CannotCompileException {
-
-		cc.instrument(new ExprEditor() {
-			public void edit(FieldAccess arg) throws CannotCompileException {
-				if (arg.isWriter()) {
-
-					if (arg.getLineNumber() > cc.getDeclaredMethods()[0]
-							.getMethodInfo().getLineNumber(0)) {
-						try {
-
-							// System.out.println(arg.getLineNumber());
-							MyClass.storeField(
-									arg.getFieldName(),
-									arg.getLineNumber(),
-									cc.getDeclaredMethod(arg.where()
-											.getMethodInfo().getName()), arg);
-						} catch (NotFoundException e) {
-							e.printStackTrace();
-						}
-					}
-				}
-			}
-		});
-	}
-
-	private static int getLocVarTableIndex(CodeIterator codeIterator,
-			LocalVariableAttribute localVarTable, int index, int op) {
-		int r = 0;
-		boolean b = true;
-		while (b) {
-			if (localVarTable.index(r) == getLocVarIndex(codeIterator, index,
-					op))
-				b = false;
-			else
-				r++;
-		}
-		return r;
-	}
-
-	private static int getLocVarLineNr(ArrayList<Integer> lineNrTableList,
-			ArrayList<Integer> lineNrTableValue, int index) {
-		int res = 0;
-		boolean b = true;
-		int j = 0;
-		int k = 1;
-		while (b) {
-			if (index < lineNrTableList.get(k)
-					&& index > lineNrTableList.get(j)) {
-				res = lineNrTableValue.get(j);
-				b = false;
-			} else {
-				j++;
-				k++;
-			}
-		}
-		return res;
-	}
-
-	// get index of locVar in locVarStack
-	private static int getLocVarIndex(CodeIterator codeIterator, int index,
-			int op) {
-		// check if locVar is stored in astore_0..._3 (one byte)
-		// if not it calculates the slot in which it stored by getting the
-		// number in the second byte (two bytes)
-		if (op >= 75 && op <= 78)
-			return Integer.parseInt(Mnemonic.OPCODE[op].substring(
-					Mnemonic.OPCODE[op].length() - 1,
-					Mnemonic.OPCODE[op].length()));
-		else
-			return codeIterator.u16bitAt(index) - 14848;
-	}
 }

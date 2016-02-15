@@ -10,17 +10,17 @@ public class NullPointerException {
 	}
 
 	public static void main(String[] args) {
-		try {
-			NullPointerException obj = new NullPointerException();
+		// try {
+		NullPointerException obj = new NullPointerException();
 
-			obj.setStr1("string 1");
-			obj = setToNull();
-			obj.setStr2("string 2");
+		obj.setStr1("string 1");
+		obj = setToNull();
+		obj.setStr2("string 2");
 
-		} catch (Throwable t) {
-			System.out.println("Java ERROR: " + t);
-			t.printStackTrace();
-		}
+		// } catch (Throwable t) {
+		// System.out.println("Java ERROR: " + t);
+		// t.printStackTrace();
+		// }
 	}
 
 	private static NullPointerException setToNull() {

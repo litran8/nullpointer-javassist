@@ -1,7 +1,9 @@
 package isFieldOrLocalVariableNull;
+
 public class Person {
 
-	public String say() {
-		return null;
+	public static Object say() {
+		Object o = null;
+		return o;
 	}
 }

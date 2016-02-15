@@ -5,6 +5,7 @@ public class AssignToNull {
 	public static Object b;
 	public static Object c;
 	public static Integer i;
+	public static NullObject nullObject;
 
 	// Object a, b, c, e, f
 	// Integer i
@@ -12,14 +13,19 @@ public class AssignToNull {
 	// int j, k,
 
 	public static void main(String[] args) {
-		Person p = new Person();
-		a = null;
-		i = 9;
-		int h = 0;
-		x(5);
+
+		Person p = (Person) isFieldOrLocalVariableNull.Person.say();
+		// a = null;
+		// i = 9;
+		// int h = 0;
+		// System.out.println(Thread.currentThread().getStackTrace()[1]
+		// .getClassName());
+		nullObject = (NullObject) NullObject.setToNullMethod();
+		// x(5);
 		y();
 		c = p.say();
 		b = setNull();
+		NullObject nO = (NullObject) NullObject.setToNullMethod();
 	}
 
 	public static void x(int j) {
