@@ -2,15 +2,18 @@ package controller;
 
 import java.util.ArrayList;
 
-import model.MyClass;
+import javassist.CannotCompileException;
 import javassist.CtClass;
+import javassist.CtField;
 import javassist.CtMethod;
+import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
+import model.MyClass;
 
 public class LocVarLogic {
 
@@ -25,8 +28,20 @@ public class LocVarLogic {
 		// this.printer = new Printer();
 	}
 
-	public void searchAndStoreLocVar() throws BadBytecode {
+	public void searchAndStoreLocVar() throws BadBytecode,
+			CannotCompileException, NotFoundException {
 		for (CtMethod method : this.cc.getDeclaredMethods()) {
+
+			// CtClass etype =
+			// ClassPool.getDefault().get("java.io.IOException");
+			// method.addCatch("{ System.out.println($e); throw $e; }", etype);
+
+			if (method.getName().equals("main")) {
+				CtField f = CtField.make("public static long startTime;", cc);
+				cc.addField(f);
+				method.insertBefore("startTime = System.nanoTime();");
+				method.insertAfter("System.out.println(\"\\nOriginal class time: \" +((System.nanoTime() - startTime)/1000000) + \" ms\");");
+			}
 
 			CodeAttribute codeAttribute = method.getMethodInfo()
 					.getCodeAttribute();
@@ -107,23 +122,6 @@ public class LocVarLogic {
 
 				this.myClass.storeLocVar(varName, varSourceLineNr, method,
 						locVarIndexInLocVarTable);
-
-				// locVar methodCalls
-				// int invokePos = getInvokePos(prevInstrOp, codeIterator,
-				// instrPositions, instrCounter);
-				//
-				// if (isLocVarCallingMethod(prevInstrOp, codeIterator,
-				// instrPositions, instrCounter)) {
-				// System.out.println("\n--- INVOKE OF LOCVAR STARTS ---");
-				// System.out
-				// .println("VarName: " + varName + "\tVarLineNr: "
-				// + varSourceLineNr + "\tClass: "
-				// + this.cc.getName());
-				// printer.printInstrAtPos(method, codeIterator, invokePos);
-				// System.out.println("--- INVOKE OF LOCVAR ENDS ---\n");
-				// isLocVarMethodCallOfSameClass(method, codeIterator,
-				// invokePos);
-				// }
 			}
 		}
 	}
