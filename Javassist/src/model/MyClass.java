@@ -8,13 +8,10 @@ import javassist.expr.FieldAccess;
 
 public class MyClass {
 
-	private CtClass cc;
-
 	private HashMap<Field, FieldAccess> fieldMap;
 	private HashMap<LocalVar, Integer> locVarMap;
 
 	public MyClass(CtClass cc) {
-		this.cc = cc;
 		this.fieldMap = new HashMap<Field, FieldAccess>();
 		this.locVarMap = new HashMap<LocalVar, Integer>();
 	}

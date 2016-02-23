@@ -1,11 +1,11 @@
 package controller;
 
-import model.MyClass;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
+import model.MyClass;
 
 public class FieldLogic {
 
@@ -35,6 +35,8 @@ public class FieldLogic {
 			public void edit(FieldAccess arg) throws CannotCompileException {
 				if (arg.isWriter()) {
 
+					// only store field in methods, not instantiated outside
+					// methods
 					if (arg.getLineNumber() > cc.getDeclaredMethods()[0]
 							.getMethodInfo().getLineNumber(0)) {
 						try {

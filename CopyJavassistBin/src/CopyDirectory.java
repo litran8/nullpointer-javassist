@@ -18,7 +18,16 @@ public class CopyDirectory {
 		File runJavassistSrcDest = new File(
 				"C:\\Users\\Lina Tran\\Desktop\\bachelor\\Empty\\src\\run");
 
+		File controllerJavassistSrc = new File(
+				"C:\\Users\\Lina Tran\\Desktop\\bachelor\\Javassist\\src\\controller\\Iteration.java");
+		File controllerJavassistDest = new File(
+				"C:\\Users\\Lina Tran\\Desktop\\bachelor\\Empty\\src\\controller");
+
 		runJavassistSrcDest.mkdir();
+		controllerJavassistDest.mkdir();
+
+		controllerJavassistDest = new File(
+				"C:\\Users\\Lina Tran\\Desktop\\bachelor\\Empty\\src\\controller\\Iteration.java");
 
 		// make sure source exists
 		if (!srcFolder.exists()) {
@@ -32,6 +41,7 @@ public class CopyDirectory {
 			try {
 				copyFolder(srcFolder, destFolder);
 				copyFolder(runJavassistSrc, runJavassistSrcDest);
+				copyFolder(controllerJavassistSrc, controllerJavassistDest);
 			} catch (IOException e) {
 				e.printStackTrace();
 				// error, just exit

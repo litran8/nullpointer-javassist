@@ -1,7 +1,6 @@
 package controller;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtClass;
@@ -16,11 +15,9 @@ public class Iteration {
 
 	private static Iteration instance;
 	private AnalyzedClassData analyzedClassData;
-	private HashMap<String, CtClass> analyzedClasses;
 
 	private Iteration() {
 		analyzedClassData = new AnalyzedClassData();
-		analyzedClasses = new HashMap<String, CtClass>();
 	}
 
 	public static Iteration getInstance() {
@@ -36,12 +33,7 @@ public class Iteration {
 
 		CtClass cc;
 
-		if (analyzedClasses.containsKey(ctClass.getName()))
-			return;
-		else {
-			cc = ctClass;
-			analyzedClasses.put(cc.getName(), cc);
-		}
+		cc = ctClass;
 
 		MyClass myClass = new MyClass(cc);
 		analyzedClassData.addClass(myClass);

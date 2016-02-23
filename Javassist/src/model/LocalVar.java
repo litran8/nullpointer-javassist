@@ -4,13 +4,13 @@ import javassist.CtMethod;
 
 public class LocalVar {
 
-	private String localVarName;
-	private int localVarLineNr;
+	private String locVarName;
+	private int locVarLineNr;
 	private CtMethod ctMethod;
 
 	public LocalVar(String locVarName, int locVarLnNr, CtMethod m) {
-		this.localVarName = locVarName;
-		this.localVarLineNr = locVarLnNr;
+		this.locVarName = locVarName;
+		this.locVarLineNr = locVarLnNr;
 		this.ctMethod = m;
 	}
 
@@ -23,18 +23,18 @@ public class LocalVar {
 	}
 
 	public String getLocalVarName() {
-		return localVarName;
+		return locVarName;
 	}
 
 	public void setLocalVarName(String localVarName) {
-		this.localVarName = localVarName;
+		this.locVarName = localVarName;
 	}
 
 	public int getLocalVarLineNr() {
-		return localVarLineNr;
+		return locVarLineNr;
 	}
 
 	public void setLocalVarLineNr(int localVarLineNr) {
-		this.localVarLineNr = localVarLineNr;
+		this.locVarLineNr = localVarLineNr;
 	}
 }
