@@ -1,13 +1,13 @@
-package run;
+package ch.unibe.scg.nullSpy.instrumentator.run;
 
 import java.util.HashMap;
 
+import ch.unibe.scg.nullSpy.instrumentator.controller.Iteration;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.Translator;
-import controller.Iteration;
 
 public class MyTranslator implements Translator {
 

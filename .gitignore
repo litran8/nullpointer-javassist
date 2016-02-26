@@ -31,3 +31,6 @@ Thumbs.db
 Desktrop.ini
 .DS_Store
 .directory
+
+# Other files
+RemoteSystemsTempFiles

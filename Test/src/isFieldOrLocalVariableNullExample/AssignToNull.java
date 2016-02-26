@@ -1,4 +1,4 @@
-package isFieldOrLocalVariableNull;
+package isFieldOrLocalVariableNullExample;
 
 public class AssignToNull {
 	public static Object a;
@@ -14,15 +14,12 @@ public class AssignToNull {
 
 	public static void main(String[] args) {
 		System.out.println("\nMethod main starts.");
-		Person p = (Person) isFieldOrLocalVariableNull.Person.say();
-		// a = null;
+		Person p = (Person) isFieldOrLocalVariableNullExample.Person.say();
+		a = null;
 		// i = 9;
 		// int h = 0;
-		// System.out.println(Thread.currentThread().getStackTrace()[1]
-		// .getClassName());
 		// nullObject = (NullObject) a;
 		nullObject = (NullObject) NullObject.setToNullMethod();
-		// x(5);
 		y();
 		c = p.say();
 		b = setNull();
@@ -30,15 +27,6 @@ public class AssignToNull {
 		nO = (NullObject) p.say();
 		Object u = nullObject.setToNullMethod();
 		System.out.println("Method main ends.\n");
-	}
-
-	public static void x(int j) {
-		System.out.println("\nMethod x starts.");
-		int k = j;
-		int kk = k;
-		Double h = null;
-		i = new Integer(j);
-		System.out.println("Method x ends.\n");
 	}
 
 	private static void y() {
@@ -49,18 +37,28 @@ public class AssignToNull {
 		// double dd = d;
 		// i = null;
 		Object f = setNull();
-		Object h = null;
 		// int v = getInt();
 		// getInt();
-		Object l = h;
+		Object h = e;
 		System.out.println("Method y ends.\n");
-	}
-
-	private static int getInt() {
-		return 8;
 	}
 
 	private static Object setNull() {
 		return null;
 	}
+
+	// public static void x(int j) {
+	// System.out.println("\nMethod x starts.");
+	// int k = j;
+	// int kk = k;
+	// Double h = null;
+	// i = new Integer(j);
+	// System.out.println("Method x ends.\n");
+	// // System.out.println(Thread.currentThread().getStackTrace()[1]
+	// // .getClassName());
+	// }
+	//
+	// private static int getInt() {
+	// return 8;
+	// }
 }

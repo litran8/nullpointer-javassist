@@ -1,4 +1,4 @@
-package isFieldOrLocalVariableNull;
+package isFieldOrLocalVariableNullExample;
 
 public class Person {
 

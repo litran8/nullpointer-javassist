@@ -1,4 +1,4 @@
-package isFieldOrLocalVariableNull;
+package isFieldOrLocalVariableNullExample;
 
 public class NullObject {
 	private static String str1 = null;
@@ -7,12 +7,12 @@ public class NullObject {
 	public static Object setToNullMethod() {
 		NullObject obj = new NullObject();
 		try {
-
 			obj.setStr1("string 1");
 			obj = setToNull();
 			obj.setStr2("string 2");
 		} catch (Throwable t) {
-
+			// System.out.println("Java ERROR: " + t);
+			// t.printStackTrace();
 		}
 		return obj;
 	}

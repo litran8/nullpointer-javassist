@@ -1,10 +1,10 @@
-package run;
+package ch.unibe.scg.nullSpy.instrumentator.run;
 
 import javassist.ClassPool;
 import javassist.Loader;
 import javassist.Translator;
 
-public class Instrumentation {
+public class MainInstrumentation {
 
 	public static String className = "isFieldOrLocalVariableNullExample.AssignToNull";
 

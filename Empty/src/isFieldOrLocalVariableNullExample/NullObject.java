@@ -12,7 +12,8 @@ public class NullObject {
 			obj = setToNull();
 			obj.setStr2("string 2");
 		} catch (Throwable t) {
-
+			// System.out.println("Java ERROR: " + t);
+			// t.printStackTrace();
 		}
 		return obj;
 	}

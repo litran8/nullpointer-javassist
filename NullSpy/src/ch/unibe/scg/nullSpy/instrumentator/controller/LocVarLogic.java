@@ -1,4 +1,4 @@
-package controller;
+package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.util.ArrayList;
 
@@ -13,28 +13,19 @@ import javassist.bytecode.CodeIterator;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
-import model.MyClass;
 
 public class LocVarLogic {
 
 	private CtClass cc;
-	private MyClass myClass;
 
-	// private Printer printer;
-
-	public LocVarLogic(CtClass cc, MyClass myClass) {
+	public LocVarLogic(CtClass cc) {
 		this.cc = cc;
-		this.myClass = myClass;
-		// this.printer = new Printer();
 	}
 
 	public void searchAndStoreLocVar() throws BadBytecode,
 			CannotCompileException, NotFoundException {
-		for (CtMethod method : this.cc.getDeclaredMethods()) {
 
-			// CtClass etype =
-			// ClassPool.getDefault().get("java.io.IOException");
-			// method.addCatch("{ System.out.println($e); throw $e; }", etype);
+		for (CtMethod method : cc.getDeclaredMethods()) {
 
 			if (method.getName().equals("main")) {
 				CtField f = CtField.make("public static long startTime;", cc);
@@ -68,8 +59,6 @@ public class LocVarLogic {
 
 			checkAndStoreLocVar(method, codeIterator, locVarTable,
 					lineNrTablePc, lineNrTableLine);
-
-			// print(method);
 		}
 	}
 
@@ -82,11 +71,12 @@ public class LocVarLogic {
 	 * @param lineNrTablePc
 	 * @param lineNrTableLine
 	 * @throws BadBytecode
+	 * @throws CannotCompileException
 	 */
 	private void checkAndStoreLocVar(CtMethod method,
 			CodeIterator codeIterator, LocalVariableAttribute localVarTable,
 			ArrayList<Integer> lineNrTablePc, ArrayList<Integer> lineNrTableLine)
-			throws BadBytecode {
+			throws BadBytecode, CannotCompileException {
 
 		// store current instruction and the previous instructions
 		ArrayList<Integer> instrPositions = new ArrayList<Integer>();
@@ -114,14 +104,17 @@ public class LocVarLogic {
 						codeIterator, localVarTable, pos);
 
 				// store locVar
-				String varName = localVarTable
+				String locVarName = localVarTable
 						.variableName(locVarIndexInLocVarTable);
 
-				int varSourceLineNr = getLocVarLineNrInSourceCode(
+				int locVarSourceLineNr = getLocVarLineNrInSourceCode(
 						lineNrTablePc, lineNrTableLine, pos);
 
-				this.myClass.storeLocVar(varName, varSourceLineNr, method,
-						locVarIndexInLocVarTable);
+				method.insertAt(locVarSourceLineNr + 1,
+						"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
+								+ method.getDeclaringClass().getName() + "\","
+								+ locVarName + "," + locVarSourceLineNr + ",\""
+								+ locVarName + "\");");
 			}
 		}
 	}
@@ -206,70 +199,4 @@ public class LocVarLogic {
 		return res;
 	}
 
-	/**
-	 * Checks if the value of the locVar is set by a methodCall
-	 * 
-	 * @param prevInstrOp
-	 * @param codeIter
-	 * @param instrPositions
-	 * @param instrCounter
-	 * @return
-	 */
-	// private boolean isLocVarCallingMethod(int prevInstrOp,
-	// CodeIterator codeIter, ArrayList<Integer> instrPositions,
-	// int instrCounter) {
-	// return Mnemonic.OPCODE[prevInstrOp].matches("invoke.*")
-	// || (Mnemonic.OPCODE[prevInstrOp].matches(".*cast.*") &&
-	// Mnemonic.OPCODE[codeIter
-	// .byteAt(instrPositions.get(instrCounter - 3))]
-	// .matches("invoke.*"));
-	// }
-
-	/**
-	 * Checks if the called method is from the same class as the locVar. If not,
-	 * go through the methodRefClass and check for fields and locVars.
-	 * 
-	 * @param method
-	 * @param codeIterator
-	 * @param instrCounter
-	 * @throws NotFoundException
-	 * @throws CannotCompileException
-	 * @throws BadBytecode
-	 * @throws IllegalAccessException
-	 * @throws InvocationTargetException
-	 * @throws NoSuchMethodException
-	 */
-	// private void isLocVarMethodCallOfSameClass(CtMethod method,
-	// CodeIterator codeIterator, int instrCounter)
-	// throws NotFoundException, CannotCompileException, BadBytecode,
-	// IllegalAccessException, InvocationTargetException,
-	// NoSuchMethodException {
-	// String methodRefClassName = method.getMethodInfo2().getConstPool()
-	// .getMethodrefClassName(codeIterator.u16bitAt(instrCounter + 1));
-	// String currentClassName = this.cc.getName();
-	//
-	// if (!(methodRefClassName.equals(currentClassName))) {
-	// Controller.Iteration.goThrough(ClassPool.getDefault().get(
-	// methodRefClassName));
-	// }
-	// }
-
-	/**
-	 * // * Gets the pos of the invokeInstr // * // * @param prevInstrOp // * @param
-	 * instrPositions // * @param instrCounter // * @param codeIter // * @return
-	 * pos of invokeInstr of locVar //
-	 */
-	// private int getInvokePos(int prevInstrOp, CodeIterator codeIter,
-	// ArrayList<Integer> instrPositions, int instrCounter) {
-	//
-	// if (Mnemonic.OPCODE[prevInstrOp].matches("invoke.*"))
-	// return instrPositions.get(instrCounter - 2);
-	// else if ((Mnemonic.OPCODE[prevInstrOp].matches(".*cast.*") &&
-	// Mnemonic.OPCODE[codeIter
-	// .byteAt(instrPositions.get(instrCounter - 3))]
-	// .matches("invoke.*"))) {
-	// return instrPositions.get(instrCounter - 3);
-	// } else
-	// return 0;
-	// }
 }
