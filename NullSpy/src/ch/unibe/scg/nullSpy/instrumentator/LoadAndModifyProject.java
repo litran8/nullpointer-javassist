@@ -19,7 +19,7 @@ import ch.unibe.scg.nullSpy.instrumentator.controller.Iteration;
 public class LoadAndModifyProject {
 
 	private static String projectBinSourcePath;
-	private static String modifiedProjectDestinationPath;
+	private static String modifiedProjectDestDirWithoutBinPath;
 	private static String jarDestPath;
 	private static String mainClassNameOfProject;
 
@@ -29,13 +29,13 @@ public class LoadAndModifyProject {
 		// many arguments because i have a space in the path: Lina Tran
 		projectBinSourcePath = args[0] + " " + args[1];
 		jarDestPath = args[2] + " " + args[3];
-		modifiedProjectDestinationPath = jarDestPath + "\\bin";
+		modifiedProjectDestDirWithoutBinPath = jarDestPath + "\\bin";
 
 		File srcFolder = new File(projectBinSourcePath);
-		File destFolder = new File(modifiedProjectDestinationPath);
+		File destFolder = new File(modifiedProjectDestDirWithoutBinPath);
 
+		// get path to get the runtimeSupportFile
 		String currentWorkingDirPath = new java.io.File(".").getCanonicalPath();
-
 		File runtimeSupporterFile = new File(currentWorkingDirPath + "\\bin");
 
 		// make sure source exists
@@ -49,8 +49,6 @@ public class LoadAndModifyProject {
 
 			try {
 
-				// copyFolder(runtimeSupporterFile, srcFolder,
-				// projectBinSourcePath);
 				modifyProjectAndStoreToDestFolder(srcFolder, destFolder);
 				copyRuntimeSupporterClassFileToModifiedProjectFolder(
 						runtimeSupporterFile, destFolder);
@@ -65,7 +63,7 @@ public class LoadAndModifyProject {
 
 		ExecutableJarCreator jar = new ExecutableJarCreator();
 
-		jar.jar(modifiedProjectDestinationPath, jarDestPath,
+		jar.jar(modifiedProjectDestDirWithoutBinPath, jarDestPath,
 				mainClassNameOfProject);
 	}
 
@@ -100,23 +98,21 @@ public class LoadAndModifyProject {
 				modifyProjectAndStoreToDestFolder(srcFile, destFile);
 			}
 		} else {
-			// set up the class pool for modifications
+			// set up the search path of the class pool for modifications
 			ClassPool pool = ClassPool.getDefault();
-			String emptyPath = projectBinSourcePath.substring(0,
-					projectBinSourcePath.lastIndexOf("\\"));
-			pool.insertClassPath(emptyPath);
+			pool.insertClassPath(projectBinSourcePath);
 
 			// create ctclass to represent the to be modified class
-			String parent = src.getParent();
-			int packageNameStartIndex = projectBinSourcePath.length() + 1;
-			String packageName = parent.substring(packageNameStartIndex,
-					parent.length());
-			String classNameWithPackageName = packageName + "."
-					+ src.getName().substring(0, src.getName().indexOf("."));
+			String packageName_ClassName = src
+					.getAbsolutePath()
+					.substring(projectBinSourcePath.length() + 1,
+							src.getAbsolutePath().length()).replace("\\", ".")
+					.replace(".class", "");
 
-			CtClass cc = pool.get(classNameWithPackageName);
+			CtClass cc = pool.get(packageName_ClassName);
 			cc.stopPruning(true);
 
+			// get the main-className
 			for (CtMethod m : cc.getDeclaredMethods()) {
 				if (m.getName().equals("main"))
 					mainClassNameOfProject = m.getDeclaringClass().getName();
@@ -148,9 +144,11 @@ public class LoadAndModifyProject {
 	 */
 	public static void copyRuntimeSupporterClassFileToModifiedProjectFolder(
 			File src, File dest) throws IOException, NotFoundException {
+
 		// only copy package ch.unibe.scg.nullSpy.runtimeSupporter
 		if (src.getName().equals("instrumentator"))
 			return;
+
 		if (src.isDirectory()) {
 
 			// if directory not exists, create it

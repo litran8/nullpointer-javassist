@@ -28,7 +28,7 @@ public class ExecutableJarCreator {
 					mainClassName);
 
 			JarOutputStream target = new JarOutputStream(new FileOutputStream(
-					dest + "\\modifiedProject.jar"), manifest);
+					dest + "\\" + mainClassName + ".jar"), manifest);
 
 			srcToJar(modifiedProject, jarDest, target);
 			target.close();
