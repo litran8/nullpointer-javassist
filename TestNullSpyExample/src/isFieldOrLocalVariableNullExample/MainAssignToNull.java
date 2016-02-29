@@ -1,6 +1,6 @@
 package isFieldOrLocalVariableNullExample;
 
-public class AssignToNull {
+public class MainAssignToNull {
 	public static Object a;
 	public static Object b;
 	public static Object c;
@@ -13,7 +13,7 @@ public class AssignToNull {
 	// int j, k,
 
 	public static void main(String[] args) {
-		long startTime = System.nanoTime();
+		// long startTime = System.nanoTime();
 
 		System.out.println("\nMethod main starts.");
 		Person p = (Person) isFieldOrLocalVariableNullExample.Person.say();
