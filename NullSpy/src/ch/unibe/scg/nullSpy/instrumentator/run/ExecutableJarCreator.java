@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator;
+package ch.unibe.scg.nullSpy.instrumentator.run;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator;
+package ch.unibe.scg.nullSpy.instrumentator.run;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -19,31 +19,43 @@ import ch.unibe.scg.nullSpy.instrumentator.controller.Iteration;
 public class MainProjectModifier {
 
 	private static String srcPath;
-	private static String destBinDirPath;
+	private static String modifiedProjectBinDirPath;
 	private static String modifiedProjectDestDirPath;
 	private static String mainClassNameOfProject;
 
 	public static void main(String[] args) throws NotFoundException,
 			IOException {
 
-		// many arguments because i have a space in the path: Lina Tran
-		srcPath = args[0] + " " + args[1]; // bin path of the to be modified
-											// project
-		modifiedProjectDestDirPath = args[2] + " " + args[3]; // path where the
-																// modified
-																// project
-																// should be
-																// stored
-																// (without bin)
-		destBinDirPath = modifiedProjectDestDirPath + "\\bin"; // same as
-																// destDirPath,
-																// but used for
-																// automatically
-																// add a bin dir
-																// in destDir
+		if (args.length == 4) {
+			// many arguments because i have a space in the path: Lina Tran
+			srcPath = args[0] + " " + args[1]; // bin path of the to be modified
+												// project
+			modifiedProjectDestDirPath = args[2] + " " + args[3]; // path where
+																	// the
+																	// modified
+																	// project
+																	// should be
+																	// stored
+																	// (without
+																	// bin)
+		} else if (args.length == 2) {
+			srcPath = args[0];
+			modifiedProjectDestDirPath = args[1];
+		} else {
+			System.out.println("Amount of args is not enough or to big.");
+			System.exit(0);
+		}
+
+		modifiedProjectBinDirPath = modifiedProjectDestDirPath + "\\bin"; // same
+																			// as
+		// destDirPath,
+		// but used for
+		// automatically
+		// add a bin dir
+		// in destDir
 
 		File srcDir = new File(srcPath);
-		File destDir = new File(destBinDirPath);
+		File destDir = new File(modifiedProjectBinDirPath);
 
 		// get path to get the runtimeSupportFile
 		String currentWorkingDirPath = new java.io.File(".").getCanonicalPath();
@@ -59,7 +71,9 @@ public class MainProjectModifier {
 		} else {
 
 			try {
+				// modifies project by instrument code
 				modifyProjectAndStoreToDestDir(srcDir, destDir, 0);
+				// modifies project by adding runtime supporter class file
 				modifyProjectAndStoreToDestDir(runtimeSupporterFile, destDir, 1);
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -70,9 +84,9 @@ public class MainProjectModifier {
 
 		System.out.println("Project modification done.");
 
+		// create executable jar out of modified project
 		ExecutableJarCreator jar = new ExecutableJarCreator();
-
-		jar.jar(destBinDirPath, modifiedProjectDestDirPath,
+		jar.jar(modifiedProjectBinDirPath, modifiedProjectDestDirPath,
 				mainClassNameOfProject);
 	}
 
