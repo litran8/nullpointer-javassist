@@ -15,8 +15,8 @@
 # Hidden files
 .*
 !.gitignore
-!.classpath
-!.project
+.classpath
+.project
 
 # Temporary files
 */tmp
