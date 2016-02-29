@@ -14,7 +14,7 @@ public class ExecutableJarCreator {
 
 	private String packageName;
 
-	public void jar(String src, String dest, String mainClassName) {
+	public void createExecJar(String src, String dest, String mainClassName) {
 
 		File modifiedProject = new File(src);
 		File jarDest = new File(dest);
@@ -75,13 +75,12 @@ public class ExecutableJarCreator {
 				// recursive copy
 				srcToJar(srcFile, destFile, target);
 
-				// only if package is changed
+				// only if package is changed; for sub-folders in jar
 				if (srcFile.isDirectory())
 					packageName = null;
 			}
 		} else {
 			// if file, then copy it
-			// Use bytes stream to support all file types
 			InputStream in = new FileInputStream(src);
 			target.putNextEntry(new JarEntry(packageName + src.getName()));
 

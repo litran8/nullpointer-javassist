@@ -22,6 +22,14 @@ public class LocVarLogic {
 		this.cc = cc;
 	}
 
+	/**
+	 * Checks all locVar in a class and instrument test-code after their
+	 * assignments.
+	 * 
+	 * @throws BadBytecode
+	 * @throws CannotCompileException
+	 * @throws NotFoundException
+	 */
 	public void instrumentAfterLocVarAssignment() throws BadBytecode,
 			CannotCompileException, NotFoundException {
 
@@ -34,6 +42,8 @@ public class LocVarLogic {
 				method.insertAfter("System.out.println(\"\\nOriginal class time: \" +((System.nanoTime() - startTime)/1000000) + \" ms\");");
 			}
 
+			// get everything what is needed for checking locVars in the
+			// byte code
 			CodeAttribute codeAttribute = method.getMethodInfo()
 					.getCodeAttribute();
 			CodeIterator codeIterator = codeAttribute.iterator();
@@ -46,7 +56,7 @@ public class LocVarLogic {
 					.getAttribute(LineNumberAttribute.tag);
 
 			// store lineNrTable into ArrayLists (because directly get lineNr
-			// changed the lineNrTable somehow...
+			// changes the lineNrTable somehow...
 			ArrayList<Integer> lineNrTablePc = new ArrayList<Integer>();
 			ArrayList<Integer> lineNrTableLine = new ArrayList<Integer>();
 
@@ -110,6 +120,8 @@ public class LocVarLogic {
 				int locVarSourceLineNr = getLocVarLineNrInSourceCode(
 						lineNrTablePc, lineNrTableLine, pos);
 
+				// insertAt( int lineNr + 1, test(String className, Object
+				// varValue, int lineNr, String varName) );
 				method.insertAt(locVarSourceLineNr + 1,
 						"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
 								+ method.getDeclaringClass().getName() + "\","

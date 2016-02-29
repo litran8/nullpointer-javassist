@@ -86,7 +86,7 @@ public class MainProjectModifier {
 
 		// create executable jar out of modified project
 		ExecutableJarCreator jar = new ExecutableJarCreator();
-		jar.jar(modifiedProjectBinDirPath, modifiedProjectDestDirPath,
+		jar.createExecJar(modifiedProjectBinDirPath, modifiedProjectDestDirPath,
 				mainClassNameOfProject);
 	}
 
@@ -140,7 +140,8 @@ public class MainProjectModifier {
 	}
 
 	/**
-	 * Modifies all class files of a project with Javassist.
+	 * Modifies all class files of a project with Javassist, by instrumenting a
+	 * check after each assignments of fields and locVars.
 	 * 
 	 * @param src
 	 * @param dest
@@ -184,8 +185,8 @@ public class MainProjectModifier {
 	}
 
 	/**
-	 * Adds the run-time supporter class file to the bin directory of the
-	 * modified project in the destination directory.
+	 * Adds the run-time supporter class file to the modified project bin
+	 * directory in the destination directory.
 	 * 
 	 * @param src
 	 * @param dest

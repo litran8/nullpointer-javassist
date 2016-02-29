@@ -38,11 +38,13 @@ public class FieldLogic {
 					if (field.getLineNumber() > cc.getDeclaredMethods()[0]
 							.getMethodInfo().getLineNumber(0)) {
 						try {
-							CtMethod method = cc.getDeclaredMethod(field.where()
-									.getMethodInfo().getName());
+							CtMethod method = cc.getDeclaredMethod(field
+									.where().getMethodInfo().getName());
 							String fieldName = field.getFieldName();
 							int fieldSourceLineNr = field.getLineNumber();
 
+							// stores field (inner class), because instrument
+							// directly doesn't work here...
 							fieldList.add(new Field(fieldName,
 									fieldSourceLineNr, method));
 						} catch (NotFoundException e) {
@@ -54,6 +56,9 @@ public class FieldLogic {
 		});
 
 		for (Field f : fieldList) {
+
+			// insertAt( int lineNr + 1, test(String className, Object
+			// varValue, int lineNr, String varName) );
 			f.getCtMethod().insertAt(
 					f.getFieldLineNr() + 1,
 					"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
