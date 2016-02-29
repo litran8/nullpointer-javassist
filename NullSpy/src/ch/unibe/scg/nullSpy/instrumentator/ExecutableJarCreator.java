@@ -39,7 +39,7 @@ public class ExecutableJarCreator {
 			System.exit(0);
 		}
 
-		System.out.println("Done");
+		System.out.println("Eexecutable jar creation done.");
 	}
 
 	/**

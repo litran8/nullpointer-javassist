@@ -22,7 +22,7 @@ public class LocVarLogic {
 		this.cc = cc;
 	}
 
-	public void searchAndStoreLocVar() throws BadBytecode,
+	public void instrumentAfterLocVarAssignment() throws BadBytecode,
 			CannotCompileException, NotFoundException {
 
 		for (CtMethod method : cc.getDeclaredMethods()) {
@@ -57,13 +57,13 @@ public class LocVarLogic {
 
 			codeIterator.begin();
 
-			checkAndStoreLocVar(method, codeIterator, locVarTable,
+			instrumentAfterLocVarObject(method, codeIterator, locVarTable,
 					lineNrTablePc, lineNrTableLine);
 		}
 	}
 
 	/**
-	 * Search all locVar; store <(name, lineNr, method), varIndexInLocVarTables>
+	 * Searches all locVar and directly instrument tester after assignment.
 	 * 
 	 * @param method
 	 * @param codeIterator
@@ -73,7 +73,7 @@ public class LocVarLogic {
 	 * @throws BadBytecode
 	 * @throws CannotCompileException
 	 */
-	private void checkAndStoreLocVar(CtMethod method,
+	private void instrumentAfterLocVarObject(CtMethod method,
 			CodeIterator codeIterator, LocalVariableAttribute localVarTable,
 			ArrayList<Integer> lineNrTablePc, ArrayList<Integer> lineNrTableLine)
 			throws BadBytecode, CannotCompileException {

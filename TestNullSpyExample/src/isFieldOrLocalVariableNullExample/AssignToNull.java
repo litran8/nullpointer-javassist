@@ -13,6 +13,8 @@ public class AssignToNull {
 	// int j, k,
 
 	public static void main(String[] args) {
+		long startTime = System.nanoTime();
+
 		System.out.println("\nMethod main starts.");
 		Person p = (Person) isFieldOrLocalVariableNullExample.Person.say();
 		a = null;
@@ -27,6 +29,9 @@ public class AssignToNull {
 		nO = (NullObject) p.say();
 		Object u = nullObject.setToNullMethod();
 		System.out.println("Method main ends.\n");
+
+		// System.out.println("Original time: "
+		// + ((System.nanoTime() - startTime) / 1000000) + "ms");
 	}
 
 	private static void y() {

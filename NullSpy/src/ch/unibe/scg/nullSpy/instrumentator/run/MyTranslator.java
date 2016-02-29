@@ -37,7 +37,7 @@ public class MyTranslator implements Translator {
 			cc.stopPruning(true);
 
 			try {
-				iter.goThrough(cc);
+				iter.instrumentCodeAfterFieldLocVarAssignment(cc);
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}

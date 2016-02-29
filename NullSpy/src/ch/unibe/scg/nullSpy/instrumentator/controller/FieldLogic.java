@@ -26,22 +26,22 @@ public class FieldLogic {
 	 * @param myClass
 	 * @throws CannotCompileException
 	 */
-	public void searchAndStoreField() throws CannotCompileException {
+	public void instrumentAfterFieldAssignment() throws CannotCompileException {
 
 		cc.instrument(new ExprEditor() {
-			public void edit(FieldAccess arg) throws CannotCompileException {
-				if (arg.isWriter()) {
+			public void edit(FieldAccess field) throws CannotCompileException {
+				if (field.isWriter()) {
 
 					// only store field in methods, which are not instantiated
 					// outside
 					// methods
-					if (arg.getLineNumber() > cc.getDeclaredMethods()[0]
+					if (field.getLineNumber() > cc.getDeclaredMethods()[0]
 							.getMethodInfo().getLineNumber(0)) {
 						try {
-							CtMethod method = cc.getDeclaredMethod(arg.where()
+							CtMethod method = cc.getDeclaredMethod(field.where()
 									.getMethodInfo().getName());
-							String fieldName = arg.getFieldName();
-							int fieldSourceLineNr = arg.getLineNumber();
+							String fieldName = field.getFieldName();
+							int fieldSourceLineNr = field.getLineNumber();
 
 							fieldList.add(new Field(fieldName,
 									fieldSourceLineNr, method));

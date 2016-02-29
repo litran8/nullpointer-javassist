@@ -1,12 +1,12 @@
 package ch.unibe.scg.nullSpy.runtimeSupporter;
 
 public class NullDisplayer {
-	public static void test(String className, Object obj, int lineNr,
-			String objName) {
-		if (obj == null) {
+	public static void test(String className, Object varValue, int lineNr,
+			String varName) {
+		if (varValue == null) {
 
 			// System.out.print(isField(lineNr) ? "Field " : "Local variable ");
-			System.out.print(objName + " at line " + lineNr + " is null: ");
+			System.out.print(varName + " at line " + lineNr + " is null: ");
 			System.out.println(getNullLink(className, lineNr));
 		}
 	}

@@ -21,17 +21,17 @@ public class Iteration {
 		return instance;
 	}
 
-	public void goThrough(CtClass cc) throws NotFoundException,
+	public void instrumentCodeAfterFieldLocVarAssignment(CtClass cc) throws NotFoundException,
 			CannotCompileException, BadBytecode, IllegalAccessException,
 			InvocationTargetException, NoSuchMethodException {
 
 		// Field
 		FieldLogic fieldLogic = new FieldLogic(cc);
-		fieldLogic.searchAndStoreField();
+		fieldLogic.instrumentAfterFieldAssignment();
 
 		// LocVar
 		LocVarLogic locVarLogic = new LocVarLogic(cc);
-		locVarLogic.searchAndStoreLocVar();
+		locVarLogic.instrumentAfterLocVarAssignment();
 	}
 
 }
