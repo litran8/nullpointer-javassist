@@ -13,11 +13,15 @@ import java.util.jar.Manifest;
 public class ExecutableJarCreator {
 
 	private String packageName;
+	private String modifiedProjectBinSrcPath;
 
-	public void createExecJar(String src, String dest, String mainClassName) {
+	public void createExecJar(String modifiedProjectBinSrcPath,
+			String jarDestPath, String mainClassName) {
 
-		File modifiedProject = new File(src);
-		File jarDest = new File(dest);
+		this.modifiedProjectBinSrcPath = modifiedProjectBinSrcPath;
+
+		File modifiedProject = new File(this.modifiedProjectBinSrcPath);
+		File jarDest = new File(jarDestPath);
 
 		try {
 			// create manifest for executable jar
@@ -28,7 +32,7 @@ public class ExecutableJarCreator {
 					mainClassName);
 
 			JarOutputStream target = new JarOutputStream(new FileOutputStream(
-					dest + "\\" + mainClassName + ".jar"), manifest);
+					jarDestPath + "\\" + mainClassName + ".jar"), manifest);
 
 			srcToJar(modifiedProject, jarDest, target);
 			target.close();
@@ -82,6 +86,10 @@ public class ExecutableJarCreator {
 		} else {
 			// if file, then copy it
 			InputStream in = new FileInputStream(src);
+
+			if (src.getParent().equals(this.modifiedProjectBinSrcPath))
+				packageName = "";
+
 			target.putNextEntry(new JarEntry(packageName + src.getName()));
 
 			byte[] buffer = new byte[1024];

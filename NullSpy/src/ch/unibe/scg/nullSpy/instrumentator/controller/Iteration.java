@@ -7,6 +7,13 @@ import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 
+/**
+ * Iterates through the whole class and instrument a test-code after each field
+ * or locVar.
+ * 
+ * @author Lina Tran
+ *
+ */
 public class Iteration {
 
 	private static Iteration instance;
@@ -21,9 +28,10 @@ public class Iteration {
 		return instance;
 	}
 
-	public void instrumentCodeAfterFieldLocVarAssignment(CtClass cc) throws NotFoundException,
-			CannotCompileException, BadBytecode, IllegalAccessException,
-			InvocationTargetException, NoSuchMethodException {
+	public void instrumentCodeAfterFieldLocVarAssignment(CtClass cc)
+			throws NotFoundException, CannotCompileException, BadBytecode,
+			IllegalAccessException, InvocationTargetException,
+			NoSuchMethodException {
 
 		// Field
 		FieldLogic fieldLogic = new FieldLogic(cc);

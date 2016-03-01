@@ -18,8 +18,8 @@ import ch.unibe.scg.nullSpy.instrumentator.controller.Iteration;
 
 public class MainProjectModifier {
 
-	private static String srcPath;
-	private static String modifiedProjectBinDirPath;
+	private static String originalProjectBinSrcPath;
+	private static String modifiedProjectDestBinDirPath;
 	private static String modifiedProjectDestDirPath;
 	private static String mainClassNameOfProject;
 
@@ -28,8 +28,10 @@ public class MainProjectModifier {
 
 		if (args.length == 4) {
 			// many arguments because i have a space in the path: Lina Tran
-			srcPath = args[0] + " " + args[1]; // bin path of the to be modified
-												// project
+			originalProjectBinSrcPath = args[0] + " " + args[1]; // bin path of
+																	// the to be
+																	// modified
+			// project
 			modifiedProjectDestDirPath = args[2] + " " + args[3]; // path where
 																	// the
 																	// modified
@@ -39,14 +41,14 @@ public class MainProjectModifier {
 																	// (without
 																	// bin)
 		} else if (args.length == 2) {
-			srcPath = args[0];
+			originalProjectBinSrcPath = args[0];
 			modifiedProjectDestDirPath = args[1];
 		} else {
 			System.out.println("Amount of args is not enough or to big.");
 			System.exit(0);
 		}
 
-		modifiedProjectBinDirPath = modifiedProjectDestDirPath + "\\bin"; // same
+		modifiedProjectDestBinDirPath = modifiedProjectDestDirPath + "\\bin"; // same
 																			// as
 		// destDirPath,
 		// but used for
@@ -54,8 +56,8 @@ public class MainProjectModifier {
 		// add a bin dir
 		// in destDir
 
-		File srcDir = new File(srcPath);
-		File destDir = new File(modifiedProjectBinDirPath);
+		File srcDir = new File(originalProjectBinSrcPath);
+		File destDir = new File(modifiedProjectDestBinDirPath);
 
 		// get path to get the runtimeSupportFile
 		String currentWorkingDirPath = new java.io.File(".").getCanonicalPath();
@@ -86,8 +88,8 @@ public class MainProjectModifier {
 
 		// create executable jar out of modified project
 		ExecutableJarCreator jar = new ExecutableJarCreator();
-		jar.createExecJar(modifiedProjectBinDirPath, modifiedProjectDestDirPath,
-				mainClassNameOfProject);
+		jar.createExecJar(modifiedProjectDestBinDirPath,
+				modifiedProjectDestDirPath, mainClassNameOfProject);
 	}
 
 	/**
@@ -153,13 +155,14 @@ public class MainProjectModifier {
 			throws NotFoundException, IOException, FileNotFoundException {
 		// set up the search path of class pool
 		ClassPool pool = ClassPool.getDefault();
-		pool.insertClassPath(srcPath);
+		pool.insertClassPath(originalProjectBinSrcPath);
 
 		// create ctclass to represent the to be modified class
 		String packageName_ClassName = src
 				.getAbsolutePath()
-				.substring(srcPath.length() + 1, src.getAbsolutePath().length())
-				.replace(".class", "").replace("\\", ".");
+				.substring(originalProjectBinSrcPath.length() + 1,
+						src.getAbsolutePath().length()).replace(".class", "")
+				.replace("\\", ".");
 
 		CtClass cc = pool.get(packageName_ClassName);
 		cc.stopPruning(true);

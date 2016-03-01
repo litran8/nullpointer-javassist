@@ -14,6 +14,12 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
 
+/**
+ * Instruments test-code after locVars.
+ * 
+ * @author Lina Tran
+ *
+ */
 public class LocVarLogic {
 
 	private CtClass cc;
@@ -23,7 +29,7 @@ public class LocVarLogic {
 	}
 
 	/**
-	 * Checks all locVar in a class and instrument test-code after their
+	 * Checks all locVars in a class and instrument test-code after their
 	 * assignments.
 	 * 
 	 * @throws BadBytecode
@@ -35,6 +41,7 @@ public class LocVarLogic {
 
 		for (CtMethod method : cc.getDeclaredMethods()) {
 
+			// calculates the time modified project uses
 			if (method.getName().equals("main")) {
 				CtField f = CtField.make("public static long startTime;", cc);
 				cc.addField(f);
@@ -73,7 +80,7 @@ public class LocVarLogic {
 	}
 
 	/**
-	 * Searches all locVar and directly instrument tester after assignment.
+	 * Searches only locVar which are objects and directly instrument test-code.
 	 * 
 	 * @param method
 	 * @param codeIterator
@@ -105,7 +112,8 @@ public class LocVarLogic {
 						.get(instrCounter - 1));
 			instrCounter++;
 
-			// check if it's NOT a primitive one
+			// check if it's NOT a primitive one and the iterator iterates only
+			// through the "direct" byte code of the method
 			if (isLocVarObject(op)
 					&& (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <= lineNrTablePc
 							.get(lineNrTablePc.size() - 1))) {
@@ -120,7 +128,8 @@ public class LocVarLogic {
 				int locVarSourceLineNr = getLocVarLineNrInSourceCode(
 						lineNrTablePc, lineNrTableLine, pos);
 
-				// insertAt( int lineNr + 1, test(String className, Object
+				// insertAt( int lineNr + 1, String sourceCodeAsString);
+				// sourceCodeasString in code: test(String className, Object
 				// varValue, int lineNr, String varName) );
 				method.insertAt(locVarSourceLineNr + 1,
 						"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
@@ -132,7 +141,7 @@ public class LocVarLogic {
 	}
 
 	/**
-	 * Checks if the locVar is an object, NOT a primitive one
+	 * Checks if the locVar is an object, NOT a primitive one.
 	 * 
 	 * @param op
 	 * @return
@@ -163,7 +172,7 @@ public class LocVarLogic {
 	}
 
 	/**
-	 * Gets the slot/index of locVar in locVarArray of frame
+	 * Gets the slot/index of locVar in locVarArray of frame.
 	 * 
 	 * @param codeIterator
 	 * @param pos
@@ -185,7 +194,7 @@ public class LocVarLogic {
 	}
 
 	/**
-	 * Gets the lineNr of the locVar in the Source Code
+	 * Gets the lineNr of the locVar in the Source Code.
 	 * 
 	 * @param lineNrTablePc
 	 * @param lineNrTableLine
