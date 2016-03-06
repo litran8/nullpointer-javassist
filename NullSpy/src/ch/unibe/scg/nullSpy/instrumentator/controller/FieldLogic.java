@@ -6,6 +6,8 @@ import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.NotFoundException;
+import javassist.bytecode.CodeIterator;
+import javassist.bytecode.ConstPool;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 
@@ -15,7 +17,14 @@ import javassist.expr.FieldAccess;
 public class FieldLogic {
 
 	private CtClass cc;
+	// private FieldAndLocVarContainerOfOneClass container;
 	private ArrayList<Field> fieldIsWritterInfoList = new ArrayList<Field>();
+
+	// public FieldLogic(CtClass cc, FieldAndLocVarContainerOfOneClass
+	// container) {
+	// this.cc = cc;
+	// this.container = container;
+	// }
 
 	public FieldLogic(CtClass cc) {
 		this.cc = cc;
@@ -41,15 +50,27 @@ public class FieldLogic {
 							.getMethodInfo().getLineNumber(0)
 							&& fieldIsNotPrimitive(field)) {
 						try {
+
 							CtMethod method = cc.getDeclaredMethod(field
 									.where().getMethodInfo().getName());
+
 							String fieldName = field.getFieldName();
+
+							ConstPool pool = method.getMethodInfo2()
+									.getConstPool();
+							CodeIterator iter = method.getMethodInfo()
+									.getCodeAttribute().iterator();
+							String fieldType = pool.getFieldrefType(iter
+									.u16bitAt(field.indexOfBytecode() + 1));
+
 							int fieldSourceLineNr = field.getLineNumber();
 
 							// stores field (inner class), because instrument
 							// directly doesn't work here...
 							fieldIsWritterInfoList.add(new Field(fieldName,
-									fieldSourceLineNr, method));
+									fieldType, fieldSourceLineNr, method));
+							// container.storeFieldIsWriterInfo(fieldName,
+							// fieldSourceLineNr, method, field);
 						} catch (NotFoundException e) {
 							e.printStackTrace();
 						}
@@ -67,9 +88,11 @@ public class FieldLogic {
 			f.getCtMethod().insertAt(
 					f.getFieldLineNr() + 1,
 					"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
-							+ cc.getName() + "\"," + f.getFieldName() + ","
-							+ f.getFieldLineNr() + ",\"" + f.getFieldName()
-							+ "\");");
+							+ cc.getName() + "\", \""
+							+ f.getCtMethod().getName() + "\", "
+							+ f.getFieldName() + "," + f.getFieldLineNr()
+							+ ",\"" + f.getFieldName() + "\", \""
+							+ f.getFieldType() + "\", \"field\");");
 		}
 	}
 
@@ -89,17 +112,25 @@ public class FieldLogic {
 	 */
 	private class Field {
 		public String fieldName;
+		public String fieldType;
+
 		public int fieldSourceLineNr;
 		public CtMethod method;
 
-		public Field(String fieldName, int fieldSourceLineNr, CtMethod method) {
+		public Field(String fieldName, String fieldType, int fieldSourceLineNr,
+				CtMethod method) {
 			this.fieldName = fieldName;
+			this.fieldType = fieldType;
 			this.fieldSourceLineNr = fieldSourceLineNr;
 			this.method = method;
 		}
 
 		public String getFieldName() {
 			return fieldName;
+		}
+
+		public String getFieldType() {
+			return fieldType;
 		}
 
 		public int getFieldLineNr() {
