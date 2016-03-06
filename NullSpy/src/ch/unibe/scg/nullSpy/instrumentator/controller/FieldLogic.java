@@ -4,10 +4,12 @@ import java.util.ArrayList;
 
 import javassist.CannotCompileException;
 import javassist.CtClass;
+import javassist.CtField;
 import javassist.CtMethod;
 import javassist.NotFoundException;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
+import javassist.bytecode.LineNumberAttribute;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 
@@ -49,33 +51,73 @@ public class FieldLogic {
 					if (field.getLineNumber() >= cc.getDeclaredMethods()[0]
 							.getMethodInfo().getLineNumber(0)
 							&& fieldIsNotPrimitive(field)) {
-						try {
-
-							CtMethod method = cc.getDeclaredMethod(field
-									.where().getMethodInfo().getName());
-
-							String fieldName = field.getFieldName();
-
-							ConstPool pool = method.getMethodInfo2()
-									.getConstPool();
-							CodeIterator iter = method.getMethodInfo()
-									.getCodeAttribute().iterator();
-							String fieldType = pool.getFieldrefType(iter
-									.u16bitAt(field.indexOfBytecode() + 1));
-
-							int fieldSourceLineNr = field.getLineNumber();
-
-							// stores field (inner class), because instrument
-							// directly doesn't work here...
-							fieldIsWritterInfoList.add(new Field(fieldName,
-									fieldType, fieldSourceLineNr, method));
-							// container.storeFieldIsWriterInfo(fieldName,
-							// fieldSourceLineNr, method, field);
-						} catch (NotFoundException e) {
-							e.printStackTrace();
+						if (isFieldFromCurrentCtClass(field)) {
+							try {
+								storeFieldOfCurrentClass(field);
+							} catch (NotFoundException e) {
+								e.printStackTrace();
+							}
+						} else {
+							try {
+								storeFieldOfAnotherClass(field);
+							} catch (NotFoundException e) {
+								e.printStackTrace();
+							}
 						}
 					}
 				}
+			}
+
+			private void storeFieldOfAnotherClass(FieldAccess field)
+					throws NotFoundException {
+				CtMethod method = cc.getDeclaredMethod(field.where()
+						.getMethodInfo().getName());
+				int lineNumber = field.getLineNumber();
+				LineNumberAttribute lineNumberTable = (LineNumberAttribute) method
+						.getMethodInfo().getCodeAttribute()
+						.getAttribute(LineNumberAttribute.tag);
+
+			}
+
+			private void storeFieldOfCurrentClass(FieldAccess field)
+					throws NotFoundException {
+
+				CtMethod method = cc.getDeclaredMethod(field.where()
+						.getMethodInfo().getName());
+
+				String fieldName = field.getFieldName();
+
+				ConstPool pool = method.getMethodInfo2().getConstPool();
+				CodeIterator iter = method.getMethodInfo().getCodeAttribute()
+						.iterator();
+				String fieldType = pool.getFieldrefType(iter.u16bitAt(field
+						.indexOfBytecode() + 1));
+
+				int fieldSourceLineNr = field.getLineNumber();
+
+				// stores field (inner class), because
+				// instrument
+				// directly doesn't work here...
+				fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
+						fieldSourceLineNr, method));
+				// container.storeFieldIsWriterInfo(fieldName,
+				// fieldSourceLineNr, method, field);
+
+			}
+
+			private boolean isFieldFromCurrentCtClass(FieldAccess field) {
+				Class c = field.getClass();
+				String name = field.getClassName();
+				CtClass ct = field.getEnclosingClass();
+				String fName = field.getFieldName();
+				String s = field.getSignature();
+				int nr = field.getLineNumber();
+				CtField[] fields = cc.getFields();
+
+				if (field.getClassName().equals(cc.getName()))
+					return true;
+				else
+					return false;
 			}
 
 		});
@@ -85,15 +127,25 @@ public class FieldLogic {
 			// insertAt( int lineNr + 1, String sourceCodeAsString);
 			// sourceCodeasString in code: test(String className, Object
 			// varValue, int lineNr, String varName) );
-			f.getCtMethod().insertAt(
-					f.getFieldLineNr() + 1,
-					"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
-							+ cc.getName() + "\", \""
-							+ f.getCtMethod().getName() + "\", "
-							+ f.getFieldName() + "," + f.getFieldLineNr()
-							+ ",\"" + f.getFieldName() + "\", \""
-							+ f.getFieldType() + "\", \"field\");");
+			CtMethod method = f.getCtMethod();
+			String fieldName = f.getFieldName();
+			int fieldLineNumber = f.getFieldLineNumber();
+			String fieldType = f.getFieldType();
+
+			insertTestLineAfterFieldAssignment(method, fieldName,
+					fieldLineNumber, fieldType);
 		}
+	}
+
+	private void insertTestLineAfterFieldAssignment(CtMethod method,
+			String fieldName, int fieldLineNumber, String fieldType)
+			throws CannotCompileException {
+		method.insertAt(fieldLineNumber + 1,
+				"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
+						+ method.getDeclaringClass().getName() + "\", \""
+						+ method.getName() + "\", " + fieldName + ","
+						+ fieldLineNumber + ",\"" + fieldName + "\", \""
+						+ fieldType + "\", \"field\");");
 	}
 
 	private boolean fieldIsNotPrimitive(FieldAccess field) {
@@ -133,7 +185,7 @@ public class FieldLogic {
 			return fieldType;
 		}
 
-		public int getFieldLineNr() {
+		public int getFieldLineNumber() {
 			return fieldSourceLineNr;
 		}
 

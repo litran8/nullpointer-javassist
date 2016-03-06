@@ -1,6 +1,7 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import javassist.CannotCompileException;
@@ -23,7 +24,7 @@ import javassist.bytecode.Opcode;
  * @author Lina Tran
  *
  */
-public class LocVarLogic implements Opcode {
+public class LocVarLogic extends VariableAnalyzer implements Opcode {
 
 	private CtClass cc;
 	// private FieldAndLocVarContainerOfOneClass container;
@@ -36,7 +37,8 @@ public class LocVarLogic implements Opcode {
 	// }
 
 	public LocVarLogic(CtClass cc) {
-		this.cc = cc;
+		super(cc);
+		this.cc = super.cc;
 	}
 
 	/**
@@ -60,30 +62,30 @@ public class LocVarLogic implements Opcode {
 			CodeAttribute codeAttribute = method.getMethodInfo()
 					.getCodeAttribute();
 			CodeIterator codeIterator = codeAttribute.iterator();
-			codeIterator.begin();
 
 			LocalVariableAttribute locVarTable = (LocalVariableAttribute) codeAttribute
 					.getAttribute(javassist.bytecode.LocalVariableAttribute.tag);
 
+			HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
 			LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttribute
 					.getAttribute(LineNumberAttribute.tag);
 
 			// store lineNrTable into ArrayLists (because directly get lineNr
 			// changes the lineNrTable somehow...
-			ArrayList<Integer> lineNrTablePc = new ArrayList<Integer>();
-			ArrayList<Integer> lineNrTableLine = new ArrayList<Integer>();
+			// ArrayList<Integer> lineNrTablePc = new ArrayList<Integer>();
+			// ArrayList<Integer> lineNrTableLine = new ArrayList<Integer>();
 
-			for (int j = 0; j < lineNrTable.tableLength(); j++) {
-				lineNrTablePc.add(lineNrTable.startPc(j));
-				lineNrTableLine.add(lineNrTable.lineNumber(j));
-			}
+			// for (int j = 0; j < lineNrTable.tableLength(); j++) {
+			// lineNrTablePc.add(lineNrTable.startPc(j));
+			// lineNrTableLine.add(lineNrTable.lineNumber(j));
+			// }
 
 			// if (method.getName().equals("setToNullMethod")) {
 
 			codeIterator.begin();
 
 			instrumentAfterLocVarObject(method, codeIterator, locVarTable,
-					lineNrTablePc, lineNrTableLine);
+					lineNumberMap, lineNrTable);
 
 			// codeIterator.begin();
 			// checkMethodCall(method, codeIterator, locVarTable, lineNrTablePc,
@@ -91,6 +93,20 @@ public class LocVarLogic implements Opcode {
 			// }
 
 		}
+	}
+
+	private HashMap<Integer, Integer> getLineNumberTable(CtMethod method) {
+		CodeAttribute codeAttribute = method.getMethodInfo().getCodeAttribute();
+		LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttribute
+				.getAttribute(LineNumberAttribute.tag);
+
+		HashMap<Integer, Integer> lineNumberMap = new HashMap<>();
+
+		for (int j = 0; j < lineNrTable.tableLength(); j++) {
+			lineNumberMap
+					.put(lineNrTable.startPc(j), lineNrTable.lineNumber(j));
+		}
+		return lineNumberMap;
 	}
 
 	private void addTimeToModifiedProject(CtMethod method)
@@ -114,21 +130,24 @@ public class LocVarLogic implements Opcode {
 	 * @param method
 	 * @param codeIterator
 	 * @param locVarTable
-	 * @param lineNrTablePc
-	 * @param lineNrTableLine
+	 * @param lineNumberMap
 	 * @throws BadBytecode
 	 * @throws CannotCompileException
 	 */
 	private void instrumentAfterLocVarObject(CtMethod method,
 			CodeIterator codeIterator, LocalVariableAttribute locVarTable,
-			ArrayList<Integer> lineNrTablePc, ArrayList<Integer> lineNrTableLine)
-			throws BadBytecode, CannotCompileException {
+			HashMap<Integer, Integer> lineNumberMap,
+			LineNumberAttribute lineNumberTable) throws BadBytecode,
+			CannotCompileException {
 
 		// store current instruction and the previous instructions
 		ArrayList<Integer> instrPositions = new ArrayList<Integer>();
 
 		int instrCounter = 0;
 		int prevInstrOp = 0;
+
+		int methodMaxPc = lineNumberTable
+				.startPc(lineNumberTable.tableLength() - 1);
 
 		while (codeIterator.hasNext()) {
 			int pos = codeIterator.next();
@@ -141,11 +160,8 @@ public class LocVarLogic implements Opcode {
 						.get(instrCounter - 1));
 			instrCounter++;
 
-			// check if it's NOT a primitive one and the iterator iterates only
-			// through the "direct" byte code of the method
 			if (isLocVarObject(op)
-					&& (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <= lineNrTablePc
-							.get(lineNrTablePc.size() - 1))) {
+					&& (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <= methodMaxPc)) {
 
 				int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
 						codeIterator, locVarTable, pos);
@@ -154,23 +170,45 @@ public class LocVarLogic implements Opcode {
 				String locVarName = locVarTable
 						.variableName(locVarIndexInLocVarTable);
 
-				int locVarSourceLineNr = getLocVarLineNrInSourceCode(
-						lineNrTablePc, lineNrTableLine, pos);
+				// int locVarSourceLineNr = getLocVarLineNrInSourceCode(
+				// lineNrTablePc, lineNrTableLine, pos);
+				int locVarSourceLineNr = getLineNumber(lineNumberMap, pos);
 
-				// insertAt( int lineNr + 1, String sourceCodeAsString);
-				// sourceCodeasString in code: test(String className, Object
-				// varValue, int lineNr, String varName) );
-				method.insertAt(locVarSourceLineNr + 1,
-						"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
-								+ method.getDeclaringClass().getName()
-								+ "\",\"" + method.getName() + "\","
-								+ locVarName + "," + locVarSourceLineNr + ",\""
-								+ locVarName + "\", \"locVar\", \"locVar\");");
+				insertTestLineForLocalVariableAssignment(method, locVarName,
+						locVarSourceLineNr);
 
 				// container.storeLocVarInfo(locVarName, locVarSourceLineNr,
 				// method, locVarIndexInLocVarTable);
 			}
 		}
+	}
+
+	private int getLineNumber(HashMap<Integer, Integer> lineNumberMap, int pos) {
+		int lineNumber = 0;
+
+		Object[] keys = lineNumberMap.keySet().toArray();
+		Arrays.sort(keys);
+
+		for (int i = 0; i < keys.length; i++) {
+			if (pos >= (int) keys[i]) {
+				lineNumber = lineNumberMap.get((int) keys[i]);
+			} else {
+				break;
+			}
+		}
+
+		return lineNumber;
+	}
+
+	private void insertTestLineForLocalVariableAssignment(CtMethod method,
+			String locVarName, int locVarSourceLineNr)
+			throws CannotCompileException {
+		method.insertAt(locVarSourceLineNr + 1,
+				"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
+						+ method.getDeclaringClass().getName() + "\",\""
+						+ method.getName() + "\"," + locVarName + ","
+						+ locVarSourceLineNr + ",\"" + locVarName
+						+ "\", \"locVar\", \"locVar\");");
 	}
 
 	private void checkMethodCall(CtMethod method, CodeIterator codeIterator,

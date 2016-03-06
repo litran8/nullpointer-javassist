@@ -15,19 +15,19 @@ import ch.unibe.scg.nullSpy.model.AnalyzedClassData;
  * @author Lina Tran
  *
  */
-public class Iteration {
+public class ClassAdapter {
 
-	private static Iteration instance;
+	private static ClassAdapter instance;
 	private AnalyzedClassData analyzedClassData = new AnalyzedClassData();
 
 	// private FieldAndLocVarContainerOfOneClass fieldLocVarContainer;
 
-	private Iteration() {
+	private ClassAdapter() {
 	}
 
-	public static Iteration getInstance() {
+	public static ClassAdapter getInstance() {
 		if (instance == null) {
-			instance = new Iteration();
+			instance = new ClassAdapter();
 		}
 		return instance;
 	}

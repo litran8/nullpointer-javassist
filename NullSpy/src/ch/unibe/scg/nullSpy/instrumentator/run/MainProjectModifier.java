@@ -14,7 +14,7 @@ import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.NotFoundException;
 import javassist.bytecode.ClassFile;
-import ch.unibe.scg.nullSpy.instrumentator.controller.Iteration;
+import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
 
 public class MainProjectModifier {
 
@@ -175,7 +175,7 @@ public class MainProjectModifier {
 
 		try {
 			// modify class
-			Iteration iter = Iteration.getInstance();
+			ClassAdapter iter = ClassAdapter.getInstance();
 			iter.instrumentCodeAfterFieldLocVarAssignment(cc);
 		} catch (Throwable e) {
 			e.printStackTrace();
