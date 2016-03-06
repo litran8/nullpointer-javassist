@@ -1,22 +1,23 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtClass;
-import javassist.CtField;
 import javassist.CtMethod;
 import javassist.NotFoundException;
+import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
-import javassist.bytecode.LineNumberAttribute;
+import javassist.bytecode.LocalVariableAttribute;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 
 /**
  * Instruments test-code after fields.
  */
-public class FieldLogic {
+public class FieldLogic extends VariableAnalyzer {
 
 	private CtClass cc;
 	// private FieldAndLocVarContainerOfOneClass container;
@@ -29,6 +30,7 @@ public class FieldLogic {
 	// }
 
 	public FieldLogic(CtClass cc) {
+		super(cc);
 		this.cc = cc;
 	}
 
@@ -70,12 +72,49 @@ public class FieldLogic {
 
 			private void storeFieldOfAnotherClass(FieldAccess field)
 					throws NotFoundException {
+
 				CtMethod method = cc.getDeclaredMethod(field.where()
 						.getMethodInfo().getName());
-				int lineNumber = field.getLineNumber();
-				LineNumberAttribute lineNumberTable = (LineNumberAttribute) method
-						.getMethodInfo().getCodeAttribute()
-						.getAttribute(LineNumberAttribute.tag);
+				CodeAttribute codeAttribute = method.getMethodInfo()
+						.getCodeAttribute();
+				CodeIterator codeIterator = codeAttribute.iterator();
+				int fieldLineNumber = field.getLineNumber();
+				HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
+				LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
+						.getAttribute(LocalVariableAttribute.tag);
+				int pos = getPc(lineNumberMap, fieldLineNumber);
+				ConstPool pool = method.getMethodInfo2().getConstPool();
+				String fieldType = pool.getFieldrefType(codeIterator
+						.u16bitAt(field.indexOfBytecode() + 1));
+
+				String belongedClassNameOfField;
+				String nameOfBelongedClassObjectOfField;
+				String fieldName;
+
+				if (!field.isStatic()) {
+					// store locVar
+					int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
+							codeIterator, localVariableTable, pos, "aload.*");
+					belongedClassNameOfField = field.getClassName();
+					nameOfBelongedClassObjectOfField = localVariableTable
+							.variableName(locVarIndexInLocVarTable);
+
+					fieldName = nameOfBelongedClassObjectOfField + "."
+							+ field.getFieldName();
+
+					// insertTestLineForLocalVariableAssignment(method,
+					// localVariableName, locVarSourceLineNr);
+				} else {
+					belongedClassNameOfField = field.getClassName();
+					nameOfBelongedClassObjectOfField = "";
+					fieldName = field.getClassName() + "."
+							+ field.getFieldName();
+				}
+
+				fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
+						belongedClassNameOfField,
+						nameOfBelongedClassObjectOfField, fieldLineNumber,
+						method));
 
 			}
 
@@ -94,26 +133,21 @@ public class FieldLogic {
 						.indexOfBytecode() + 1));
 
 				int fieldSourceLineNr = field.getLineNumber();
+				String belongedClassNameOfField = cc.getName();
 
 				// stores field (inner class), because
 				// instrument
 				// directly doesn't work here...
-				fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
-						fieldSourceLineNr, method));
+				fieldIsWritterInfoList
+						.add(new Field(fieldName, fieldType,
+								belongedClassNameOfField, "",
+								fieldSourceLineNr, method));
 				// container.storeFieldIsWriterInfo(fieldName,
 				// fieldSourceLineNr, method, field);
 
 			}
 
 			private boolean isFieldFromCurrentCtClass(FieldAccess field) {
-				Class c = field.getClass();
-				String name = field.getClassName();
-				CtClass ct = field.getEnclosingClass();
-				String fName = field.getFieldName();
-				String s = field.getSignature();
-				int nr = field.getLineNumber();
-				CtField[] fields = cc.getFields();
-
 				if (field.getClassName().equals(cc.getName()))
 					return true;
 				else
@@ -132,20 +166,11 @@ public class FieldLogic {
 			int fieldLineNumber = f.getFieldLineNumber();
 			String fieldType = f.getFieldType();
 
-			insertTestLineAfterFieldAssignment(method, fieldName,
-					fieldLineNumber, fieldType);
+			adaptByteCode(method, fieldName, fieldLineNumber, fieldType,
+					"field");
+			// insertTestLineAfterFieldAssignment(method, fieldName,
+			// fieldLineNumber, fieldType);
 		}
-	}
-
-	private void insertTestLineAfterFieldAssignment(CtMethod method,
-			String fieldName, int fieldLineNumber, String fieldType)
-			throws CannotCompileException {
-		method.insertAt(fieldLineNumber + 1,
-				"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
-						+ method.getDeclaringClass().getName() + "\", \""
-						+ method.getName() + "\", " + fieldName + ","
-						+ fieldLineNumber + ",\"" + fieldName + "\", \""
-						+ fieldType + "\", \"field\");");
 	}
 
 	private boolean fieldIsNotPrimitive(FieldAccess field) {
@@ -163,16 +188,23 @@ public class FieldLogic {
 	 *
 	 */
 	private class Field {
+
 		public String fieldName;
 		public String fieldType;
+		public String belongedClassNameOfField;
+		public String nameOfBelongedClassObjectOfField;
 
 		public int fieldSourceLineNr;
 		public CtMethod method;
 
-		public Field(String fieldName, String fieldType, int fieldSourceLineNr,
+		public Field(String fieldName, String fieldType,
+				String belongedClassNameOfField,
+				String nameOfBelongedClassObjectOfField, int fieldSourceLineNr,
 				CtMethod method) {
 			this.fieldName = fieldName;
 			this.fieldType = fieldType;
+			this.belongedClassNameOfField = belongedClassNameOfField;
+			this.nameOfBelongedClassObjectOfField = nameOfBelongedClassObjectOfField;
 			this.fieldSourceLineNr = fieldSourceLineNr;
 			this.method = method;
 		}

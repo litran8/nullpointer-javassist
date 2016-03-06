@@ -8,10 +8,4 @@ public class VariableAnalyzer extends Analyzer {
 		super(cc);
 	}
 
-	@Override
-	public void searchAndAdapt(ByteCodeAdapter byteCodeAdaptor) {
-		// TODO Auto-generated method stub
-
-	}
-
 }

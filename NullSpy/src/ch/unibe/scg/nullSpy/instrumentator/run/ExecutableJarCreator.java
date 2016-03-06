@@ -59,6 +59,11 @@ public class ExecutableJarCreator {
 
 		if (src.isDirectory()) {
 
+			String dirName = src.getName();
+			if (dirName.equals("model") || dirName.equals("testRun")
+					|| dirName.equals("tests")) {
+				return;
+			}
 			// to make sub-folders in jar
 			if (!src.getName().equals("bin")) {
 				if (packageName == null)

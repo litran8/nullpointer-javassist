@@ -6,7 +6,6 @@ import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
-import ch.unibe.scg.nullSpy.model.AnalyzedClassData;
 
 /**
  * Iterates through the whole class and instrument a test-code after each field
@@ -18,7 +17,8 @@ import ch.unibe.scg.nullSpy.model.AnalyzedClassData;
 public class ClassAdapter {
 
 	private static ClassAdapter instance;
-	private AnalyzedClassData analyzedClassData = new AnalyzedClassData();
+
+	// private AnalyzedClassData analyzedClassData = new AnalyzedClassData();
 
 	// private FieldAndLocVarContainerOfOneClass fieldLocVarContainer;
 

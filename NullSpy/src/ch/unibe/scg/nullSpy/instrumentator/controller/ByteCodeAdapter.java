@@ -5,15 +5,15 @@ import javassist.CtMethod;
 
 public class ByteCodeAdapter {
 
-	public void insertTestLineForLocalVariableAssignment(CtMethod method,
-			String locVarName, int locVarSourceLineNr)
-			throws CannotCompileException {
-		method.insertAt(locVarSourceLineNr + 1,
+	public void insertTestLineAfterVariableAssignment(CtMethod method,
+			String variableName, int variableLineNumber, String variableType,
+			String variableID) throws CannotCompileException {
+		method.insertAt(variableLineNumber + 1,
 				"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
 						+ method.getDeclaringClass().getName() + "\",\""
-						+ method.getName() + "\"," + locVarName + ","
-						+ locVarSourceLineNr + ",\"" + locVarName
-						+ "\", \"locVar\", \"locVar\");");
+						+ method.getName() + "\"," + variableName + ","
+						+ variableLineNumber + ",\"" + variableName + "\", \""
+						+ variableType + "\", \"" + variableID + "\");");
 
 	}
 
