@@ -49,7 +49,7 @@ public class MainProjectModifier {
 		}
 
 		modifiedProjectDestBinDirPath = modifiedProjectDestDirPath + "\\bin"; // same
-																			// as
+																				// as
 		// destDirPath,
 		// but used for
 		// automatically
@@ -107,7 +107,11 @@ public class MainProjectModifier {
 			IOException {
 
 		// only copy package ch.unibe.scg.nullSpy.runtimeSupporter
-		if (src.getName().equals("instrumentator") && modifyID == 1)
+		String srcName = src.getName();
+		if ((srcName.equals("instrumentator") || srcName.equals("model")
+				|| srcName.equals("testRun") || srcName.equals("tests") || srcName
+					.equals("isFieldOrLocalVariableNullExample"))
+				&& modifyID == 1)
 			return;
 
 		if (src.isDirectory()) {

@@ -36,7 +36,7 @@ public class LocVarLogic extends VariableAnalyzer implements Opcode {
 
 	public LocVarLogic(CtClass cc) {
 		super(cc);
-		this.cc = super.cc;
+		this.cc = cc;
 	}
 
 	/**
