@@ -22,10 +22,22 @@ public abstract class Analyzer {
 	}
 
 	protected void adaptByteCode(CtMethod method, String variableName,
-			int variableLineNumber, String variableType, String variableID)
-			throws CannotCompileException {
-		byteCodeAdapter.insertTestLineAfterVariableAssignment(method,
-				variableName, variableLineNumber, variableType, variableID);
+			int variableLineNumber, String variableType, String variableID,
+			boolean isStatic) throws CannotCompileException {
+		if (method != null) {
+			byteCodeAdapter.insertTestLineAfterVariableAssignment(method,
+					variableName, variableLineNumber, variableType, variableID);
+		} else {
+			for (CtMethod m : cc.getDeclaredMethods()) {
+
+				// if (!m.getMethodInfo().isConstructor()) {
+				byteCodeAdapter
+						.insertTestLineAfterFieldInstantiatedOutSideMethod(m,
+								variableName, variableLineNumber, variableType,
+								variableID);
+				// }
+			}
+		}
 	}
 
 	protected HashMap<Integer, Integer> getLineNumberTable(CtMethod method) {

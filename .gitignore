@@ -35,4 +35,5 @@ Desktrop.ini
 # Other files
 RemoteSystemsTempFiles/
 NullSpy/src/ch/unibe/scg/nullSpy/testRun/
+JHotDraw/
 NullSpy/src/isFieldOrLocalVariableNullExample/

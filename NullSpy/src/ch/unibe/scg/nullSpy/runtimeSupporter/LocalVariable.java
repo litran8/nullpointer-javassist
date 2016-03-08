@@ -7,16 +7,16 @@ package ch.unibe.scg.nullSpy.runtimeSupporter;
  * @author Lina Tran
  *
  */
-public class LocVar {
-	public String fieldName;
-	public int fieldSourceLineNr;
+public class LocalVariable {
+	public String localVariableName;
+	public int localVariableLineNumber;
 	public String methodName;
 	public String className;
 
-	public LocVar(String fieldName, int fieldSourceLineNr, String methodName,
+	public LocalVariable(String localVariableName, int localVariableLineNumber, String methodName,
 			String className) {
-		this.fieldName = fieldName;
-		this.fieldSourceLineNr = fieldSourceLineNr;
+		this.localVariableName = localVariableName;
+		this.localVariableLineNumber = localVariableLineNumber;
 		this.methodName = methodName;
 		this.className = className;
 	}
@@ -26,11 +26,11 @@ public class LocVar {
 	}
 
 	public String getFieldName() {
-		return fieldName;
+		return localVariableName;
 	}
 
 	public int getFieldLineNr() {
-		return fieldSourceLineNr;
+		return localVariableLineNumber;
 	}
 
 	public String getMethodName() {

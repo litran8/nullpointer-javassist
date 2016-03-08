@@ -133,6 +133,11 @@ public class MainProjectModifier {
 			}
 		} else {
 
+			if (!src.getName()
+					.substring(src.getName().indexOf(".") + 1,
+							src.getName().length()).equals("class")) {
+				modifyID = 1;
+			}
 			switch (modifyID) {
 			case 0:
 				modifyProject(src, dest);

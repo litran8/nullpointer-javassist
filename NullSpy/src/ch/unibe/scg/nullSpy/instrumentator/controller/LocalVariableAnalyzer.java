@@ -11,6 +11,7 @@ import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
+import javassist.bytecode.ExceptionTable;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
@@ -22,7 +23,7 @@ import javassist.bytecode.Opcode;
  * @author Lina Tran
  *
  */
-public class LocVarLogic extends VariableAnalyzer implements Opcode {
+public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 	private CtClass cc;
 
@@ -34,9 +35,9 @@ public class LocVarLogic extends VariableAnalyzer implements Opcode {
 	// this.container = fieldLocVarContainer;
 	// }
 
-	public LocVarLogic(CtClass cc) {
+	public LocalVariableAnalyzer(CtClass cc) {
 		super(cc);
-		this.cc = cc;
+		this.cc = super.cc;
 	}
 
 	/**
@@ -62,18 +63,20 @@ public class LocVarLogic extends VariableAnalyzer implements Opcode {
 			CodeIterator codeIterator = codeAttribute.iterator();
 
 			LocalVariableAttribute locVarTable = (LocalVariableAttribute) codeAttribute
-					.getAttribute(javassist.bytecode.LocalVariableAttribute.tag);
+					.getAttribute(LocalVariableAttribute.tag);
 
 			HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
 			LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttribute
 					.getAttribute(LineNumberAttribute.tag);
+			ExceptionTable exceptionTable = codeAttribute.getExceptionTable();
+			// codeAttribute.getAttribute(ExceptionTable.)
 
 			// if (method.getName().equals("setToNullMethod")) {
 
 			codeIterator.begin();
 
 			instrumentAfterLocVarObject(method, codeIterator, locVarTable,
-					lineNumberMap, lineNrTable);
+					lineNumberMap, lineNrTable, exceptionTable);
 
 			// codeIterator.begin();
 			// checkMethodCall(method, codeIterator, locVarTable, lineNrTablePc,
@@ -105,14 +108,15 @@ public class LocVarLogic extends VariableAnalyzer implements Opcode {
 	 * @param codeIterator
 	 * @param locVarTable
 	 * @param lineNumberMap
+	 * @param exceptionTable
 	 * @throws BadBytecode
 	 * @throws CannotCompileException
 	 */
 	private void instrumentAfterLocVarObject(CtMethod method,
 			CodeIterator codeIterator, LocalVariableAttribute locVarTable,
 			HashMap<Integer, Integer> lineNumberMap,
-			LineNumberAttribute lineNumberTable) throws BadBytecode,
-			CannotCompileException {
+			LineNumberAttribute lineNumberTable, ExceptionTable exceptionTable)
+			throws BadBytecode, CannotCompileException {
 
 		// store current instruction and the previous instructions
 		ArrayList<Integer> instrPositions = new ArrayList<Integer>();
@@ -152,7 +156,7 @@ public class LocVarLogic extends VariableAnalyzer implements Opcode {
 				// locVarSourceLineNr);
 				adaptByteCode(method, localVariableName,
 						localVariableLineNumber, "localVariable",
-						"localVariable");
+						"localVariable", false);
 				// container.storeLocVarInfo(locVarName, locVarSourceLineNr,
 				// method, locVarIndexInLocVarTable);
 			}

@@ -17,14 +17,21 @@ public class ByteCodeAdapter {
 
 	}
 
-	public void insertTestLineAfterFieldAssignment(CtMethod method,
-			String fieldName, int fieldLineNumber, String fieldType)
+	public void insertTestLineAfterFieldInstantiatedOutSideMethod(
+			CtMethod method, String variableName, int variableLineNumber,
+			String variableType, String variableID)
 			throws CannotCompileException {
-		method.insertAt(fieldLineNumber + 1,
-				"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
-						+ method.getDeclaringClass().getName() + "\", \""
-						+ method.getName() + "\", " + fieldName + ","
-						+ fieldLineNumber + ",\"" + fieldName + "\", \""
-						+ fieldType + "\", \"field\");");
+		method.insertBefore("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
+				+ method.getDeclaringClass().getName()
+				+ "\",\""
+				+ method.getName()
+				+ "\","
+				+ variableName
+				+ ","
+				+ variableLineNumber
+				+ ",\""
+				+ variableName
+				+ "\", \""
+				+ variableType + "\", \"" + variableID + "\");");
 	}
 }

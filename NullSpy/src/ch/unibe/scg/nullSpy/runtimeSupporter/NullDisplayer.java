@@ -11,16 +11,16 @@ public class NullDisplayer {
 	// Object>();
 
 	private static List<Field> fieldList = new ArrayList<>();
-	private static List<LocVar> locVarList = new ArrayList<>();
+	private static List<LocalVariable> localVariableList = new ArrayList<>();
 
 	public static void test(String className, String methodName,
-			Object varValue, int lineNr, String varName, String varType,
-			String fieldOrLocVarID) {
-		if (varValue == null) {
+			Object variableValue, int lineNumber, String variableName,
+			String variableType, String fieldOrLocalVariableID) {
+		if (variableValue == null) {
 
-			if (fieldOrLocVarID.equals("field")) {
-				Field field = new Field(varName, varType, lineNr, methodName,
-						className);
+			if (fieldOrLocalVariableID.equals("field")) {
+				Field field = new Field(variableName, variableType, lineNumber,
+						methodName, className);
 				// isAlreadyNull(field, fieldOrLocVarID);
 				fieldList.add(field);
 				// fieldMap.put(new Field(varName, lineNr, methodName,
@@ -28,15 +28,35 @@ public class NullDisplayer {
 				// varValue);
 				System.out.print("Field ");
 			} else {
-				locVarList.add(new LocVar(varName, lineNr, methodName,
-						className));
+				localVariableList.add(new LocalVariable(variableName,
+						lineNumber, methodName, className));
 				// locVarMap.put(
 				// new LocVar(varName, lineNr, methodName, className),
 				// varValue);
 				System.out.print("Local variable ");
 			}
 
-			printNullLink(className, lineNr, varName);
+			printNullLink(className, lineNumber, variableName);
+		} else {
+			if (fieldOrLocalVariableID.equals("field")) {
+				for (int i = fieldList.size() - 1; i >= 0; i--) {
+					Field f = fieldList.get(i);
+					if (f.getFieldName().equals(variableName)
+							&& f.getFieldType().equals(variableType)
+							&& f.getClassName().equals(className)) {
+						fieldList.remove(i);
+					}
+				}
+			} else {
+				for (int i = localVariableList.size() - 1; i >= 0; i--) {
+					LocalVariable lv = localVariableList.get(i);
+					if (lv.getMethodName().equals(methodName)
+							&& lv.getClassName().equals(className)
+							&& lv.getFieldName().equals(variableName)) {
+						localVariableList.remove(i);
+					}
+				}
+			}
 		}
 	}
 
@@ -63,7 +83,7 @@ public class NullDisplayer {
 				}
 			}
 		} else {
-			for (LocVar lv : locVarList) {
+			for (LocalVariable lv : localVariableList) {
 				if (lv.getFieldName().equals(varName)) {
 					printNullLink(lv.getClassName(), lv.getFieldLineNr(),
 							lv.getFieldName());

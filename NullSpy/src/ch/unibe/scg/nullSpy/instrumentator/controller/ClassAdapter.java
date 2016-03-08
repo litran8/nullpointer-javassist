@@ -39,13 +39,13 @@ public class ClassAdapter {
 		// fieldLocVarContainer = new FieldAndLocVarContainerOfOneClass();
 		// Field
 		// FieldLogic fieldLogic = new FieldLogic(cc, fieldLocVarContainer);
-		FieldLogic fieldLogic = new FieldLogic(cc);
+		FieldAnalyzer fieldLogic = new FieldAnalyzer(cc);
 		fieldLogic.instrumentAfterFieldAssignment();
 		// fieldLocVarContainer.getFieldMap();
 
 		// LocVar
 		// LocVarLogic locVarLogic = new LocVarLogic(cc, fieldLocVarContainer);
-		LocVarLogic locVarLogic = new LocVarLogic(cc);
+		LocalVariableAnalyzer locVarLogic = new LocalVariableAnalyzer(cc);
 		locVarLogic.instrumentAfterLocVarAssignment();
 		// fieldLocVarContainer.getLocVarMap();
 
