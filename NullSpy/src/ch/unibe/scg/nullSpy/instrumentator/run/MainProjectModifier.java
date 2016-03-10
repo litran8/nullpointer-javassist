@@ -108,10 +108,10 @@ public class MainProjectModifier {
 
 		// only copy package ch.unibe.scg.nullSpy.runtimeSupporter
 		String srcName = src.getName();
-		if ((srcName.equals("instrumentator") || srcName.equals("model")
-				|| srcName.equals("testRun") || srcName.equals("tests") || srcName
-					.equals("isFieldOrLocalVariableNullExample"))
-				&& modifyID == 1)
+		if (modifyID == 1
+				&& (srcName.equals("instrumentator") || srcName.equals("model")
+						|| srcName.equals("testRun") || srcName.equals("tests") || srcName
+							.equals("isFieldOrLocalVariableNullExample")))
 			return;
 
 		if (src.isDirectory()) {
