@@ -16,9 +16,23 @@ public class NullObject {
 			// String s = obj.getStr1().substring(0, i);
 			// s = s.substring(0, 1);
 		} catch (Throwable t) {
-			// System.out.println("Java ERROR: " + t);
-			// t.printStackTrace();
+			System.out.println("Java ERROR: " + t);
+			t.printStackTrace();
 		}
+		int i = 1;
+		try {
+			String str = "string 1";
+			obj.setStr1(str);
+			setToNull();
+			obj = setToNull();
+			// int i = 2;
+			// String s = obj.getStr1().substring(0, i);
+			// s = s.substring(0, 1);
+		} catch (Throwable t) {
+			System.out.println("Java ERROR: " + t);
+			t.printStackTrace();
+		}
+		i = 0;
 		return obj;
 	}
 

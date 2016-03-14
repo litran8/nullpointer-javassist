@@ -12,6 +12,7 @@ import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ExceptionTable;
+import javassist.bytecode.InstructionPrinter;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
@@ -57,12 +58,12 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
 			LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttribute
 					.getAttribute(LineNumberAttribute.tag);
-			ExceptionTable exceptionTable = codeAttribute.getExceptionTable();
+			ExceptionTable exceptionTables = codeAttribute.getExceptionTable();
 
 			codeIterator.begin();
 
 			instrumentAfterLocVarObject(method, codeIterator, locVarTable,
-					lineNumberMap, lineNrTable, exceptionTable);
+					lineNumberMap, lineNrTable, exceptionTables);
 		}
 	}
 
@@ -107,6 +108,13 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		int methodMaxPc = lineNumberTable
 				.startPc(lineNumberTable.tableLength() - 1);
 
+		int afterCatchBlockPos = 0;
+		int exceptionTableEntryIndex = 0;
+		int handlerPos = 0;
+
+		int endTryBlockPos = getExceptionTableEndPos(exceptionTableEntryIndex,
+				exceptionTable);
+
 		while (codeIterator.hasNext()) {
 			int pos = codeIterator.next();
 			instrPositions.add(pos);
@@ -117,6 +125,14 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 				prevInstrOp = codeIterator.byteAt(instrPositions
 						.get(instrCounter - 1));
 			instrCounter++;
+
+			if (Mnemonic.OPCODE[op].matches("goto.*")) {
+				afterCatchBlockPos = getAfterCatchBlockPos(codeIterator,
+						method, pos);
+				String s = InstructionPrinter.instructionString(codeIterator,
+						pos, method.getMethodInfo2().getConstPool());
+				System.out.println(s);
+			}
 
 			if (isLocVarObject(op)
 					&& (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <= methodMaxPc)) {
@@ -132,6 +148,37 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 						"localVariable");
 			}
 		}
+	}
+
+	private int getExceptionTableEndPos(int exceptionTableEntryIndex,
+			ExceptionTable exceptionTable) {
+
+		int endTryBlockPos = 0;
+		int handlerPos = 0;
+
+		for (int i = exceptionTableEntryIndex; i < exceptionTable.size(); i++) {
+			if (endTryBlockPos == 0) {
+				endTryBlockPos = exceptionTable.endPc(i);
+				handlerPos = exceptionTable.handlerPc(i);
+			} else {
+				if (exceptionTable.handlerPc(i) > handlerPos) {
+					break;
+				} else {
+					endTryBlockPos = exceptionTable.endPc(i);
+				}
+
+			}
+		}
+
+		return endTryBlockPos;
+	}
+
+	private int getAfterCatchBlockPos(CodeIterator codeIterator,
+			CtMethod method, int pos) {
+		String goto_X = InstructionPrinter.instructionString(codeIterator, pos,
+				method.getMethodInfo2().getConstPool());
+		return Integer.parseInt(goto_X.substring(goto_X.indexOf(" ") + 1,
+				goto_X.length()));
 	}
 
 	/**
