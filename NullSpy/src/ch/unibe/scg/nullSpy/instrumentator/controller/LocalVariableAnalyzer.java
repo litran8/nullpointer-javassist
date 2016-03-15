@@ -112,11 +112,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		ArrayList<Integer> exceptionTableEndPosList = getExceptionTableEndPosList(exceptionTable);
 
 		int afterCatchBlockGotoPos = 0;
-		int exceptionTableEntryIndex = 0;
-
-		// int endTryBlockPos =
-		// getExceptionTableEndPos(exceptionTableEntryIndex,
-		// exceptionTable);
 
 		while (codeIterator.hasNext()) {
 			int pos = codeIterator.next();
@@ -128,9 +123,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 				prevInstrOp = codeIterator.byteAt(instrPositions
 						.get(instrCounter - 1));
 			instrCounter++;
-
-			// System.out.println(InstructionPrinter.instructionString(
-			// codeIterator, pos, method.getMethodInfo2().getConstPool()));
 
 			if (Mnemonic.OPCODE[op].matches("goto .*")) {
 				System.out.println(cc.getName());
@@ -151,9 +143,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 					if (pos == afterCatchBlockGotoPos) {
 						inCatchBlock = false;
-						// exceptionTableEntryIndex++;
-						// endTryBlockPos = getExceptionTableEndPos(
-						// exceptionTableEntryIndex, exceptionTable);
 					}
 				}
 			}
@@ -203,29 +192,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 		return exceptionTableEndPosList;
 	}
-
-	// private int getExceptionTableEndPos(int exceptionTableEntryIndex,
-	// ExceptionTable exceptionTable) {
-	//
-	// int endTryBlockPos = 0;
-	// int handlerPos = 0;
-	//
-	// for (int i = exceptionTableEntryIndex; i < exceptionTable.size(); i++) {
-	// if (endTryBlockPos == 0) {
-	// endTryBlockPos = exceptionTable.endPc(i);
-	// handlerPos = exceptionTable.handlerPc(i);
-	// } else {
-	// if (exceptionTable.handlerPc(i) > handlerPos) {
-	// break;
-	// } else {
-	// endTryBlockPos = exceptionTable.endPc(i);
-	// }
-	//
-	// }
-	// }
-	//
-	// return endTryBlockPos;
-	// }
 
 	private int getAfterCatchBlockGotoDestPos(CtMethod method, int pos) {
 		CodeIterator codeIterator = method.getMethodInfo().getCodeAttribute()
