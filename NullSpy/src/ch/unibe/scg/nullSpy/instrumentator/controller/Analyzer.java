@@ -90,34 +90,39 @@ public abstract class Analyzer {
 	protected int getLocVarIndexInLocVarTable(CodeIterator codeIterator,
 			LocalVariableAttribute localVarTable, int pos, String checkFor) {
 		int i = 0;
+		int res = 0;
 		boolean b = true;
-		while (b) {
+		String opString = Mnemonic.OPCODE[codeIterator.byteAt(pos)];
 
-			String opString = Mnemonic.OPCODE[codeIterator.byteAt(pos)];
+		for (int j = 0; j < localVarTable.tableLength(); j++) {
 			if (opString.matches(checkFor)) {
-				// int a = localVarTable.index(i);
-				// int c = getLocVarArraySlotAtStoring(codeIterator, pos);
-				if (localVarTable.index(i) == getLocVarArraySlotAtStoring(
-						codeIterator, pos))
-					b = false;
-				else
-					i++;
-
+				if (localVarTable.index(j) == getLocVarArraySlotAtStoring(
+						codeIterator, pos)) {
+					if (localVarTable.codeLength(j) - pos > 0) {
+						// System.out.println(localVarTable.codeLength(i));
+						res = j;
+						break;
+					}
+				}
 			}
-
-			// if (opString.matches("aload.*")) {
-			// int a = localVarTable.index(i);
-			// int c = getLocVarArraySlotAtLoading(codeIterator, pos);
-			// if (localVarTable.index(i) == getLocVarArraySlotAtLoading(
-			// codeIterator, pos))
-			// b = false;
-			// else
-			// i++;
-			//
-			// }
-
 		}
-		return i;
+
+		return res;
+
+		// while (b) {
+		//
+		// // String opString = Mnemonic.OPCODE[codeIterator.byteAt(pos)];
+		// System.out.println(localVarTable.tableLength());
+		// if (opString.matches(checkFor)) {
+		// if (localVarTable.index(i) == getLocVarArraySlotAtStoring(
+		// codeIterator, pos)) {
+		// System.out.println(localVarTable.codeLength(i));
+		// b = false;
+		// } else
+		// i++;
+		// }
+		// }
+		// return i;
 	}
 
 	/**

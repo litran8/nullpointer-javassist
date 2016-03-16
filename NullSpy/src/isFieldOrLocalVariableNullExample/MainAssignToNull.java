@@ -36,7 +36,6 @@ public class MainAssignToNull {
 		o = (Person) p.a;
 		o = (Person) p.o;
 
-		a = p.a;
 		a = p.o;
 		d = p.a;
 		d = p.o;

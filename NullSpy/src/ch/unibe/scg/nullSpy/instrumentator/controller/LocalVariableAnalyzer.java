@@ -125,16 +125,10 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			instrCounter++;
 
 			if (Mnemonic.OPCODE[op].matches("goto .*")) {
-				System.out.println(cc.getName());
-				System.out.println(method.getName());
-				System.out.println(Mnemonic.OPCODE[op]);
 
 				exceptionTableEndPosList.remove(0);
 				afterCatchBlockGotoPos = getAfterCatchBlockGotoDestPos(method,
 						pos);
-				String s = InstructionPrinter.instructionString(codeIterator,
-						pos, method.getMethodInfo2().getConstPool());
-				System.out.println(s);
 
 				boolean inCatchBlock = true;
 				while (inCatchBlock) {
