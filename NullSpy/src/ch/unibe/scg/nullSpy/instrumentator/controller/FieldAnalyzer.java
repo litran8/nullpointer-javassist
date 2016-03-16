@@ -110,6 +110,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
 		LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
 				.getAttribute(LocalVariableAttribute.tag);
+		ArrayList<LocalVariableTableEntry> localVariableTableList = getStableLocalVariableTableAsList(localVariableTable);
 
 		int fieldLineNumber = field.getLineNumber();
 		int pos = getPc(lineNumberMap, fieldLineNumber);
@@ -122,10 +123,10 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		if (!field.isStatic()) {
 			// store locVar
 			int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
-					codeIterator, localVariableTable, pos, "aload.*");
+					codeIterator, localVariableTableList, pos, "aload.*");
 			belongedClassNameOfField = field.getClassName();
-			nameOfBelongedClassObjectOfField = localVariableTable
-					.variableName(locVarIndexInLocVarTable);
+			nameOfBelongedClassObjectOfField = localVariableTableList
+					.get(locVarIndexInLocVarTable).varName;
 
 			fieldName = nameOfBelongedClassObjectOfField + "."
 					+ field.getFieldName();

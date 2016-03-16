@@ -51,6 +51,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			LocalVariableAttribute locVarTable = (LocalVariableAttribute) codeAttribute
 					.getAttribute(LocalVariableAttribute.tag);
+			ArrayList<LocalVariableTableEntry> localVariableList = getStableLocalVariableTableAsList(locVarTable);
 
 			HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
 			LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttribute
@@ -59,14 +60,33 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			codeIterator.begin();
 
-			instrumentAfterLocVarObject(method, codeIterator, locVarTable,
-					lineNumberMap, lineNrTable, exceptionTables);
+			instrumentAfterLocVarObject(method, codeIterator,
+					localVariableList, lineNumberMap, lineNrTable,
+					exceptionTables);
 
 			// calculates the time modified project uses
 			addTimeToModifiedProject(method);
 
 		}
 	}
+
+	// protected ArrayList<LocalVariableTableEntry>
+	// getStableLocalVariableTableAsList(
+	// LocalVariableAttribute locVarTable) {
+	//
+	// ArrayList<LocalVariableTableEntry> localVariableList = new ArrayList<>();
+	//
+	// for (int i = 0; i < locVarTable.tableLength(); i++) {
+	// int startPc = locVarTable.startPc(i);
+	// int length = locVarTable.codeLength(i);
+	// int index = locVarTable.index(i);
+	// String varName = locVarTable.variableName(i);
+	// localVariableList.add(new LocalVariableTableEntry(startPc, length,
+	// index, varName));
+	// }
+	//
+	// return localVariableList;
+	// }
 
 	private void addTimeToModifiedProject(CtMethod method)
 			throws CannotCompileException {
@@ -95,7 +115,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	 * @throws CannotCompileException
 	 */
 	private void instrumentAfterLocVarObject(CtMethod method,
-			CodeIterator codeIterator, LocalVariableAttribute locVarTable,
+			CodeIterator codeIterator,
+			ArrayList<LocalVariableTableEntry> locVarTable,
 			HashMap<Integer, Integer> lineNumberMap,
 			LineNumberAttribute lineNumberTable, ExceptionTable exceptionTable)
 			throws BadBytecode, CannotCompileException {
@@ -149,11 +170,15 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			if (isLocVarObject(op)
 					&& (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <= methodMaxPc)) {
-
+				System.out.println(javassist.bytecode.InstructionPrinter
+						.instructionString(codeIterator, pos, method
+								.getMethodInfo2().getConstPool()));
 				int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
 						codeIterator, locVarTable, pos, "astore.*");
+				// String localVariableName = locVarTable
+				// .variableName(locVarIndexInLocVarTable);
 				String localVariableName = locVarTable
-						.variableName(locVarIndexInLocVarTable);
+						.get(locVarIndexInLocVarTable).varName;
 				int localVariableLineNumber = getLineNumber(lineNumberMap, pos);
 
 				adaptByteCode(method, localVariableName,
@@ -206,5 +231,37 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	private static boolean isLocVarObject(int op) {
 		return Mnemonic.OPCODE[op].matches("a{1,2}store.*");
 	}
+
+	// private class LocalVariableTableEntry {
+	// int startPc;
+	// int length;
+	// int index;
+	// String varName;
+	//
+	// public LocalVariableTableEntry(int startPc, int length, int index,
+	// String varName) {
+	// this.startPc = startPc;
+	// this.length = length;
+	// this.index = index;
+	// this.varName = varName;
+	// }
+	//
+	// public int getStartPc() {
+	// return startPc;
+	// }
+	//
+	// public int getLength() {
+	// return length;
+	// }
+	//
+	// public int getIndex() {
+	// return index;
+	// }
+	//
+	// public String getVarName() {
+	// return varName;
+	// }
+	//
+	// }
 
 }

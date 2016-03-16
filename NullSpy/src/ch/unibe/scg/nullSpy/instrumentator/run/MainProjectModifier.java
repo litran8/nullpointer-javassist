@@ -185,7 +185,9 @@ public class MainProjectModifier {
 		try {
 			// modify class
 			ClassAdapter iter = ClassAdapter.getInstance();
-			iter.instrumentCodeAfterFieldLocVarAssignment(cc);
+			if (!cc.isInterface()) {
+				iter.instrumentCodeAfterFieldLocVarAssignment(cc);
+			}
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}

@@ -1,5 +1,6 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -57,15 +58,30 @@ public abstract class Analyzer {
 
 		Object[] keys = lineNumberMap.keySet().toArray();
 		Arrays.sort(keys);
+		int targetListIndex = 0;
+		int oneInstructionMultipleLine = 0;
+		ArrayList<Integer> checkedLines = new ArrayList<>();
 
 		for (int i = 0; i < keys.length; i++) {
 			if (pos >= (int) keys[i]) {
+				targetListIndex = i;
+				int bla = lineNumberMap.get((int) keys[i]);
+				if (lineNumber != 0
+						&& (oneInstructionMultipleLine == 0 && checkedLines
+								.contains(lineNumberMap.get((int) keys[i])))) {
+					oneInstructionMultipleLine++;
+				}
 				lineNumber = lineNumberMap.get((int) keys[i]);
+				checkedLines.add(lineNumber);
+
 			} else {
 				break;
 			}
 		}
 
+		if (oneInstructionMultipleLine > 0) {
+			lineNumber = lineNumberMap.get((int) keys[targetListIndex - 1]);
+		}
 		return lineNumber;
 	}
 
@@ -79,6 +95,23 @@ public abstract class Analyzer {
 		return 0;
 	}
 
+	protected ArrayList<LocalVariableTableEntry> getStableLocalVariableTableAsList(
+			LocalVariableAttribute locVarTable) {
+
+		ArrayList<LocalVariableTableEntry> localVariableList = new ArrayList<>();
+
+		for (int i = 0; i < locVarTable.tableLength(); i++) {
+			int startPc = locVarTable.startPc(i);
+			int length = locVarTable.codeLength(i);
+			int index = locVarTable.index(i);
+			String varName = locVarTable.variableName(i);
+			localVariableList.add(new LocalVariableTableEntry(startPc, length,
+					index, varName));
+		}
+
+		return localVariableList;
+	}
+
 	/**
 	 * Gets the index of locVar in the locVarTable (Byte code)
 	 * 
@@ -88,17 +121,25 @@ public abstract class Analyzer {
 	 * @return index of locVar in locVarTable
 	 */
 	protected int getLocVarIndexInLocVarTable(CodeIterator codeIterator,
-			LocalVariableAttribute localVarTable, int pos, String checkFor) {
+			ArrayList<LocalVariableTableEntry> localVarTable, int pos,
+			String checkFor) {
 		int i = 0;
 		int res = 0;
 		boolean b = true;
 		String opString = Mnemonic.OPCODE[codeIterator.byteAt(pos)];
 
-		for (int j = 0; j < localVarTable.tableLength(); j++) {
+		for (int j = 0; j < localVarTable.size(); j++) {
 			if (opString.matches(checkFor)) {
-				if (localVarTable.index(j) == getLocVarArraySlotAtStoring(
+				i = getLocVarArraySlotAtStoring(codeIterator, pos);
+				LocalVariableTableEntry entry = localVarTable.get(j);
+				int k = entry.index;
+				if (entry.getIndex() == getLocVarArraySlotAtStoring(
 						codeIterator, pos)) {
-					if (localVarTable.codeLength(j) - pos > 0) {
+					String varName = entry.varName;
+					int start = entry.startPc;
+					int length = entry.length;
+					int end = start + length;
+					if (end - pos > 0) {
 						// System.out.println(localVarTable.codeLength(i));
 						res = j;
 						break;
@@ -140,12 +181,47 @@ public abstract class Analyzer {
 
 		int op = codeIterator.byteAt(pos);
 		String opString = Mnemonic.OPCODE[op];
+		// String astoreInstruction =
+		// javassist.bytecode.InstructionPrinter.instructionString(codeIterator,
+		// pos, c)
 
 		if (!opString.matches("astore"))
 			return Integer.parseInt(opString.substring(opString.length() - 1,
 					opString.length()));
 		else
 			return codeIterator.u16bitAt(pos) - 14848;
+	}
+
+	protected class LocalVariableTableEntry {
+		int startPc;
+		int length;
+		int index;
+		String varName;
+
+		public LocalVariableTableEntry(int startPc, int length, int index,
+				String varName) {
+			this.startPc = startPc;
+			this.length = length;
+			this.index = index;
+			this.varName = varName;
+		}
+
+		public int getStartPc() {
+			return startPc;
+		}
+
+		public int getLength() {
+			return length;
+		}
+
+		public int getIndex() {
+			return index;
+		}
+
+		public String getVarName() {
+			return varName;
+		}
+
 	}
 
 	/**
