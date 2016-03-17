@@ -72,7 +72,11 @@ public abstract class Analyzer {
 		// if for storing a variable needs more than 1 line, it "calculates" the
 		// last line which storing needs
 		for (int i = targetListIndex - 1; i >= 0; i--) {
-			if (lineNumberMap.get((int) keys[i]) == lineNumber) {
+			// if (lineNumberMap.get((int) keys[i]) == lineNumber) {
+			// lineNumber = lineNumberMap.get((int) keys[targetListIndex -
+			// 1]);
+			// }
+			if (lineNumberMap.get((int) keys[i]) > lineNumber) {
 				lineNumber = lineNumberMap.get((int) keys[targetListIndex - 1]);
 			}
 		}

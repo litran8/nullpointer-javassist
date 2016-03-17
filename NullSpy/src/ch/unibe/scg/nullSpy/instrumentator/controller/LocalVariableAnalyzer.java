@@ -59,7 +59,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			ExceptionTable exceptionTable = codeAttribute.getExceptionTable();
 
 			codeIterator.begin();
-			// if (method.getName().equals("print"))
+			// if (method.getName().equals("elementStarted"))
 			instrumentAfterLocVarObject(method, codeIterator,
 					localVariableList, lineNumberMap, lineNumberTable,
 					exceptionTable);
@@ -172,6 +172,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			// && (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <=
 			// methodMaxPc)) {
 			if (isLocVarObject(op) && pos <= methodMaxPc) {
+				System.out.println(cc.getName());
+				System.out.println(method.getName());
 				System.out.println(javassist.bytecode.InstructionPrinter
 						.instructionString(codeIterator, pos, method
 								.getMethodInfo2().getConstPool()));
