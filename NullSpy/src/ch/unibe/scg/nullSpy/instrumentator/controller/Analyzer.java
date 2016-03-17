@@ -111,8 +111,14 @@ public abstract class Analyzer {
 	}
 
 	private boolean isNotPrimitive(String variableDescriptor) {
-		return variableDescriptor.startsWith("L")
-				|| variableDescriptor.startsWith("[L");
+		return !(variableDescriptor.equals("I")
+				|| variableDescriptor.equals("B")
+				|| variableDescriptor.equals("J")
+				|| variableDescriptor.equals("D")
+				|| variableDescriptor.equals("F")
+				|| variableDescriptor.equals("C")
+				|| variableDescriptor.equals("S") || variableDescriptor
+					.equals("Z"));
 	}
 
 	/**
@@ -136,6 +142,7 @@ public abstract class Analyzer {
 				i = getLocVarArraySlotAtStoring(codeIterator, pos);
 				LocalVariableTableEntry entry = localVarTable.get(j);
 				int k = entry.index;
+				int slot = getLocVarArraySlotAtStoring(codeIterator, pos);
 				if (entry.getIndex() == getLocVarArraySlotAtStoring(
 						codeIterator, pos)) {
 					String varName = entry.varName;

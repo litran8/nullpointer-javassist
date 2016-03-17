@@ -59,7 +59,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			ExceptionTable exceptionTable = codeAttribute.getExceptionTable();
 
 			codeIterator.begin();
-			// if (method.getName().equals("invalidValue"))
+			// if (method.getName().equals("print"))
 			instrumentAfterLocVarObject(method, codeIterator,
 					localVariableList, lineNumberMap, lineNumberTable,
 					exceptionTable);
@@ -182,7 +182,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 				String localVariableName = localVariableList
 						.get(locVarIndexInLocVarTable).varName;
 				int localVariableLineNumber = getLineNumber(lineNumberMap, pos);
-
 				adaptByteCode(method, localVariableName,
 						localVariableLineNumber, "localVariable",
 						"localVariable");
