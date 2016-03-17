@@ -59,29 +59,24 @@ public abstract class Analyzer {
 		Object[] keys = lineNumberMap.keySet().toArray();
 		Arrays.sort(keys);
 		int targetListIndex = 0;
-		int oneInstructionMultipleLine = 0;
-		ArrayList<Integer> checkedLines = new ArrayList<>();
 
 		for (int i = 0; i < keys.length; i++) {
 			if (pos >= (int) keys[i]) {
 				targetListIndex = i;
-				int bla = lineNumberMap.get((int) keys[i]);
-				if (lineNumber != 0
-						&& (oneInstructionMultipleLine == 0 && checkedLines
-								.contains(lineNumberMap.get((int) keys[i])))) {
-					oneInstructionMultipleLine++;
-				}
 				lineNumber = lineNumberMap.get((int) keys[i]);
-				checkedLines.add(lineNumber);
-
 			} else {
 				break;
 			}
 		}
 
-		if (oneInstructionMultipleLine > 0) {
-			lineNumber = lineNumberMap.get((int) keys[targetListIndex - 1]);
+		// if for storing a variable needs more than 1 line, it "calculates" the
+		// last line which storing needs
+		for (int i = targetListIndex - 1; i >= 0; i--) {
+			if (lineNumberMap.get((int) keys[i]) == lineNumber) {
+				lineNumber = lineNumberMap.get((int) keys[targetListIndex - 1]);
+			}
 		}
+
 		return lineNumber;
 	}
 
@@ -101,15 +96,23 @@ public abstract class Analyzer {
 		ArrayList<LocalVariableTableEntry> localVariableList = new ArrayList<>();
 
 		for (int i = 0; i < locVarTable.tableLength(); i++) {
-			int startPc = locVarTable.startPc(i);
-			int length = locVarTable.codeLength(i);
-			int index = locVarTable.index(i);
-			String varName = locVarTable.variableName(i);
-			localVariableList.add(new LocalVariableTableEntry(startPc, length,
-					index, varName));
+			String descriptor = locVarTable.descriptor(i);
+			if (isNotPrimitive(locVarTable.descriptor(i))) {
+				int startPc = locVarTable.startPc(i);
+				int length = locVarTable.codeLength(i);
+				int index = locVarTable.index(i);
+				String varName = locVarTable.variableName(i);
+				localVariableList.add(new LocalVariableTableEntry(startPc,
+						length, index, varName));
+			}
 		}
 
 		return localVariableList;
+	}
+
+	private boolean isNotPrimitive(String variableDescriptor) {
+		return variableDescriptor.startsWith("L")
+				|| variableDescriptor.startsWith("[L");
 	}
 
 	/**

@@ -49,20 +49,20 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					.getCodeAttribute();
 			CodeIterator codeIterator = codeAttribute.iterator();
 
-			LocalVariableAttribute locVarTable = (LocalVariableAttribute) codeAttribute
+			LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
 					.getAttribute(LocalVariableAttribute.tag);
-			ArrayList<LocalVariableTableEntry> localVariableList = getStableLocalVariableTableAsList(locVarTable);
+			ArrayList<LocalVariableTableEntry> localVariableList = getStableLocalVariableTableAsList(localVariableTable);
 
 			HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
-			LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttribute
+			LineNumberAttribute lineNumberTable = (LineNumberAttribute) codeAttribute
 					.getAttribute(LineNumberAttribute.tag);
-			ExceptionTable exceptionTables = codeAttribute.getExceptionTable();
+			ExceptionTable exceptionTable = codeAttribute.getExceptionTable();
 
 			codeIterator.begin();
-
+			// if (method.getName().equals("invalidValue"))
 			instrumentAfterLocVarObject(method, codeIterator,
-					localVariableList, lineNumberMap, lineNrTable,
-					exceptionTables);
+					localVariableList, lineNumberMap, lineNumberTable,
+					exceptionTable);
 
 			// calculates the time modified project uses
 			addTimeToModifiedProject(method);
@@ -108,7 +108,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	 * 
 	 * @param method
 	 * @param codeIterator
-	 * @param locVarTable
+	 * @param localVariableList
 	 * @param lineNumberMap
 	 * @param exceptionTable
 	 * @throws BadBytecode
@@ -116,7 +116,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	 */
 	private void instrumentAfterLocVarObject(CtMethod method,
 			CodeIterator codeIterator,
-			ArrayList<LocalVariableTableEntry> locVarTable,
+			ArrayList<LocalVariableTableEntry> localVariableList,
 			HashMap<Integer, Integer> lineNumberMap,
 			LineNumberAttribute lineNumberTable, ExceptionTable exceptionTable)
 			throws BadBytecode, CannotCompileException {
@@ -145,39 +145,41 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 						.get(instrCounter - 1));
 			instrCounter++;
 
-			if (Mnemonic.OPCODE[op].matches("goto .*")) {
+			// if (Mnemonic.OPCODE[op].matches("goto .*")) {
+			//
+			// exceptionTableEndPosList.remove(0);
+			// afterCatchBlockGotoPos = getAfterCatchBlockGotoDestPos(method,
+			// pos);
+			//
+			// boolean inCatchBlock = true;
+			// while (inCatchBlock) {
+			// pos = codeIterator.next();
+			// op = codeIterator.byteAt(pos);
+			//
+			// if (pos == afterCatchBlockGotoPos) {
+			// inCatchBlock = false;
+			// }
+			// }
+			// }
+			//
+			// if (exceptionTable.size() > 0
+			// && pos == exceptionTableEndPosList.get(0)
+			// && !Mnemonic.OPCODE[op].matches("goto.*")) {
+			// return;
+			// }
 
-				exceptionTableEndPosList.remove(0);
-				afterCatchBlockGotoPos = getAfterCatchBlockGotoDestPos(method,
-						pos);
-
-				boolean inCatchBlock = true;
-				while (inCatchBlock) {
-					pos = codeIterator.next();
-					op = codeIterator.byteAt(pos);
-
-					if (pos == afterCatchBlockGotoPos) {
-						inCatchBlock = false;
-					}
-				}
-			}
-
-			if (exceptionTable.size() > 0
-					&& pos == exceptionTableEndPosList.get(0)
-					&& !Mnemonic.OPCODE[op].matches("goto.*")) {
-				return;
-			}
-
-			if (isLocVarObject(op)
-					&& (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <= methodMaxPc)) {
+			// if (isLocVarObject(op)
+			// && (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <=
+			// methodMaxPc)) {
+			if (isLocVarObject(op) && pos <= methodMaxPc) {
 				System.out.println(javassist.bytecode.InstructionPrinter
 						.instructionString(codeIterator, pos, method
 								.getMethodInfo2().getConstPool()));
 				int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
-						codeIterator, locVarTable, pos, "astore.*");
+						codeIterator, localVariableList, pos, "astore.*");
 				// String localVariableName = locVarTable
 				// .variableName(locVarIndexInLocVarTable);
-				String localVariableName = locVarTable
+				String localVariableName = localVariableList
 						.get(locVarIndexInLocVarTable).varName;
 				int localVariableLineNumber = getLineNumber(lineNumberMap, pos);
 

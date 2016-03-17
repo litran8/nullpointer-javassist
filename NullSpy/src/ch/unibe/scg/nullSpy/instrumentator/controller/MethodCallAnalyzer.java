@@ -32,17 +32,20 @@ public class MethodCallAnalyzer extends Analyzer {
 			CodeIterator codeIterator = codeAttribute.iterator();
 			LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
 					.getAttribute(LocalVariableAttribute.tag);
+
+			ArrayList<LocalVariableTableEntry> localVariableTableAsList = getStableLocalVariableTableAsList(localVariableTable);
+
 			LineNumberAttribute lineNumberTable = (LineNumberAttribute) codeAttribute
 					.getAttribute(LineNumberAttribute.tag);
 			HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
 
-			checkMethodCall(method, codeIterator, localVariableTable,
+			checkMethodCall(method, codeIterator, localVariableTableAsList,
 					lineNumberMap, lineNumberTable);
 		}
 	}
 
 	private void checkMethodCall(CtMethod method, CodeIterator codeIterator,
-			LocalVariableAttribute locVarTable,
+			ArrayList<LocalVariableTableEntry> localVariableTableAsList,
 			HashMap<Integer, Integer> lineNumberMap,
 			LineNumberAttribute lineNumberTable) throws BadBytecode,
 			CannotCompileException {
@@ -77,11 +80,13 @@ public class MethodCallAnalyzer extends Analyzer {
 					&& (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <= methodMaxPc)) {
 				aloadsInInstructionsOfOneLine.add(pos);
 				int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
-						codeIterator, locVarTable, pos, "aload.*");
+						codeIterator, localVariableTableAsList, pos, "aload.*");
 
 				// store locVar
-				String locVarName = locVarTable
-						.variableName(locVarIndexInLocVarTable);
+				// String locVarName = locVarTable
+				// .variableName(locVarIndexInLocVarTable);
+				String localVariableName = localVariableTableAsList
+						.get(locVarIndexInLocVarTable).varName;
 
 				// int locVarSourceLineNr = getLineNumber(lineNumberMap, pos);
 
