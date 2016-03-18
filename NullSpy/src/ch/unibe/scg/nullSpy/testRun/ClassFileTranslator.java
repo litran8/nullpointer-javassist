@@ -44,9 +44,6 @@ public class ClassFileTranslator implements Translator {
 			try {
 				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc);
 			} catch (Throwable e) {
-				// System.out.print("codeIterator at line 206 is null: ");
-				// System.out
-				// .println("(ch.unibe.scg.nullSpy.instrumentator.controller.Analyzer.java:206)");
 				e.printStackTrace();
 			}
 
