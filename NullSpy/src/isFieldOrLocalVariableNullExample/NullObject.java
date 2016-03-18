@@ -9,6 +9,7 @@ public class NullObject {
 		NullObject obj = new NullObject();
 		try {
 			String str = "string 1";
+			// obj = null;
 			obj.setStr1(str);
 			setToNull();
 			obj = setToNull();
@@ -17,7 +18,7 @@ public class NullObject {
 			// s = s.substring(0, 1);
 		} catch (Throwable t) {
 			// System.out.println("Java ERROR: " + t);
-			// t.printStackTrace();
+			t.printStackTrace();
 		}
 		int i = 1;
 		// try {

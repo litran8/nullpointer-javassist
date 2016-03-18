@@ -100,7 +100,6 @@ public abstract class Analyzer {
 		ArrayList<LocalVariableTableEntry> localVariableList = new ArrayList<>();
 
 		for (int i = 0; i < locVarTable.tableLength(); i++) {
-			String descriptor = locVarTable.descriptor(i);
 			if (isNotPrimitive(locVarTable.descriptor(i))) {
 				int startPc = locVarTable.startPc(i);
 				int length = locVarTable.codeLength(i);
@@ -136,14 +135,12 @@ public abstract class Analyzer {
 	protected int getLocVarIndexInLocVarTable(CodeIterator codeIterator,
 			ArrayList<LocalVariableTableEntry> localVarTable, int pos,
 			String checkFor) {
-		int i = 0;
 		int res = 0;
-		boolean b = true;
 		String opString = Mnemonic.OPCODE[codeIterator.byteAt(pos)];
 
 		for (int j = 0; j < localVarTable.size(); j++) {
 			if (opString.matches(checkFor)) {
-				i = getLocVarArraySlotAtStoring(codeIterator, pos);
+				int i = getLocVarArraySlotAtStoring(codeIterator, pos);
 				LocalVariableTableEntry entry = localVarTable.get(j);
 				int k = entry.index;
 				int slot = getLocVarArraySlotAtStoring(codeIterator, pos);
@@ -154,7 +151,6 @@ public abstract class Analyzer {
 					int length = entry.length;
 					int end = start + length;
 					if (end - pos > 0) {
-						// System.out.println(localVarTable.codeLength(i));
 						res = j;
 						break;
 					}
@@ -163,21 +159,6 @@ public abstract class Analyzer {
 		}
 
 		return res;
-
-		// while (b) {
-		//
-		// // String opString = Mnemonic.OPCODE[codeIterator.byteAt(pos)];
-		// System.out.println(localVarTable.tableLength());
-		// if (opString.matches(checkFor)) {
-		// if (localVarTable.index(i) == getLocVarArraySlotAtStoring(
-		// codeIterator, pos)) {
-		// System.out.println(localVarTable.codeLength(i));
-		// b = false;
-		// } else
-		// i++;
-		// }
-		// }
-		// return i;
 	}
 
 	/**
@@ -202,8 +183,9 @@ public abstract class Analyzer {
 		if (!opString.matches("astore"))
 			return Integer.parseInt(opString.substring(opString.length() - 1,
 					opString.length()));
-		else
+		else {
 			return codeIterator.u16bitAt(pos) - 14848;
+		}
 	}
 
 	protected class LocalVariableTableEntry {

@@ -11,7 +11,7 @@ import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
 
 public class ClassFileTranslator implements Translator {
 
-	private ClassAdapter iter = ClassAdapter.getInstance();
+	private ClassAdapter classAdapter = ClassAdapter.getInstance();
 	private HashMap<String, CtClass> analyzedClasses = new HashMap<String, CtClass>();
 
 	@Override
@@ -42,10 +42,14 @@ public class ClassFileTranslator implements Translator {
 			cc.stopPruning(true);
 
 			try {
-				iter.instrumentCodeAfterFieldLocVarAssignment(cc);
+				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc);
 			} catch (Throwable e) {
+				// System.out.print("codeIterator at line 206 is null: ");
+				// System.out
+				// .println("(ch.unibe.scg.nullSpy.instrumentator.controller.Analyzer.java:206)");
 				e.printStackTrace();
 			}
+
 		}
 	}
 }

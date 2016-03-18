@@ -47,6 +47,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			// byte code
 			CodeAttribute codeAttribute = method.getMethodInfo()
 					.getCodeAttribute();
+
+			// if (codeAttribute != null) {
 			CodeIterator codeIterator = codeAttribute.iterator();
 
 			LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
@@ -66,7 +68,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			// calculates the time modified project uses
 			addTimeToModifiedProject(method);
-
+			// }
 		}
 	}
 

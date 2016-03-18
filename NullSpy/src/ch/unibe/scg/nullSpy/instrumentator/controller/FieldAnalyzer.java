@@ -86,6 +86,11 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	 */
 	private boolean isFieldInstantiatedInMethod(FieldAccess field)
 			throws NotFoundException {
+		System.out.println(cc.getName());
+		System.out.println(field.getFieldName());
+		System.out.println(field.getLineNumber());
+		System.out.println(cc.getDeclaredMethods()[0].getMethodInfo()
+				.getLineNumber(0));
 		return field.getLineNumber() >= cc.getDeclaredMethods()[0]
 				.getMethodInfo().getLineNumber(0);
 	}
