@@ -26,6 +26,7 @@ public abstract class Analyzer {
 	protected void adaptByteCode(CtMethod method, String variableName,
 			int variableLineNumber, String variableType, String variableID)
 			throws CannotCompileException {
+		// null if field is instantiated outside method
 		if (method != null) {
 			byteCodeAdapter.insertTestLineAfterVariableAssignment(method,
 					variableName, variableLineNumber, variableType, variableID);

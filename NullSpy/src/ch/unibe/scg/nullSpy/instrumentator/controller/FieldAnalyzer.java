@@ -5,8 +5,10 @@ import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtClass;
+import javassist.CtConstructor;
 import javassist.CtMethod;
 import javassist.NotFoundException;
+import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.LocalVariableAttribute;
@@ -41,11 +43,13 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				if (field.isWriter()) {
 					try {
 						if (fieldIsNotPrimitive(field)) {
-							if (!isFieldInstantiatedInMethod(field)) {
+							if (isFieldInstantiatedOutsideMethod(field)) {
 								storeFieldInitiatedOutsideMethod(field);
 							} else {
 								CtMethod method = cc.getDeclaredMethod(field
 										.where().getMethodInfo().getName());
+								// constructor!!!!!!!!
+								// CtConstructor constructor = cc.getde
 
 								if (isFieldFromCurrentCtClass(field)) {
 									storeFieldOfCurrentClass(field, method);
@@ -54,7 +58,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 								}
 							}
 						}
-					} catch (NotFoundException e) {
+					} catch (NotFoundException | BadBytecode e) {
 						e.printStackTrace();
 					}
 				}
@@ -83,16 +87,64 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	 * @param field
 	 * @return
 	 * @throws NotFoundException
+	 * @throws BadBytecode
 	 */
-	private boolean isFieldInstantiatedInMethod(FieldAccess field)
-			throws NotFoundException {
+	private boolean isFieldInstantiatedOutsideMethod(FieldAccess field)
+			throws NotFoundException, BadBytecode {
+		boolean inMethod = false;
 		System.out.println(cc.getName());
 		System.out.println(field.getFieldName());
 		System.out.println(field.getLineNumber());
-		System.out.println(cc.getDeclaredMethods()[0].getMethodInfo()
-				.getLineNumber(0));
-		return field.getLineNumber() >= cc.getDeclaredMethods()[0]
-				.getMethodInfo().getLineNumber(0);
+		System.out.println(field.where().getMethodInfo().getName());
+
+		for (CtMethod method : cc.getMethods()) {
+			CodeAttribute codeAttribute = method.getMethodInfo()
+					.getCodeAttribute();
+
+			if (codeAttribute == null) {
+				break;
+			}
+
+			CodeIterator codeIterator = codeAttribute.iterator();
+			int pos = 0;
+
+			// get last pc of method (end of method)
+			while (codeIterator.hasNext()) {
+				pos = codeIterator.next();
+			}
+
+			inMethod = field.getLineNumber() >= method.getMethodInfo()
+					.getLineNumber(0)
+					&& field.getLineNumber() <= method.getMethodInfo()
+							.getLineNumber(pos);
+		}
+
+		boolean inConstructor = false;
+		for (CtConstructor constructor : cc.getConstructors()) {
+			CodeAttribute codeAttribute = constructor.getMethodInfo()
+					.getCodeAttribute();
+			System.out.println(constructor.getLongName());
+			System.out.println(constructor.getMethodInfo().getLineNumber(0));
+
+			if (codeAttribute == null) {
+				break;
+			}
+
+			CodeIterator codeIterator = codeAttribute.iterator();
+			int pos = 0;
+
+			// get last pc of constructor (end of constructor)
+			while (codeIterator.hasNext()) {
+				pos = codeIterator.next();
+			}
+
+			inConstructor = field.getLineNumber() >= constructor
+					.getMethodInfo().getLineNumber(0)
+					&& field.getLineNumber() <= constructor.getMethodInfo()
+							.getLineNumber(pos);
+		}
+
+		return !(inMethod || inConstructor);
 	}
 
 	private void storeFieldInitiatedOutsideMethod(FieldAccess field)
@@ -164,6 +216,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// stores field (inner class), because
 		// instrument
 		// directly doesn't work here...
+		// if field is initiated outside a method -> method is null
 		fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
 				belongedClassNameOfField, "", fieldSourceLineNr, method, field
 						.isStatic()));
