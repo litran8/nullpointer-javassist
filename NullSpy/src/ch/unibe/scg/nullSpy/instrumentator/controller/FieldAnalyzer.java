@@ -5,7 +5,6 @@ import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtClass;
-import javassist.CtConstructor;
 import javassist.CtMethod;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
@@ -119,32 +118,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 							.getLineNumber(pos);
 		}
 
-		boolean inConstructor = false;
-		for (CtConstructor constructor : cc.getConstructors()) {
-			CodeAttribute codeAttribute = constructor.getMethodInfo()
-					.getCodeAttribute();
-			System.out.println(constructor.getLongName());
-			System.out.println(constructor.getMethodInfo().getLineNumber(0));
-
-			if (codeAttribute == null) {
-				break;
-			}
-
-			CodeIterator codeIterator = codeAttribute.iterator();
-			int pos = 0;
-
-			// get last pc of constructor (end of constructor)
-			while (codeIterator.hasNext()) {
-				pos = codeIterator.next();
-			}
-
-			inConstructor = field.getLineNumber() >= constructor
-					.getMethodInfo().getLineNumber(0)
-					&& field.getLineNumber() <= constructor.getMethodInfo()
-							.getLineNumber(pos);
-		}
-
-		return !(inMethod || inConstructor);
+		return !inMethod;
 	}
 
 	private void storeFieldInitiatedOutsideMethod(FieldAccess field)
