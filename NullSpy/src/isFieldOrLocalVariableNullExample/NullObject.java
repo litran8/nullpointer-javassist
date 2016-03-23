@@ -5,11 +5,11 @@ public class NullObject {
 	private static String str2 = null;
 	private Object o = null;
 
-	// private String s;
-	//
-	// public NullObject() {
-	// this.s = null;
-	// }
+	private String s = null;;
+
+	public NullObject() {
+		this.s = null;
+	}
 
 	public static Object setToNullMethod(Object a, Object p) {
 		NullObject obj = new NullObject();

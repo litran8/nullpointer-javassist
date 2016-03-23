@@ -53,6 +53,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 								if (isFieldFromCurrentCtClass(field)) {
 									storeFieldOfCurrentClass(field, method);
 								} else {
+									// field of an object in current class
 									storeFieldOfAnotherClass(field, method);
 								}
 							}
@@ -91,17 +92,18 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	private boolean isFieldInstantiatedOutsideMethod(FieldAccess field)
 			throws NotFoundException, BadBytecode {
 		boolean inMethod = false;
-		System.out.println(cc.getName());
-		System.out.println(field.getFieldName());
-		System.out.println(field.getLineNumber());
-		System.out.println(field.where().getMethodInfo().getName());
-
+		System.out.println("ClassName: " + cc.getName());
+		System.out.println("FieldName: " + field.getFieldName());
+		System.out.println("FieldLineNumber: " + field.getLineNumber());
+		System.out.println("FieldMethod: "
+				+ field.where().getMethodInfo().getName());
+		CtMethod[] m = cc.getMethods();
 		for (CtMethod method : cc.getMethods()) {
 			CodeAttribute codeAttribute = method.getMethodInfo()
 					.getCodeAttribute();
 
 			if (codeAttribute == null) {
-				break;
+				continue;
 			}
 
 			CodeIterator codeIterator = codeAttribute.iterator();
@@ -112,11 +114,20 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				pos = codeIterator.next();
 			}
 
+			int methodStart = method.getMethodInfo().getLineNumber(0);
+			int methodEnd = method.getMethodInfo().getLineNumber(pos);
+
 			inMethod = field.getLineNumber() >= method.getMethodInfo()
 					.getLineNumber(0)
 					&& field.getLineNumber() <= method.getMethodInfo()
 							.getLineNumber(pos);
+
+			if (inMethod) {
+				break;
+			}
+
 		}
+		System.out.println();
 
 		return !inMethod;
 	}
