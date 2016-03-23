@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import javassist.CannotCompileException;
+import javassist.CtBehavior;
 import javassist.CtClass;
+import javassist.CtConstructor;
 import javassist.CtMethod;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
@@ -42,13 +44,29 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				if (field.isWriter()) {
 					try {
 						if (fieldIsNotPrimitive(field)) {
-							if (isFieldInstantiatedOutsideMethod(field)) {
-								storeFieldInitiatedOutsideMethod(field);
+							// check if field is instantiated outside, not in
+							// method nor constructor
+							if (!isFieldInstantiatedInMethod(field)) {
+								// check if is instatiated in a constructor
+								if (isFieldInstantiatedInConstructor(field)) {
+									CtConstructor constructor = getConstructor(field);
+									// check if it's field itself, or a field of
+									// the field (direct or indirect)
+									if (isFieldFromCurrentCtClass(field)) {
+										storeFieldOfCurrentClass(field,
+												constructor);
+									} else {
+										// field of an object/field in current
+										// class
+										storeFieldOfAnotherClass(field,
+												constructor);
+									}
+								} else {
+									storeFieldInitiatedOutsideMethod(field);
+								}
 							} else {
 								CtMethod method = cc.getDeclaredMethod(field
 										.where().getMethodInfo().getName());
-								// constructor!!!!!!!!
-								// CtConstructor constructor = cc.getde
 
 								if (isFieldFromCurrentCtClass(field)) {
 									storeFieldOfCurrentClass(field, method);
@@ -71,7 +89,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			// insertAt( int lineNr + 1, String sourceCodeAsString);
 			// sourceCodeasString in code: test(String className, Object
 			// varValue, int lineNr, String varName) );
-			CtMethod method = f.getCtMethod();
+			CtBehavior method = f.getCtBehavior();
 			String fieldName = f.getFieldName();
 			int fieldLineNumber = f.getFieldLineNumber();
 			String fieldType = f.getFieldType();
@@ -79,6 +97,34 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			adaptByteCode(method, fieldName, fieldLineNumber, fieldType,
 					"field");
 		}
+	}
+
+	private CtConstructor getConstructor(FieldAccess field) throws BadBytecode {
+		int fieldLineNumber = field.getLineNumber();
+		CtConstructor aimConstructor = null;
+		for (CtConstructor constructor : cc.getConstructors()) {
+			CodeAttribute codeAttribute = constructor.getMethodInfo()
+					.getCodeAttribute();
+
+			if (codeAttribute == null) {
+				continue;
+			}
+
+			if (fieldLineNumber >= constructor.getMethodInfo().getLineNumber(0)
+					&& fieldLineNumber <= getLastLineNumberOfMethodOrConstructorBody(constructor)) {
+				aimConstructor = constructor;
+				break;
+			}
+		}
+		return aimConstructor;
+	}
+
+	private boolean isFieldInstantiatedInConstructor(FieldAccess field)
+			throws BadBytecode {
+		boolean inConstructor = isInMethodOrConstructorBody(field,
+				cc.getConstructors());
+
+		return inConstructor;
 	}
 
 	/**
@@ -89,47 +135,58 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	 * @throws NotFoundException
 	 * @throws BadBytecode
 	 */
-	private boolean isFieldInstantiatedOutsideMethod(FieldAccess field)
+	private boolean isFieldInstantiatedInMethod(FieldAccess field)
 			throws NotFoundException, BadBytecode {
-		boolean inMethod = false;
+		boolean inMethod = isInMethodOrConstructorBody(field, cc.getMethods());
+
+		return inMethod;
+	}
+
+	private boolean isInMethodOrConstructorBody(FieldAccess field,
+			CtBehavior[] ctBehaviorList) throws BadBytecode {
+		boolean inMethodBody = false;
 		System.out.println("ClassName: " + cc.getName());
 		System.out.println("FieldName: " + field.getFieldName());
 		System.out.println("FieldLineNumber: " + field.getLineNumber());
 		System.out.println("FieldMethod: "
 				+ field.where().getMethodInfo().getName());
 		CtMethod[] m = cc.getMethods();
-		for (CtMethod method : cc.getMethods()) {
-			CodeAttribute codeAttribute = method.getMethodInfo()
+		for (CtBehavior behavior : ctBehaviorList) {
+			CodeAttribute codeAttribute = behavior.getMethodInfo()
 					.getCodeAttribute();
 
 			if (codeAttribute == null) {
 				continue;
 			}
 
-			CodeIterator codeIterator = codeAttribute.iterator();
-			int pos = 0;
+			int methodStart = behavior.getMethodInfo().getLineNumber(0);
+			int methodEnd = getLastLineNumberOfMethodOrConstructorBody(behavior);
 
-			// get last pc of method (end of method)
-			while (codeIterator.hasNext()) {
-				pos = codeIterator.next();
-			}
-
-			int methodStart = method.getMethodInfo().getLineNumber(0);
-			int methodEnd = method.getMethodInfo().getLineNumber(pos);
-
-			inMethod = field.getLineNumber() >= method.getMethodInfo()
+			inMethodBody = field.getLineNumber() >= behavior.getMethodInfo()
 					.getLineNumber(0)
-					&& field.getLineNumber() <= method.getMethodInfo()
-							.getLineNumber(pos);
+					&& field.getLineNumber() <= getLastLineNumberOfMethodOrConstructorBody(behavior);
 
-			if (inMethod) {
+			if (inMethodBody) {
 				break;
 			}
 
 		}
 		System.out.println();
+		return inMethodBody;
+	}
 
-		return !inMethod;
+	private int getLastLineNumberOfMethodOrConstructorBody(CtBehavior behavior)
+			throws BadBytecode {
+		int pos = 0;
+		CodeIterator codeIterator = behavior.getMethodInfo().getCodeAttribute()
+				.iterator();
+		// get last pc of method (end of method)
+		while (codeIterator.hasNext()) {
+			pos = codeIterator.next();
+		}
+
+		// int methodEnd = behavior.getMethodInfo().getLineNumber(pos);
+		return behavior.getMethodInfo().getLineNumber(pos);
 	}
 
 	private void storeFieldInitiatedOutsideMethod(FieldAccess field)
@@ -143,13 +200,14 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	 * @param field
 	 * @throws NotFoundException
 	 */
-	private void storeFieldOfAnotherClass(FieldAccess field, CtMethod method)
+	private void storeFieldOfAnotherClass(FieldAccess field, CtBehavior behavior)
 			throws NotFoundException {
 
-		CodeAttribute codeAttribute = method.getMethodInfo().getCodeAttribute();
+		CodeAttribute codeAttribute = behavior.getMethodInfo()
+				.getCodeAttribute();
 		CodeIterator codeIterator = codeAttribute.iterator();
 
-		HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
+		HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(behavior);
 		LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
 				.getAttribute(LocalVariableAttribute.tag);
 		ArrayList<LocalVariableTableEntry> localVariableTableList = getStableLocalVariableTableAsList(localVariableTable);
@@ -180,7 +238,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
 				belongedClassNameOfField, nameOfBelongedClassObjectOfField,
-				fieldLineNumber, method, field.isStatic()));
+				fieldLineNumber, behavior, field.isStatic()));
 
 	}
 
@@ -190,7 +248,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	 * @param field
 	 * @throws NotFoundException
 	 */
-	private void storeFieldOfCurrentClass(FieldAccess field, CtMethod method)
+	private void storeFieldOfCurrentClass(FieldAccess field, CtBehavior behavior)
 			throws NotFoundException {
 
 		String fieldName = field.getFieldName();
@@ -203,8 +261,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// directly doesn't work here...
 		// if field is initiated outside a method -> method is null
 		fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
-				belongedClassNameOfField, "", fieldSourceLineNr, method, field
-						.isStatic()));
+				belongedClassNameOfField, "", fieldSourceLineNr, behavior,
+				field.isStatic()));
 	}
 
 	private boolean isFieldFromCurrentCtClass(FieldAccess field) {
@@ -215,6 +273,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	}
 
 	private boolean fieldIsNotPrimitive(FieldAccess field) {
+		String sign = field.getSignature();
 		if (field.getSignature().matches("L.*"))
 			return true;
 		else
@@ -236,18 +295,18 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		public String nameOfBelongedClassObjectOfField; // Person p; p.a : p
 
 		public int fieldSourceLineNr;
-		public CtMethod method;
+		public CtBehavior behavior;
 
 		public Field(String fieldName, String fieldType,
 				String belongedClassNameOfField,
 				String nameOfBelongedClassObjectOfField, int fieldSourceLineNr,
-				CtMethod method, boolean isStatic) {
+				CtBehavior behavior, boolean isStatic) {
 			this.fieldName = fieldName;
 			this.fieldType = fieldType;
 			this.belongedClassNameOfField = belongedClassNameOfField;
 			this.nameOfBelongedClassObjectOfField = nameOfBelongedClassObjectOfField;
 			this.fieldSourceLineNr = fieldSourceLineNr;
-			this.method = method;
+			this.behavior = behavior;
 		}
 
 		public String getFieldName() {
@@ -262,8 +321,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			return fieldSourceLineNr;
 		}
 
-		public CtMethod getCtMethod() {
-			return method;
+		public CtBehavior getCtBehavior() {
+			return behavior;
 		}
 
 		public String getBelongedClassNameOfField() {

@@ -1,12 +1,12 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import javassist.CannotCompileException;
+import javassist.CtBehavior;
 import javassist.CtConstructor;
-import javassist.CtMethod;
 
 public class ByteCodeAdapter {
 
-	public void insertTestLineAfterVariableAssignment(CtMethod method,
+	public void insertTestLineAfterVariableAssignment(CtBehavior method,
 			String variableName, int variableLineNumber, String variableType,
 			String variableID) throws CannotCompileException {
 		method.insertAt(variableLineNumber + 1,

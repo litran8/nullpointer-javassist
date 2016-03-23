@@ -5,9 +5,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import javassist.CannotCompileException;
+import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.CtConstructor;
-import javassist.CtMethod;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.LineNumberAttribute;
@@ -23,7 +23,7 @@ public abstract class Analyzer {
 		this.byteCodeAdapter = new ByteCodeAdapter();
 	}
 
-	protected void adaptByteCode(CtMethod method, String variableName,
+	protected void adaptByteCode(CtBehavior method, String variableName,
 			int variableLineNumber, String variableType, String variableID)
 			throws CannotCompileException {
 		// null if field is instantiated outside method
@@ -40,7 +40,7 @@ public abstract class Analyzer {
 		}
 	}
 
-	protected HashMap<Integer, Integer> getLineNumberTable(CtMethod method) {
+	protected HashMap<Integer, Integer> getLineNumberTable(CtBehavior method) {
 		CodeAttribute codeAttribute = method.getMethodInfo().getCodeAttribute();
 		LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttribute
 				.getAttribute(LineNumberAttribute.tag);
