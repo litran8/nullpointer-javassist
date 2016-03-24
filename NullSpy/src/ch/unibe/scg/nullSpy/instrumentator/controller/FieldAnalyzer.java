@@ -199,9 +199,12 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	 * 
 	 * @param field
 	 * @throws NotFoundException
+	 * @throws BadBytecode
 	 */
 	private void storeFieldOfAnotherClass(FieldAccess field, CtBehavior behavior)
-			throws NotFoundException {
+			throws NotFoundException, BadBytecode {
+
+		boolean isAnotherClassAnInnerClass = isAnotherClassAnInnerClass(field);
 
 		CodeAttribute codeAttribute = behavior.getMethodInfo()
 				.getCodeAttribute();
@@ -214,13 +217,16 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		int fieldLineNumber = field.getLineNumber();
 		int pos = getPc(lineNumberMap, fieldLineNumber);
+		String innerClassFieldName = "";
 
 		String fieldType = field.getSignature();
 		String belongedClassNameOfField;
 		String nameOfBelongedClassObjectOfField;
 		String fieldName;
+		System.out.println();
 
 		if (!field.isStatic()) {
+
 			// store locVar
 			int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
 					codeIterator, localVariableTableList, pos, "aload.*");
@@ -228,8 +234,21 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			nameOfBelongedClassObjectOfField = localVariableTableList
 					.get(locVarIndexInLocVarTable).varName;
 
-			fieldName = nameOfBelongedClassObjectOfField + "."
-					+ field.getFieldName();
+			if (isAnotherClassAnInnerClass
+					&& nameOfBelongedClassObjectOfField.equals("this")) {
+				codeIterator.move(pos);
+				codeIterator.next();
+				int innerClassGetFieldPos = codeIterator.next();
+				int index = codeIterator.u16bitAt(innerClassGetFieldPos + 1);
+				innerClassFieldName = behavior.getMethodInfo2().getConstPool()
+						.getFieldrefName(index);
+				fieldName = nameOfBelongedClassObjectOfField + "."
+						+ innerClassFieldName + "." + field.getFieldName();
+			} else {
+				fieldName = nameOfBelongedClassObjectOfField + "."
+						+ field.getFieldName();
+			}
+
 		} else {
 			belongedClassNameOfField = field.getClassName();
 			nameOfBelongedClassObjectOfField = "";
@@ -242,6 +261,16 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 	}
 
+	private boolean isAnotherClassAnInnerClass(FieldAccess field)
+			throws NotFoundException {
+		for (CtClass c : cc.getNestedClasses()) {
+			if (c.getName().equals(field.getClassName())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * If the field is of the current analyzed class.
 	 * 
@@ -251,7 +280,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	private void storeFieldOfCurrentClass(FieldAccess field, CtBehavior behavior)
 			throws NotFoundException {
 
-		String fieldName = field.getFieldName();
+		String fieldName = "this." + field.getFieldName();
 		String fieldType = field.getSignature();
 		int fieldSourceLineNr = field.getLineNumber();
 		String belongedClassNameOfField = cc.getName();
@@ -265,7 +294,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				field.isStatic()));
 	}
 
-	private boolean isFieldFromCurrentCtClass(FieldAccess field) {
+	private boolean isFieldFromCurrentCtClass(FieldAccess field)
+			throws NotFoundException {
 		if (field.getClassName().equals(cc.getName()))
 			return true;
 		else
