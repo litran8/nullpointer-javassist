@@ -158,7 +158,7 @@ public abstract class Analyzer {
 				}
 			}
 		}
-
+		System.out.println();
 		return res;
 	}
 
@@ -181,10 +181,14 @@ public abstract class Analyzer {
 		// javassist.bytecode.InstructionPrinter.instructionString(codeIterator,
 		// pos, c)
 
-		if (!opString.matches("astore"))
+		if (!(opString.matches("astore") || opString.matches("aload")))
 			return Integer.parseInt(opString.substring(opString.length() - 1,
 					opString.length()));
-		else {
+		else if (opString.matches("aload.*")) {
+			int i = codeIterator.u16bitAt(pos);
+			return codeIterator.u16bitAt(pos) - 6400;
+		} else {
+			int i = codeIterator.u16bitAt(pos);
 			return codeIterator.u16bitAt(pos) - 14848;
 		}
 	}

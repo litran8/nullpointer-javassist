@@ -279,10 +279,29 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	 */
 	private void storeFieldOfCurrentClass(FieldAccess field, CtBehavior behavior)
 			throws NotFoundException {
+		int fieldLineNumber = field.getLineNumber();
+		String nameOfBelongedClassObjectOfField = "";
+		if (behavior != null) {
+			CodeAttribute codeAttribute = behavior.getMethodInfo()
+					.getCodeAttribute();
+			CodeIterator codeIterator = codeAttribute.iterator();
 
-		String fieldName = "this." + field.getFieldName();
+			HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(behavior);
+			LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
+					.getAttribute(LocalVariableAttribute.tag);
+			ArrayList<LocalVariableTableEntry> localVariableTableList = getStableLocalVariableTableAsList(localVariableTable);
+
+			int pos = getPc(lineNumberMap, fieldLineNumber);
+			int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
+					codeIterator, localVariableTableList, pos, "aload.*");
+			nameOfBelongedClassObjectOfField = localVariableTableList
+					.get(locVarIndexInLocVarTable).varName + ".";
+		}
+
+		String fieldName = (field.isStatic() ? ""
+				: nameOfBelongedClassObjectOfField) + field.getFieldName();
 		String fieldType = field.getSignature();
-		int fieldSourceLineNr = field.getLineNumber();
+		// int fieldLineNumber = field.getLineNumber();
 		String belongedClassNameOfField = cc.getName();
 
 		// stores field (inner class), because
@@ -290,8 +309,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// directly doesn't work here...
 		// if field is initiated outside a method -> method is null
 		fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
-				belongedClassNameOfField, "", fieldSourceLineNr, behavior,
-				field.isStatic()));
+				belongedClassNameOfField, "", fieldLineNumber, behavior, field
+						.isStatic()));
 	}
 
 	private boolean isFieldFromCurrentCtClass(FieldAccess field)

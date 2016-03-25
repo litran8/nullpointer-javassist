@@ -1,6 +1,7 @@
 package isFieldOrLocalVariableNullExample;
 
 public class MainAssignToNull {
+	
 	public static Object a = null;
 	public static Object b;
 	public static Object c;
