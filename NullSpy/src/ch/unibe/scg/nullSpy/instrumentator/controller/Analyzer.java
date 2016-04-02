@@ -8,6 +8,8 @@ import javassist.CannotCompileException;
 import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.CtConstructor;
+import javassist.NotFoundException;
+import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.LineNumberAttribute;
@@ -24,12 +26,14 @@ public abstract class Analyzer {
 	}
 
 	protected void adaptByteCode(CtBehavior method, String variableName,
-			int variableLineNumber, String variableType, String variableID)
-			throws CannotCompileException {
+			String belongedClassNameOfVariable, int variableLineNumber,
+			String variableType, String variableID)
+			throws CannotCompileException, NotFoundException, BadBytecode {
 		// null if field is instantiated outside method
 		if (method != null) {
 			byteCodeAdapter.insertTestLineAfterVariableAssignment(method,
-					variableName, variableLineNumber, variableType, variableID);
+					variableName, belongedClassNameOfVariable,
+					variableLineNumber, variableType, variableID);
 		} else {
 			for (CtConstructor constructor : cc.getConstructors()) {
 				byteCodeAdapter
@@ -105,9 +109,10 @@ public abstract class Analyzer {
 				int startPc = locVarTable.startPc(i);
 				int length = locVarTable.codeLength(i);
 				int index = locVarTable.index(i);
+				String varType = locVarTable.descriptor(i);
 				String varName = locVarTable.variableName(i);
 				localVariableList.add(new LocalVariableTableEntry(startPc,
-						length, index, varName));
+						length, index, varName, varType));
 			}
 		}
 
@@ -198,13 +203,15 @@ public abstract class Analyzer {
 		int length;
 		int index;
 		String varName;
+		String varType;
 
 		public LocalVariableTableEntry(int startPc, int length, int index,
-				String varName) {
+				String varName, String varType) {
 			this.startPc = startPc;
 			this.length = length;
 			this.index = index;
 			this.varName = varName;
+			this.varType = varType;
 		}
 
 		public int getStartPc() {

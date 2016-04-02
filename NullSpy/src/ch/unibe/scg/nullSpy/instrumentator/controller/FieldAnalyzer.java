@@ -12,7 +12,12 @@ import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
+import javassist.bytecode.LineNumberAttribute;
+import javassist.bytecode.LineNumberAttribute.Pc;
 import javassist.bytecode.LocalVariableAttribute;
+import javassist.bytecode.MethodInfo;
+import javassist.bytecode.analysis.ControlFlow;
+import javassist.bytecode.analysis.ControlFlow.Block;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 
@@ -35,8 +40,11 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	 * @param this.cc
 	 * @param myClass
 	 * @throws CannotCompileException
+	 * @throws BadBytecode
+	 * @throws NotFoundException
 	 */
-	public void instrumentAfterFieldAssignment() throws CannotCompileException {
+	public void instrumentAfterFieldAssignment() throws CannotCompileException,
+			BadBytecode, NotFoundException {
 
 		cc.instrument(new ExprEditor() {
 			public void edit(FieldAccess field) throws CannotCompileException {
@@ -86,16 +94,24 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		for (Field f : fieldIsWritterInfoList) {
 
-			// insertAt( int lineNr + 1, String sourceCodeAsString);
-			// sourceCodeasString in code: test(String className, Object
-			// varValue, int lineNr, String varName) );
 			CtBehavior method = f.getCtBehavior();
 			String fieldName = f.getFieldName();
 			int fieldLineNumber = f.getFieldLineNumber();
 			String fieldType = f.getFieldType();
-
-			adaptByteCode(method, fieldName, fieldLineNumber, fieldType,
-					"field");
+			String belongedClassNameOfField = f.getBelongedClassNameOfField();
+			ControlFlow ctrlFlow = null;
+			Block[] blocks = null;
+			if (method != null) {
+				if (method instanceof CtMethod) {
+					ctrlFlow = new ControlFlow((CtMethod) method);
+				} else {
+					MethodInfo methodInfo = method.getMethodInfo();
+					ctrlFlow = new ControlFlow(cc, methodInfo);
+				}
+				blocks = ctrlFlow.basicBlocks();
+			}
+			adaptByteCode(method, fieldName, belongedClassNameOfField,
+					fieldLineNumber, fieldType, "field");
 		}
 	}
 
@@ -128,7 +144,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	}
 
 	/**
-	 * Show fields which are instantiated outside method.
+	 * Check if field is instantiated in a method or a constructor. If not, it
+	 * returns false.
 	 * 
 	 * @param field
 	 * @return
@@ -217,6 +234,9 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		int fieldLineNumber = field.getLineNumber();
 		int pos = getPc(lineNumberMap, fieldLineNumber);
+		LineNumberAttribute lineAttr = (LineNumberAttribute) codeAttribute
+				.getAttribute(LineNumberAttribute.tag);
+		Pc posAfter = lineAttr.toNearPc(122);
 		String innerClassFieldName = "";
 
 		String fieldType = field.getSignature();

@@ -14,8 +14,11 @@ import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ExceptionTable;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
+import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
+import javassist.bytecode.analysis.ControlFlow;
+import javassist.bytecode.analysis.ControlFlow.Block;
 
 /**
  * Instruments test-code after locVars.
@@ -97,13 +100,14 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	 * @param exceptionTable
 	 * @throws BadBytecode
 	 * @throws CannotCompileException
+	 * @throws NotFoundException
 	 */
 	private void instrumentAfterLocVarObject(CtMethod method,
 			CodeIterator codeIterator,
 			ArrayList<LocalVariableTableEntry> localVariableList,
 			HashMap<Integer, Integer> lineNumberMap,
 			LineNumberAttribute lineNumberTable, ExceptionTable exceptionTable)
-			throws BadBytecode, CannotCompileException {
+			throws BadBytecode, CannotCompileException, NotFoundException {
 
 		// store current instruction and the previous instructions
 		ArrayList<Integer> instrPositions = new ArrayList<Integer>();
@@ -130,9 +134,22 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 				String localVariableName = localVariableList
 						.get(locVarIndexInLocVarTable).varName;
 				int localVariableLineNumber = getLineNumber(lineNumberMap, pos);
-				adaptByteCode(method, localVariableName,
-						localVariableLineNumber, "localVariable",
-						"localVariable");
+				String localVariableType = localVariableList
+						.get(locVarIndexInLocVarTable).varType;
+				int index = localVariableList.get(locVarIndexInLocVarTable).index;
+
+				ControlFlow ctrlFlow = null;
+				Block[] blocks = null;
+				if (method instanceof CtMethod) {
+					ctrlFlow = new ControlFlow((CtMethod) method);
+				} else {
+					MethodInfo methodInfo = method.getMethodInfo();
+					ctrlFlow = new ControlFlow(cc, methodInfo);
+				}
+				blocks = ctrlFlow.basicBlocks();
+				adaptByteCode(method, localVariableName, null,
+						localVariableLineNumber, localVariableType,
+						"localVariable_" + index);
 			}
 		}
 	}

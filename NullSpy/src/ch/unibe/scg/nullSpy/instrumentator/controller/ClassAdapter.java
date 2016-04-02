@@ -32,6 +32,7 @@ public class ClassAdapter {
 			throws NotFoundException, CannotCompileException, BadBytecode,
 			IllegalAccessException, InvocationTargetException,
 			NoSuchMethodException {
+
 		FieldAnalyzer fieldLogic = new FieldAnalyzer(cc);
 		fieldLogic.instrumentAfterFieldAssignment();
 
