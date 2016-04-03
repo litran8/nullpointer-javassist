@@ -58,4 +58,13 @@ public class Variable {
 		return posAfterAssignment;
 	}
 
+	public String toString() {
+		String s = "VarName: "
+				+ varName
+				+ ", LineNr: "
+				+ varLineNr
+				+ (behavior == null ? "" : ", Behavior: " + behavior.getName()
+						+ ", Class: " + behavior.getDeclaringClass().getName());
+		return s;
+	}
 }
