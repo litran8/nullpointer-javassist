@@ -1,44 +1,47 @@
 package ch.unibe.scg.nullSpy.model;
 
-import javassist.CtClass;
-import javassist.CtMethod;
+/**
+ * Stores information of a field which can be written for instrumentation after
+ * their collection.
+ * 
+ * @author Lina Tran
+ *
+ */
+import javassist.CtBehavior;
 
-public class Field {
-	private String fieldName;
-	private int fieldLineNumber;
-	private CtMethod method;
-	private CtClass ctClass;
+public class Field extends Variable {
 
-	public Field(String fName, int fLineNumber, CtMethod m) {
-		this.fieldName = fName;
-		this.fieldLineNumber = fLineNumber;
-		this.method = m;
-		this.ctClass = m.getDeclaringClass();
-		String s = ctClass.getName();
+	private String fieldBelongedClassName; // package.Person
+
+	// object_filed
+	private String opCode_field;
+	private IndirectFieldObject indirectFieldObject;
+
+	public Field(String fieldName, String fieldType,
+			String fieldBelongedClassName, int fieldSourceLineNr, int pos,
+			int posAfterAssignment, CtBehavior behavior, boolean isStatic,
+			String opCode_field, IndirectFieldObject indirectFieldObject) {
+
+		super(fieldName, fieldSourceLineNr, fieldType, isStatic, behavior, pos,
+				posAfterAssignment);
+
+		this.fieldBelongedClassName = fieldBelongedClassName;
+
+		// OBJECT_field
+		this.opCode_field = opCode_field;
+		this.indirectFieldObject = indirectFieldObject;
 	}
 
-	public int getFieldLineNumber() {
-		return this.fieldLineNumber;
+	public String getFieldBelongedClassName() {
+		return fieldBelongedClassName;
 	}
 
-	public void setFieldLineNumber(int fieldLineNumber) {
-		this.fieldLineNumber = fieldLineNumber;
+	public String getOpCode_field() {
+		return opCode_field;
 	}
 
-	public String getFieldName() {
-		return this.fieldName;
-	}
-
-	public void setFieldName(String fieldName) {
-		this.fieldName = fieldName;
-	}
-
-	public CtMethod getMethod() {
-		return this.method;
-	}
-
-	public void setMethod(CtMethod method) {
-		this.method = method;
+	public IndirectFieldObject getIndirectFieldObject() {
+		return indirectFieldObject;
 	}
 
 }

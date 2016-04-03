@@ -12,13 +12,12 @@ import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ExceptionTable;
+import javassist.bytecode.InstructionPrinter;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
-import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
-import javassist.bytecode.analysis.ControlFlow;
-import javassist.bytecode.analysis.ControlFlow.Block;
+import ch.unibe.scg.nullSpy.model.LocalVar;
 
 /**
  * Instruments test-code after locVars.
@@ -118,6 +117,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		while (codeIterator.hasNext()) {
 			int pos = codeIterator.next();
 			instrPositions.add(pos);
+			System.out.println(InstructionPrinter.instructionString(
+					codeIterator, pos, method.getMethodInfo2().getConstPool()));
 
 			int op = codeIterator.byteAt(pos);
 
@@ -129,27 +130,27 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 						.instructionString(codeIterator, pos, method
 								.getMethodInfo2().getConstPool()));
 
-				int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
+				int localVarTableIndex = getLocVarIndexInLocVarTable(
 						codeIterator, localVariableList, pos, "astore.*");
-				String localVariableName = localVariableList
-						.get(locVarIndexInLocVarTable).varName;
-				int localVariableLineNumber = getLineNumber(lineNumberMap, pos);
-				String localVariableType = localVariableList
-						.get(locVarIndexInLocVarTable).varType;
-				int index = localVariableList.get(locVarIndexInLocVarTable).index;
+				String localVarName = localVariableList.get(localVarTableIndex).varName;
+				int localVarLineNr = getLineNumber(lineNumberMap, pos);
+				String localVarType = localVariableList.get(localVarTableIndex).varType;
+				int localVarSlot = localVariableList.get(localVarTableIndex).index;
 
-				ControlFlow ctrlFlow = null;
-				Block[] blocks = null;
-				if (method instanceof CtMethod) {
-					ctrlFlow = new ControlFlow((CtMethod) method);
-				} else {
-					MethodInfo methodInfo = method.getMethodInfo();
-					ctrlFlow = new ControlFlow(cc, methodInfo);
-				}
-				blocks = ctrlFlow.basicBlocks();
-				adaptByteCode(method, localVariableName, null,
-						localVariableLineNumber, localVariableType,
-						"localVariable_" + index);
+				System.out.println(localVarName);
+				System.out.println(localVarLineNr);
+				System.out.println();
+
+				LocalVar localVar = new LocalVar(localVarName, localVarLineNr,
+						localVarType, pos, codeIterator.next(), method,
+						localVarTableIndex, localVarSlot);
+
+				adaptByteCode(localVar, "localVariable_" + localVarSlot);
+
+				// adaptByteCode(method, localVarName, null, localVarLineNr,
+				// localVarType, "localVariable_" + localVarSlot, false,
+				// codeIterator.next());
+
 			}
 		}
 	}

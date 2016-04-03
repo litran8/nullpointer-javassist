@@ -29,6 +29,8 @@ public class MainAssignToNull {
 		Person p2 = (Person) Person.say();
 		p.a = null; // aload, aconst, putfield Person.a
 		p.o = null;
+		o.a = null;
+		o.o = null;
 		Person.o = null;// putstatic Person.o
 		a = Person.say();
 		d = Person.say();

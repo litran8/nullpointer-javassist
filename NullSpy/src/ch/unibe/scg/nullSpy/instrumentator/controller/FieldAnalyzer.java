@@ -7,26 +7,30 @@ import javassist.CannotCompileException;
 import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.CtConstructor;
+import javassist.CtField;
 import javassist.CtMethod;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
+import javassist.bytecode.InstructionPrinter;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LineNumberAttribute.Pc;
 import javassist.bytecode.LocalVariableAttribute;
-import javassist.bytecode.MethodInfo;
-import javassist.bytecode.analysis.ControlFlow;
-import javassist.bytecode.analysis.ControlFlow.Block;
+import javassist.bytecode.Mnemonic;
+import javassist.bytecode.Opcode;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
+import ch.unibe.scg.nullSpy.model.Field;
+import ch.unibe.scg.nullSpy.model.IndirectFieldObject;
+import ch.unibe.scg.nullSpy.model.Variable;
 
 /**
  * Instruments test-code after fields.
  */
 public class FieldAnalyzer extends VariableAnalyzer {
 
-	private ArrayList<Field> fieldIsWritterInfoList = new ArrayList<Field>();
+	private ArrayList<Variable> fieldIsWritterInfoList = new ArrayList<Variable>();
 
 	public FieldAnalyzer(CtClass cc) {
 		super(cc);
@@ -92,26 +96,21 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		});
 
-		for (Field f : fieldIsWritterInfoList) {
+		for (Variable var : fieldIsWritterInfoList) {
 
-			CtBehavior method = f.getCtBehavior();
-			String fieldName = f.getFieldName();
-			int fieldLineNumber = f.getFieldLineNumber();
-			String fieldType = f.getFieldType();
-			String belongedClassNameOfField = f.getBelongedClassNameOfField();
-			ControlFlow ctrlFlow = null;
-			Block[] blocks = null;
-			if (method != null) {
-				if (method instanceof CtMethod) {
-					ctrlFlow = new ControlFlow((CtMethod) method);
-				} else {
-					MethodInfo methodInfo = method.getMethodInfo();
-					ctrlFlow = new ControlFlow(cc, methodInfo);
-				}
-				blocks = ctrlFlow.basicBlocks();
-			}
-			adaptByteCode(method, fieldName, belongedClassNameOfField,
-					fieldLineNumber, fieldType, "field");
+			// CtBehavior method = f.getBehavior();
+			// String fieldName = f.getVarName();
+			// int fieldLineNumber = f.getVarLineNr();
+			// String fieldType = f.getVarType();
+			// String belongedClassNameOfField = f.getFieldBelongedClassName();
+			// boolean isStatic = f.isStatic();
+			// int posAfterAssignment = f.getPosAfterAssignment();
+
+			adaptByteCode(var, "field");
+
+			// adaptByteCode(method, fieldName, belongedClassNameOfField,
+			// fieldLineNumber, fieldType, "field", isStatic,
+			// posAfterAssignment);
 		}
 	}
 
@@ -207,12 +206,13 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	}
 
 	private void storeFieldInitiatedOutsideMethod(FieldAccess field)
-			throws NotFoundException {
+			throws NotFoundException, BadBytecode {
 		storeFieldOfCurrentClass(field, null);
 	}
 
 	/**
-	 * If the field is of another class than the current analyzed one.
+	 * If the field is of another class than the current analyzed one. E.g. p.a:
+	 * p->PersonClass
 	 * 
 	 * @param field
 	 * @throws NotFoundException
@@ -232,53 +232,104 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				.getAttribute(LocalVariableAttribute.tag);
 		ArrayList<LocalVariableTableEntry> localVariableTableList = getStableLocalVariableTableAsList(localVariableTable);
 
+		// lineNr
 		int fieldLineNumber = field.getLineNumber();
+
+		// pos and posAfterAssignment
 		int pos = getPc(lineNumberMap, fieldLineNumber);
 		LineNumberAttribute lineAttr = (LineNumberAttribute) codeAttribute
 				.getAttribute(LineNumberAttribute.tag);
 		Pc posAfter = lineAttr.toNearPc(122);
+		int posAfterAssignment = getPosAfterAssignment(pos, codeIterator,
+				"put.*");
+
+		// innerclass
 		String innerClassFieldName = "";
 
-		String fieldType = field.getSignature();
-		String belongedClassNameOfField;
-		String nameOfBelongedClassObjectOfField;
 		String fieldName;
-		System.out.println();
+
+		// object_FIELD
+		int op = codeIterator.byteAt(pos);
+		String opCode_field = Mnemonic.OPCODE[op];
+
+		// OBJECT_field
+		IndirectFieldObject indirectFieldObject;
+
+		String objectName_field = "";
+		String objectType_field = "";
+		String objectBelongedClassName_field = "";
 
 		if (!field.isStatic()) {
 
-			// store locVar
-			int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
-					codeIterator, localVariableTableList, pos, "aload.*");
-			belongedClassNameOfField = field.getClassName();
-			nameOfBelongedClassObjectOfField = localVariableTableList
-					.get(locVarIndexInLocVarTable).varName;
+			boolean isfieldStatic_field = false;
 
-			if (isAnotherClassAnInnerClass
-					&& nameOfBelongedClassObjectOfField.equals("this")) {
+			if (Mnemonic.OPCODE[op].matches("aload.*")) {
+				// store locVar e.g. p.a -> get p
+				int localVarTableIndex = 0;
+
+				localVarTableIndex = getLocVarIndexInLocVarTable(codeIterator,
+						localVariableTableList, pos, "aload.*");
+				int locVarSlot = getLocVarArraySlot(codeIterator, pos);
+				opCode_field = "aload_" + locVarSlot;
+
+				objectName_field = localVariableTableList
+						.get(localVarTableIndex).varName;
+				objectType_field = localVariableTableList
+						.get(localVarTableIndex).varType;
+
+			} else {
+
+				String instruction = InstructionPrinter.instructionString(
+						codeIterator, pos, field.where().getMethodInfo2()
+								.getConstPool());
+				int brace = instruction.indexOf("(");
+				instruction = instruction.substring(0, brace);
+				instruction = instruction.substring(instruction
+						.lastIndexOf(".") + 1);
+				objectName_field = instruction;
+
+				CtField field_field = cc.getField(objectName_field);
+
+				objectBelongedClassName_field = field_field.getDeclaringClass()
+						.getName();
+				objectType_field = field_field.getSignature();
+				isfieldStatic_field = op == Opcode.GETSTATIC;
+				// testMethodByteCode.addGetfield(belongedClassNameOfVariable,
+				// variableName, variableType);
+
+			}
+
+			if (isAnotherClassAnInnerClass && objectName_field.equals("this")) {
 				codeIterator.move(pos);
 				codeIterator.next();
 				int innerClassGetFieldPos = codeIterator.next();
 				int index = codeIterator.u16bitAt(innerClassGetFieldPos + 1);
 				innerClassFieldName = behavior.getMethodInfo2().getConstPool()
 						.getFieldrefName(index);
-				fieldName = nameOfBelongedClassObjectOfField + "."
-						+ innerClassFieldName + "." + field.getFieldName();
-			} else {
-				fieldName = nameOfBelongedClassObjectOfField + "."
+				fieldName = objectName_field + "." + innerClassFieldName + "."
 						+ field.getFieldName();
+			} else {
+				fieldName = objectName_field + "." + field.getFieldName();
+			}
+
+			if (opCode_field.matches("get.*") && !isfieldStatic_field) {
+				fieldName = "this." + fieldName;
 			}
 
 		} else {
-			belongedClassNameOfField = field.getClassName();
-			nameOfBelongedClassObjectOfField = "";
 			fieldName = field.getClassName() + "." + field.getFieldName();
 		}
 
-		fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
-				belongedClassNameOfField, nameOfBelongedClassObjectOfField,
-				fieldLineNumber, behavior, field.isStatic()));
+		indirectFieldObject = new IndirectFieldObject(objectName_field,
+				objectType_field, objectBelongedClassName_field);
 
+		String fieldType = field.getSignature();
+		String fieldBelongedClassName = field.getClassName();
+
+		fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
+				fieldBelongedClassName, fieldLineNumber, pos,
+				posAfterAssignment, behavior, field.isStatic(), opCode_field,
+				indirectFieldObject));
 	}
 
 	private boolean isAnotherClassAnInnerClass(FieldAccess field)
@@ -296,11 +347,17 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	 * 
 	 * @param field
 	 * @throws NotFoundException
+	 * @throws BadBytecode
 	 */
 	private void storeFieldOfCurrentClass(FieldAccess field, CtBehavior behavior)
-			throws NotFoundException {
-		int fieldLineNumber = field.getLineNumber();
-		String nameOfBelongedClassObjectOfField = "";
+			throws NotFoundException, BadBytecode {
+
+		int fieldLineNr = field.getLineNumber();
+		String objectName_Field = "";
+		int pos = 0;
+		int posAfterAssignment = 0;
+		String opCode = "";
+
 		if (behavior != null) {
 			CodeAttribute codeAttribute = behavior.getMethodInfo()
 					.getCodeAttribute();
@@ -311,26 +368,29 @@ public class FieldAnalyzer extends VariableAnalyzer {
 					.getAttribute(LocalVariableAttribute.tag);
 			ArrayList<LocalVariableTableEntry> localVariableTableList = getStableLocalVariableTableAsList(localVariableTable);
 
-			int pos = getPc(lineNumberMap, fieldLineNumber);
-			int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
-					codeIterator, localVariableTableList, pos, "aload.*");
-			nameOfBelongedClassObjectOfField = localVariableTableList
-					.get(locVarIndexInLocVarTable).varName + ".";
+			pos = getPc(lineNumberMap, fieldLineNr);
+			posAfterAssignment = getPosAfterAssignment(pos, codeIterator,
+					"put.*");
+			int localVarTableIndex = getLocVarIndexInLocVarTable(codeIterator,
+					localVariableTableList, pos, "aload.*");
+			objectName_Field = localVariableTableList.get(localVarTableIndex).varName
+					+ ".";
+			opCode = Mnemonic.OPCODE[codeIterator.byteAt(pos)];
 		}
 
-		String fieldName = (field.isStatic() ? ""
-				: nameOfBelongedClassObjectOfField) + field.getFieldName();
+		String fieldName = (field.isStatic() ? "" : objectName_Field)
+				+ field.getFieldName();
 		String fieldType = field.getSignature();
 		// int fieldLineNumber = field.getLineNumber();
-		String belongedClassNameOfField = cc.getName();
+		String fieldBelongedClassName = cc.getName();
 
 		// stores field (inner class), because
 		// instrument
 		// directly doesn't work here...
 		// if field is initiated outside a method -> method is null
 		fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
-				belongedClassNameOfField, "", fieldLineNumber, behavior, field
-						.isStatic()));
+				fieldBelongedClassName, fieldLineNr, pos, posAfterAssignment,
+				behavior, field.isStatic(), opCode, null));
 	}
 
 	private boolean isFieldFromCurrentCtClass(FieldAccess field)
@@ -349,58 +409,81 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			return false;
 	}
 
-	/**
-	 * Stores information of a field which can be written for instrumentation
-	 * after their collection.
-	 * 
-	 * @author Lina Tran
-	 *
-	 */
-	private class Field {
-
-		public String fieldName;
-		public String fieldType;
-		public String belongedClassNameOfField; // package.Person
-		public String nameOfBelongedClassObjectOfField; // Person p; p.a : p
-
-		public int fieldSourceLineNr;
-		public CtBehavior behavior;
-
-		public Field(String fieldName, String fieldType,
-				String belongedClassNameOfField,
-				String nameOfBelongedClassObjectOfField, int fieldSourceLineNr,
-				CtBehavior behavior, boolean isStatic) {
-			this.fieldName = fieldName;
-			this.fieldType = fieldType;
-			this.belongedClassNameOfField = belongedClassNameOfField;
-			this.nameOfBelongedClassObjectOfField = nameOfBelongedClassObjectOfField;
-			this.fieldSourceLineNr = fieldSourceLineNr;
-			this.behavior = behavior;
-		}
-
-		public String getFieldName() {
-			return fieldName;
-		}
-
-		public String getFieldType() {
-			return fieldType;
-		}
-
-		public int getFieldLineNumber() {
-			return fieldSourceLineNr;
-		}
-
-		public CtBehavior getCtBehavior() {
-			return behavior;
-		}
-
-		public String getBelongedClassNameOfField() {
-			return belongedClassNameOfField;
-		}
-
-		public String getNameOfBelongedClassObjectOfField() {
-			return nameOfBelongedClassObjectOfField;
-		}
-	}
+	// /**
+	// * Stores information of a field which can be written for instrumentation
+	// * after their collection.
+	// *
+	// * @author Lina Tran
+	// *
+	// */
+	// private class Field {
+	//
+	// public String fieldName;
+	// public String fieldType;
+	// public String belongedClassNameOfField; // package.Person
+	// public String nameOfBelongedClassObjectOfField; // Person p; p.a : p
+	//
+	// public int fieldSourceLineNr;
+	// public int pos;
+	// public int posAfterAssignment;
+	// public CtBehavior behavior;
+	//
+	// // object_filed
+	// public String localVariableOrField_field;
+	// public String objectName_field;
+	// public String fieldType_field;
+	// public String fieldBelongedClassName_field;
+	//
+	// boolean isStatic;
+	//
+	// public Field(String fieldName, String fieldType,
+	// String belongedClassNameOfField,
+	// String nameOfBelongedClassObjectOfField, int fieldSourceLineNr,
+	// int pos, int posAfterAssignment, CtBehavior behavior,
+	// boolean isStatic, String localVariableOrField_field,
+	// String objectName_field, String fieldType_field,
+	// String fieldBelongedClassName_field) {
+	//
+	// this.fieldName = fieldName;
+	// this.fieldType = fieldType;
+	// this.belongedClassNameOfField = belongedClassNameOfField;
+	// this.nameOfBelongedClassObjectOfField = nameOfBelongedClassObjectOfField;
+	// this.fieldSourceLineNr = fieldSourceLineNr;
+	// this.pos = pos;
+	// this.posAfterAssignment = posAfterAssignment;
+	// this.behavior = behavior;
+	// this.isStatic = isStatic;
+	//
+	// // object_field
+	// this.localVariableOrField_field = localVariableOrField_field;
+	// this.objectName_field = objectName_field;
+	// this.fieldType_field = fieldType_field;
+	// this.fieldBelongedClassName_field = fieldBelongedClassName_field;
+	// }
+	//
+	// public String getFieldName() {
+	// return fieldName;
+	// }
+	//
+	// public String getFieldType() {
+	// return fieldType;
+	// }
+	//
+	// public int getFieldLineNumber() {
+	// return fieldSourceLineNr;
+	// }
+	//
+	// public CtBehavior getCtBehavior() {
+	// return behavior;
+	// }
+	//
+	// public String getBelongedClassNameOfField() {
+	// return belongedClassNameOfField;
+	// }
+	//
+	// public String getNameOfBelongedClassObjectOfField() {
+	// return nameOfBelongedClassObjectOfField;
+	// }
+	// }
 
 }

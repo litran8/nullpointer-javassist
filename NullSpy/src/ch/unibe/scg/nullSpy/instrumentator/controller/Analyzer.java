@@ -15,6 +15,8 @@ import javassist.bytecode.CodeIterator;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
+import javassist.bytecode.analysis.ControlFlow.Block;
+import ch.unibe.scg.nullSpy.model.Variable;
 
 public abstract class Analyzer {
 	protected CtClass cc;
@@ -25,24 +27,53 @@ public abstract class Analyzer {
 		this.byteCodeAdapter = new ByteCodeAdapter();
 	}
 
-	protected void adaptByteCode(CtBehavior method, String variableName,
-			String belongedClassNameOfVariable, int variableLineNumber,
-			String variableType, String variableID)
+	// field
+	// adaptByteCode( _, _ , belongedClassNameOfField, _, _, "field", isStatic,
+	// _);
+	// }
+
+	// localVar
+	// adaptByteCode( _, _, null, _, _, "localVariable_" + localVarSlot, false,
+	// _);
+
+	// adaptByteCode(Variable var, )
+
+	protected void adaptByteCode(Variable var, String variableID)
 			throws CannotCompileException, NotFoundException, BadBytecode {
+		CtBehavior method = var.getBehavior();
 		// null if field is instantiated outside method
 		if (method != null) {
-			byteCodeAdapter.insertTestLineAfterVariableAssignment(method,
-					variableName, belongedClassNameOfVariable,
-					variableLineNumber, variableType, variableID);
+			byteCodeAdapter.insertTestLineAfterVariableAssignment(var,
+					variableID);
 		} else {
 			for (CtConstructor constructor : cc.getConstructors()) {
 				byteCodeAdapter
 						.insertTestLineAfterFieldInstantiatedOutSideMethod(
-								constructor, variableName, variableLineNumber,
-								variableType, variableID);
+								constructor, var, variableID);
 			}
 		}
 	}
+
+	// protected void adaptByteCode(CtBehavior method, String variableName,
+	// String belongedClassNameOfVariable, int variableLineNumber,
+	// String variableType, String variableID, boolean isStatic,
+	// int posAfterAsignment) throws CannotCompileException,
+	// NotFoundException, BadBytecode {
+	// // null if field is instantiated outside method
+	// if (method != null) {
+	// byteCodeAdapter.insertTestLineAfterVariableAssignment(method,
+	// variableName, belongedClassNameOfVariable,
+	// variableLineNumber, variableType, variableID, isStatic,
+	// posAfterAsignment);
+	// } else {
+	// for (CtConstructor constructor : cc.getConstructors()) {
+	// byteCodeAdapter
+	// .insertTestLineAfterFieldInstantiatedOutSideMethod(
+	// constructor, variableName, variableLineNumber,
+	// variableType, variableID);
+	// }
+	// }
+	// }
 
 	protected HashMap<Integer, Integer> getLineNumberTable(CtBehavior method) {
 		CodeAttribute codeAttribute = method.getMethodInfo().getCodeAttribute();
@@ -146,12 +177,11 @@ public abstract class Analyzer {
 
 		for (int j = 0; j < localVarTable.size(); j++) {
 			if (opString.matches(checkFor)) {
-				int i = getLocVarArraySlotAtStoring(codeIterator, pos);
+				int i = getLocVarArraySlot(codeIterator, pos);
 				LocalVariableTableEntry entry = localVarTable.get(j);
 				int k = entry.index;
-				int slot = getLocVarArraySlotAtStoring(codeIterator, pos);
-				if (entry.getIndex() == getLocVarArraySlotAtStoring(
-						codeIterator, pos)) {
+				int slot = getLocVarArraySlot(codeIterator, pos);
+				if (entry.getIndex() == getLocVarArraySlot(codeIterator, pos)) {
 					String varName = entry.varName;
 					int start = entry.startPc;
 					int length = entry.length;
@@ -163,7 +193,6 @@ public abstract class Analyzer {
 				}
 			}
 		}
-		System.out.println();
 		return res;
 	}
 
@@ -174,8 +203,7 @@ public abstract class Analyzer {
 	 * @param pos
 	 * @return slot/index of locVar in locVarArray
 	 */
-	private static int getLocVarArraySlotAtStoring(CodeIterator codeIterator,
-			int pos) {
+	protected static int getLocVarArraySlot(CodeIterator codeIterator, int pos) {
 		// check if locVar is stored in astore_0..._3 (one byte)
 		// if not it calculates the slot in which it stored by getting the
 		// number in the second byte (two bytes)
@@ -230,6 +258,28 @@ public abstract class Analyzer {
 			return varName;
 		}
 
+	}
+
+	protected Block getAimBlock(int pos, Block[] blocks) {
+		for (Block b : blocks) {
+			if (pos >= b.position() && pos <= (b.position() + b.length())) {
+				return b;
+			}
+		}
+		return null;
+	}
+
+	protected int getPosAfterAssignment(int pos, CodeIterator codeIterator,
+			String opCheck) throws BadBytecode {
+		codeIterator.move(pos);
+		while (codeIterator.hasNext()) {
+			int pc = codeIterator.next();
+			int op = codeIterator.byteAt(pc);
+			if (Mnemonic.OPCODE[op].matches(opCheck)) {
+				return codeIterator.next();
+			}
+		}
+		return 0;
 	}
 
 	/**
