@@ -321,14 +321,14 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		}
 
 		indirectFieldObject = new IndirectFieldObject(objectName_field,
-				objectType_field, objectBelongedClassName_field);
+				objectType_field, objectBelongedClassName_field, opCode_field);
 
 		String fieldType = field.getSignature();
 		String fieldBelongedClassName = field.getClassName();
 
 		fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
 				fieldBelongedClassName, fieldLineNumber, pos,
-				posAfterAssignment, behavior, field.isStatic(), opCode_field,
+				posAfterAssignment, behavior, field.isStatic(),
 				indirectFieldObject));
 	}
 
@@ -390,7 +390,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// if field is initiated outside a method -> method is null
 		fieldIsWritterInfoList.add(new Field(fieldName, fieldType,
 				fieldBelongedClassName, fieldLineNr, pos, posAfterAssignment,
-				behavior, field.isStatic(), opCode, null));
+				behavior, field.isStatic(), null));
 	}
 
 	private boolean isFieldFromCurrentCtClass(FieldAccess field)

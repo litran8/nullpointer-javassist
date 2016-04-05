@@ -37,27 +37,28 @@ public class NullDisplayer {
 			}
 
 			printNullLink(className, lineNumber, variableName);
-		} else {
-			if (fieldOrLocalVariableID.equals("field")) {
-				for (int i = fieldList.size() - 1; i >= 0; i--) {
-					Field f = fieldList.get(i);
-					if (f.getFieldName().equals(variableName)
-							&& f.getFieldType().equals(variableType)
-							&& f.getClassName().equals(className)) {
-						fieldList.remove(i);
-					}
-				}
-			} else {
-				for (int i = localVariableList.size() - 1; i >= 0; i--) {
-					LocalVariable lv = localVariableList.get(i);
-					if (lv.getMethodName().equals(methodName)
-							&& lv.getClassName().equals(className)
-							&& lv.getFieldName().equals(variableName)) {
-						localVariableList.remove(i);
-					}
-				}
-			}
 		}
+		// else {
+		// if (fieldOrLocalVariableID.equals("field")) {
+		// for (int i = fieldList.size() - 1; i >= 0; i--) {
+		// Field f = fieldList.get(i);
+		// if (f.getFieldName().equals(variableName)
+		// && f.getFieldType().equals(variableType)
+		// && f.getClassName().equals(className)) {
+		// fieldList.remove(i);
+		// }
+		// }
+		// } else {
+		// for (int i = localVariableList.size() - 1; i >= 0; i--) {
+		// LocalVariable lv = localVariableList.get(i);
+		// if (lv.getMethodName().equals(methodName)
+		// && lv.getClassName().equals(className)
+		// && lv.getFieldName().equals(variableName)) {
+		// localVariableList.remove(i);
+		// }
+		// }
+		// }
+		// }
 	}
 
 	private static void printNullLink(String className, int lineNr,

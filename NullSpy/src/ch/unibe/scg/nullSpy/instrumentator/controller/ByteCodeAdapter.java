@@ -11,7 +11,9 @@ import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.LineNumberAttribute;
+import javassist.bytecode.Opcode;
 import ch.unibe.scg.nullSpy.model.Field;
+import ch.unibe.scg.nullSpy.model.IndirectFieldObject;
 import ch.unibe.scg.nullSpy.model.Variable;
 
 public class ByteCodeAdapter {
@@ -45,6 +47,9 @@ public class ByteCodeAdapter {
 			CodeIterator iter = codeAttribute.iterator();
 
 			iter.insertEx(var.getPosAfterAssignment(), byteCode);
+
+			behavior.getMethodInfo().rebuildStackMap(
+					behavior.getDeclaringClass().getClassPool());
 
 			// method.insertAt(
 			// variableLineNumber + 1,
@@ -95,15 +100,37 @@ public class ByteCodeAdapter {
 
 		ConstPool cp = behavior.getMethodInfo2().getConstPool();
 		Bytecode testMethodByteCode = new Bytecode(cp);
-
+		String s = behavior.getName();
 		testMethodByteCode.addLdc(behavior.getDeclaringClass().getName());
 		testMethodByteCode.addLdc(behavior.getName());
 		if (variableID.equals("field")) {
 			if (!var.isStatic()) {
-				testMethodByteCode.addAload(0);
+				if (((Field) var).getIndirectFieldObject() == null) {
+					testMethodByteCode.addAload(0);
+				} else if (((Field) var).getIndirectFieldObject()
+						.getOpCode_field().matches("a{1,2}store.*")) {
+					String localVarOpCode = ((Field) var)
+							.getIndirectFieldObject().getOpCode_field();
+					int localVarSlot = ((Field) var).getIndirectFieldObject()
+							.getLocalVarSlot(localVarOpCode);
+					testMethodByteCode.addAload(localVarSlot);
+				} else {
+					testMethodByteCode.addAload(0);
+					IndirectFieldObject OBJECT_field = ((Field) var)
+							.getIndirectFieldObject();
+					testMethodByteCode.addGetfield(
+							OBJECT_field.getObjectBelongedClassName_field(),
+							OBJECT_field.getObjectName_field(),
+							OBJECT_field.getObjectType_field());
+				}
+				testMethodByteCode.addGetfield(varBelongedClassName, varName,
+						varType);
+			} else {
+				testMethodByteCode.addGetstatic(
+						((Field) var).getFieldBelongedClassName(),
+						var.getVarName(), var.getVarType());
 			}
-			testMethodByteCode.addGetfield(varBelongedClassName, varName,
-					varType);
+
 		} else {
 			String indexAsString = variableID.substring(
 					variableID.indexOf("_") + 1, variableID.length());
@@ -111,17 +138,21 @@ public class ByteCodeAdapter {
 			testMethodByteCode.addAload(index);
 		}
 
-		testMethodByteCode.add32bit(var.getVarLineNr());
+		testMethodByteCode.addOpcode(Opcode.BIPUSH);
+		testMethodByteCode.addOpcode(var.getVarLineNr());
 		testMethodByteCode.addLdc(varName);
 		testMethodByteCode.addLdc(varType);
 		testMethodByteCode.addLdc(variableID);
+
 		CtClass nullDisplayer = ClassPool.getDefault().get(
-				"ch.unibe.scg.nullspy.runtimeSupporter.NullDisplayer");
+				"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer");
 		CtClass str = ClassPool.getDefault().get("java.lang.String");
 		CtClass object = ClassPool.getDefault().get("java.lang.Object");
+
 		testMethodByteCode.addInvokestatic(nullDisplayer, "test",
 				CtClass.voidType, new CtClass[] { str, str, object,
 						CtClass.intType, str, str, str });
+
 		byte[] byteCode = testMethodByteCode.get();
 		return byteCode;
 	}
@@ -201,11 +232,19 @@ public class ByteCodeAdapter {
 
 	private String getTestMethodAsString(CtBehavior behavior, Variable var,
 			String variableID) {
-		return "ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
-				+ behavior.getDeclaringClass().getName() + "\",\""
-				+ behavior.getName() + "\"," + var.getVarName() + ","
-				+ var.getVarLineNr() + ",\"" + var.getVarName() + "\", \""
+		String s = "ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test( \""
+				+ behavior.getDeclaringClass().getName()
+				+ "\",\""
+				+ behavior.getName()
+				+ "\","
+				+ var.getVarName()
+				+ ","
+				+ var.getVarLineNr()
+				+ ",\""
+				+ var.getVarName()
+				+ "\", \""
 				+ var.getVarType() + "\", \"" + variableID + "\");";
+		return s;
 	}
 
 	// public void insertTestLineAfterVariableAssignment(CtBehavior method,

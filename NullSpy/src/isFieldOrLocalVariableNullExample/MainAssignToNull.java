@@ -24,7 +24,7 @@ public class MainAssignToNull {
 		Object d2 = null;
 		d = d2;
 
-		Person p = new Person();
+		Person p = new Person(); // here
 		o = new Person();
 		Person p2 = (Person) Person.say();
 		p.a = null; // aload, aconst, putfield Person.a
@@ -33,7 +33,7 @@ public class MainAssignToNull {
 		o.o = null;
 		Person.o = null;// putstatic Person.o
 		a = Person.say();
-		d = Person.say();
+		d = Person.say(); // here
 		Object d3 = Person.say();
 		o = (Person) Person.say();
 		o = (Person) p.a;
@@ -77,7 +77,7 @@ public class MainAssignToNull {
 		p2 = (Person) nullObject.toNull(null);
 		// p2.print2();
 		// NullObject nO = (NullObject) NullObject.setToNullMethod(a, p);
-		nO = (NullObject) Person.say(); // p.say() works too, but not a good way
+		nO = (NullObject) Person.say(); // p.say() works too, but not a goodway
 		Object u = nullObject.setToNullMethod(a, p);
 		System.out.println("Method main ends.\n");
 

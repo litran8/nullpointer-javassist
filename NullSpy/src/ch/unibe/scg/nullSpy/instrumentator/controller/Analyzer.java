@@ -116,7 +116,7 @@ public abstract class Analyzer {
 				lineNumber = lineNumberMap.get((int) keys[targetListIndex - 1]);
 			}
 		}
-
+		System.out.println();
 		return lineNumber;
 	}
 

@@ -20,7 +20,7 @@ public class Variable {
 			int posAfterAssignment) {
 		this.varName = varName;
 		this.varLineNr = varLineNr;
-		this.varType = varType;
+		this.varType = varType.substring(1, varType.indexOf(";"));
 
 		this.isStatic = isStatic;
 
@@ -63,6 +63,10 @@ public class Variable {
 				+ varName
 				+ ", LineNr: "
 				+ varLineNr
+				+ ",\nPos: "
+				+ pos
+				+ ", PosAfter: "
+				+ posAfterAssignment
 				+ (behavior == null ? "" : ", Behavior: " + behavior.getName()
 						+ ", Class: " + behavior.getDeclaringClass().getName());
 		return s;
