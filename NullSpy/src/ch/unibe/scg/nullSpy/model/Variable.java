@@ -4,6 +4,8 @@ import javassist.CtBehavior;
 
 public class Variable {
 
+	protected String varID;
+
 	protected String varName;
 	protected int varLineNr;
 	protected String varType;
@@ -15,9 +17,11 @@ public class Variable {
 	protected int pos;
 	protected int posAfterAssignment;
 
-	public Variable(String varName, int varLineNr, String varType,
-			boolean isStatic, CtBehavior behavior, int pos,
+	public Variable(String varID, String varName, int varLineNr,
+			String varType, boolean isStatic, CtBehavior behavior, int pos,
 			int posAfterAssignment) {
+
+		this.varID = varID;
 		this.varName = varName;
 		this.varLineNr = varLineNr;
 		this.varType = varType.substring(1, varType.indexOf(";"));
@@ -28,6 +32,10 @@ public class Variable {
 
 		this.pos = pos;
 		this.posAfterAssignment = posAfterAssignment;
+	}
+
+	public String getVarID() {
+		return varID;
 	}
 
 	public String getVarName() {

@@ -7,12 +7,12 @@ public class LocalVar extends Variable {
 	private int localVarTableIndex;
 	private int localVarSlot;
 
-	public LocalVar(String localVarName, int localVarLineNr,
+	public LocalVar(String varID, String localVarName, int localVarLineNr,
 			String localVarType, int pos, int posAfterAssignment,
 			CtBehavior behavior, int localVarTableIndex, int localVarSlot) {
 
-		super(localVarName, localVarLineNr, localVarType, false, behavior, pos,
-				posAfterAssignment);
+		super(varID, localVarName, localVarLineNr, localVarType, false,
+				behavior, pos, posAfterAssignment);
 
 		this.localVarTableIndex = localVarTableIndex;
 		this.localVarSlot = localVarSlot;

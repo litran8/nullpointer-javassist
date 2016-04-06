@@ -27,53 +27,20 @@ public abstract class Analyzer {
 		this.byteCodeAdapter = new ByteCodeAdapter();
 	}
 
-	// field
-	// adaptByteCode( _, _ , belongedClassNameOfField, _, _, "field", isStatic,
-	// _);
-	// }
-
-	// localVar
-	// adaptByteCode( _, _, null, _, _, "localVariable_" + localVarSlot, false,
-	// _);
-
-	// adaptByteCode(Variable var, )
-
-	protected void adaptByteCode(Variable var, String variableID)
-			throws CannotCompileException, NotFoundException, BadBytecode {
+	protected void adaptByteCode(Variable var) throws CannotCompileException,
+			NotFoundException, BadBytecode {
 		CtBehavior method = var.getBehavior();
 		// null if field is instantiated outside method
 		if (method != null) {
-			byteCodeAdapter.insertTestLineAfterVariableAssignment(var,
-					variableID);
+			byteCodeAdapter.insertTestLineAfterVariableAssignment(var);
 		} else {
 			for (CtConstructor constructor : cc.getConstructors()) {
 				byteCodeAdapter
 						.insertTestLineAfterFieldInstantiatedOutSideMethod(
-								constructor, var, variableID);
+								constructor, var);
 			}
 		}
 	}
-
-	// protected void adaptByteCode(CtBehavior method, String variableName,
-	// String belongedClassNameOfVariable, int variableLineNumber,
-	// String variableType, String variableID, boolean isStatic,
-	// int posAfterAsignment) throws CannotCompileException,
-	// NotFoundException, BadBytecode {
-	// // null if field is instantiated outside method
-	// if (method != null) {
-	// byteCodeAdapter.insertTestLineAfterVariableAssignment(method,
-	// variableName, belongedClassNameOfVariable,
-	// variableLineNumber, variableType, variableID, isStatic,
-	// posAfterAsignment);
-	// } else {
-	// for (CtConstructor constructor : cc.getConstructors()) {
-	// byteCodeAdapter
-	// .insertTestLineAfterFieldInstantiatedOutSideMethod(
-	// constructor, variableName, variableLineNumber,
-	// variableType, variableID);
-	// }
-	// }
-	// }
 
 	protected HashMap<Integer, Integer> getLineNumberTable(CtBehavior method) {
 		CodeAttribute codeAttribute = method.getMethodInfo().getCodeAttribute();
@@ -108,15 +75,10 @@ public abstract class Analyzer {
 		// if for storing a variable needs more than 1 line, it "calculates" the
 		// last line which storing needs
 		for (int i = targetListIndex - 1; i >= 0; i--) {
-			// if (lineNumberMap.get((int) keys[i]) == lineNumber) {
-			// lineNumber = lineNumberMap.get((int) keys[targetListIndex -
-			// 1]);
-			// }
 			if (lineNumberMap.get((int) keys[i]) > lineNumber) {
 				lineNumber = lineNumberMap.get((int) keys[targetListIndex - 1]);
 			}
 		}
-		System.out.println();
 		return lineNumber;
 	}
 
@@ -210,17 +172,17 @@ public abstract class Analyzer {
 
 		int op = codeIterator.byteAt(pos);
 		String opString = Mnemonic.OPCODE[op];
-		// String astoreInstruction =
-		// javassist.bytecode.InstructionPrinter.instructionString(codeIterator,
-		// pos, c)
 
 		if (!(opString.matches("astore") || opString.matches("aload")))
+			// astore_X || aload_X
 			return Integer.parseInt(opString.substring(opString.length() - 1,
 					opString.length()));
 		else if (opString.matches("aload.*")) {
+			// aload X
 			int i = codeIterator.u16bitAt(pos);
 			return codeIterator.u16bitAt(pos) - 6400;
 		} else {
+			// astore X
 			int i = codeIterator.u16bitAt(pos);
 			return codeIterator.u16bitAt(pos) - 14848;
 		}
@@ -258,6 +220,11 @@ public abstract class Analyzer {
 			return varName;
 		}
 
+		public String toString() {
+			String s = "VarName: " + varName + " Index: " + index
+					+ "\nStartPc: " + startPc + ", EndPc" + (startPc + length);
+			return s;
+		}
 	}
 
 	protected Block getAimBlock(int pos, Block[] blocks) {
@@ -282,26 +249,4 @@ public abstract class Analyzer {
 		return 0;
 	}
 
-	/**
-	 * Gets the slot/index of locVar in locVarArray of frame.
-	 * 
-	 * @param codeIterator
-	 * @param pos
-	 * @return slot/index of locVar in locVarArray
-	 */
-	// private static int getLocVarArraySlotAtLoading(CodeIterator codeIterator,
-	// int pos) {
-	// // check if locVar is stored in astore_0..._3 (one byte)
-	// // if not it calculates the slot in which it stored by getting the
-	// // number in the second byte (two bytes)
-	//
-	// int op = codeIterator.byteAt(pos);
-	// String opString = Mnemonic.OPCODE[op];
-	//
-	// if (!opString.matches("aload"))
-	// return Integer.parseInt(opString.substring(opString.length() - 1,
-	// opString.length()));
-	// else
-	// return codeIterator.u16bitAt(pos) - 14848;
-	// }
 }

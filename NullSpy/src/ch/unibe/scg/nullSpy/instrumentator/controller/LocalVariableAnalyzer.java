@@ -62,8 +62,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			LineNumberAttribute lineNumberTable = (LineNumberAttribute) codeAttribute
 					.getAttribute(LineNumberAttribute.tag);
 
-			int i = lineNumberTable.tableLength();
-
 			ExceptionTable exceptionTable = codeAttribute.getExceptionTable();
 
 			codeIterator.begin();
@@ -124,8 +122,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			int pos = codeIterator.next();
 			instrPositions.add(pos);
-			// System.out.println(InstructionPrinter.instructionString(
-			// codeIterator, pos, method.getMethodInfo2().getConstPool()));
 
 			int op = codeIterator.byteAt(pos);
 
@@ -144,40 +140,31 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 				// .getConstPool()));
 				Printer p = new Printer();
 				p.printMethod(method, pos);
-				// System.out.println(cc.getName());
-				// System.out.println(method.getName());
-				// System.out.println(javassist.bytecode.InstructionPrinter
-				// .instructionString(codeIterator, pos, method
-				// .getMethodInfo2().getConstPool()));
 
 				int localVarTableIndex = getLocVarIndexInLocVarTable(
 						codeIterator, localVariableList, pos, "astore.*");
 				String localVarName = localVariableList.get(localVarTableIndex).varName;
+
 				int lineNr2 = lineNumberTable.toLineNumber(pos);
 				int localVarLineNr = getLineNumber(lineNumberMap, pos);
+
 				String localVarType = localVariableList.get(localVarTableIndex).varType;
+
 				int localVarSlot = localVariableList.get(localVarTableIndex).index;
-				//
-				// System.out.println(localVarName);
-				// System.out.println(localVarLineNr);
-				// System.out.println();
+				String varID = "localVariable_" + localVarSlot;
+
 				int posAfter = codeIterator.next();
 
-				LocalVar localVar = new LocalVar(localVarName, localVarLineNr,
-						localVarType, pos, posAfter, method,
+				LocalVar localVar = new LocalVar(varID, localVarName,
+						localVarLineNr, localVarType, pos, posAfter, method,
 						localVarTableIndex, localVarSlot);
 
 				localVarList.add(localVar);
 
-				adaptByteCode(localVar, "localVariable_" + localVarSlot);
-
-				// adaptByteCode(method, localVarName, null, localVarLineNr,
-				// localVarType, "localVariable_" + localVarSlot, false,
-				// codeIterator.next());
+				adaptByteCode(localVar);
 
 				codeAttribute = method.getMethodInfo().getCodeAttribute();
 
-				// if (codeAttribute != null) {
 				codeIterator = codeAttribute.iterator();
 
 				p.printMethod(method, 0);

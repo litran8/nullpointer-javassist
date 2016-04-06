@@ -36,6 +36,7 @@ public class MainAssignToNull {
 		d = Person.say(); // here
 		Object d3 = Person.say();
 		o = (Person) Person.say();
+		o = null;
 		o = (Person) p.a;
 		o = (Person) p.o;
 

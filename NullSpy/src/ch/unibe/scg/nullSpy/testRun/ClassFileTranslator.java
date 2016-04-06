@@ -1,6 +1,8 @@
 package ch.unibe.scg.nullSpy.testRun;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -8,8 +10,11 @@ import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.Translator;
 import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
+import ch.unibe.scg.nullSpy.model.Variable;
 
 public class ClassFileTranslator implements Translator {
+
+	public static final List<Variable> BYTECODE_INSTRUMENTATION_LIST = new ArrayList<>();
 
 	private ClassAdapter classAdapter = ClassAdapter.getInstance();
 	private HashMap<String, CtClass> analyzedClasses = new HashMap<String, CtClass>();

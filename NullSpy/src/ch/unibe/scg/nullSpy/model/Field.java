@@ -17,13 +17,13 @@ public class Field extends Variable {
 
 	private IndirectFieldObject indirectFieldObject;
 
-	public Field(String fieldName, String fieldType,
+	public Field(String varID, String fieldName, String fieldType,
 			String fieldBelongedClassName, int fieldSourceLineNr, int pos,
 			int posAfterAssignment, CtBehavior behavior, boolean isStatic,
 			IndirectFieldObject indirectFieldObject) {
 
-		super(fieldName, fieldSourceLineNr, fieldType, isStatic, behavior, pos,
-				posAfterAssignment);
+		super(varID, fieldName, fieldSourceLineNr, fieldType, isStatic,
+				behavior, pos, posAfterAssignment);
 
 		this.fieldBelongedClassName = fieldBelongedClassName;
 
