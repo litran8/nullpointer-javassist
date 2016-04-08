@@ -24,7 +24,7 @@ public class Variable {
 		this.varID = varID;
 		this.varName = varName;
 		this.varLineNr = varLineNr;
-		this.varType = varType.substring(1, varType.indexOf(";"));
+		this.varType = varType;
 
 		this.isStatic = isStatic;
 

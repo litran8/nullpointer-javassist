@@ -58,7 +58,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					.getAttribute(LocalVariableAttribute.tag);
 			ArrayList<LocalVariableTableEntry> localVariableList = getStableLocalVariableTableAsList(localVariableTable);
 
-			HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
+			HashMap<Integer, Integer> lineNumberMap = getLineNumberMap(method);
 			LineNumberAttribute lineNumberTable = (LineNumberAttribute) codeAttribute
 					.getAttribute(LineNumberAttribute.tag);
 
@@ -131,7 +131,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 						.getAttribute(LocalVariableAttribute.tag);
 				localVariableList = getStableLocalVariableTableAsList(localVariableTable);
 
-				lineNumberMap = getLineNumberTable(method);
+				lineNumberMap = getLineNumberMap(method);
 				lineNumberTable = (LineNumberAttribute) codeAttribute
 						.getAttribute(LineNumberAttribute.tag);
 

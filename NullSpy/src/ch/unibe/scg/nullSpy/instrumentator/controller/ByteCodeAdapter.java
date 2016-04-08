@@ -28,23 +28,30 @@ public class ByteCodeAdapter {
 		CodeAttribute codeAttribute = behavior.getMethodInfo()
 				.getCodeAttribute();
 
-		if (insertedLineNumber == varLineNr + 1) {
-			behavior.insertAt(varLineNr + 1,
-					getTestMethodAsString(behavior, var));
-		} else {
+		// if (insertedLineNumber == varLineNr + 1) {
+		// Printer p = new Printer();
+		// p.printMethod(behavior, 0);
+		// behavior.insertAt(varLineNr + 1,
+		// getTestMethodAsString(behavior, var));
+		// } else {
+		// Printer p = new Printer();
+		// p.printMethod(behavior, 0);
+		byte[] byteCode = getInsertCodeByteArray(var);
 
-			byte[] byteCode = getInsertCodeByteArray(var);
+		CodeIterator iter = codeAttribute.iterator();
+		iter.move(var.getPos());
+		iter.next();
 
-			CodeIterator iter = codeAttribute.iterator();
+		iter.insert(byteCode);
 
-			iter.insertEx(var.getPosAfterAssignment(), byteCode);
+		// iter.insertEx(var.getPosAfterAssignment(), byteCode);
 
-			// behavior.getMethodInfo().rebuildStackMap(
-			// behavior.getDeclaringClass().getClassPool());
-			behavior.getMethodInfo().rebuildStackMapIf6(
-					behavior.getDeclaringClass().getClassPool(),
-					behavior.getDeclaringClass().getClassFile2());
-		}
+		// behavior.getMethodInfo().rebuildStackMap(
+		// behavior.getDeclaringClass().getClassPool());
+		behavior.getMethodInfo().rebuildStackMapIf6(
+				behavior.getDeclaringClass().getClassPool(),
+				behavior.getDeclaringClass().getClassFile2());
+		// }
 
 	}
 
@@ -98,7 +105,7 @@ public class ByteCodeAdapter {
 				if (((Field) var).getIndirectFieldObject() == null) {
 					testMethodByteCode.addAload(0);
 				} else if (((Field) var).getIndirectFieldObject()
-						.getOpCode_field().matches("a{1,2}store.*")) {
+						.getOpCode_field().matches("a{1,2}load.*")) {
 					String localVarOpCode = ((Field) var)
 							.getIndirectFieldObject().getOpCode_field();
 					int localVarSlot = ((Field) var).getIndirectFieldObject()

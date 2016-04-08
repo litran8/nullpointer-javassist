@@ -16,6 +16,7 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.analysis.ControlFlow.Block;
+import ch.unibe.scg.nullSpy.model.PcLine;
 import ch.unibe.scg.nullSpy.model.Variable;
 
 public abstract class Analyzer {
@@ -42,7 +43,7 @@ public abstract class Analyzer {
 		}
 	}
 
-	protected HashMap<Integer, Integer> getLineNumberTable(CtBehavior method) {
+	protected HashMap<Integer, Integer> getLineNumberMap(CtBehavior method) {
 		CodeAttribute codeAttribute = method.getMethodInfo().getCodeAttribute();
 		LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttribute
 				.getAttribute(LineNumberAttribute.tag);
@@ -54,6 +55,21 @@ public abstract class Analyzer {
 					.put(lineNrTable.startPc(j), lineNrTable.lineNumber(j));
 		}
 		return lineNumberMap;
+	}
+
+	protected ArrayList<PcLine> getSortedLineNrMapAsList(
+			HashMap<Integer, Integer> lineNumberMap) {
+		Object[] keys = lineNumberMap.keySet().toArray();
+		Arrays.sort(keys);
+
+		ArrayList<PcLine> res = new ArrayList<>();
+
+		for (int i = 0; i < keys.length; i++) {
+			res.add(new PcLine((int) keys[i], lineNumberMap.get(keys[i])));
+		}
+
+		return res;
+
 	}
 
 	protected int getLineNumber(HashMap<Integer, Integer> lineNumberMap, int pos) {

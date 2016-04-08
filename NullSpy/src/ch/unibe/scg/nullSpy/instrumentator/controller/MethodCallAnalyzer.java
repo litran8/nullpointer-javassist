@@ -37,7 +37,7 @@ public class MethodCallAnalyzer extends Analyzer {
 
 			LineNumberAttribute lineNumberTable = (LineNumberAttribute) codeAttribute
 					.getAttribute(LineNumberAttribute.tag);
-			HashMap<Integer, Integer> lineNumberMap = getLineNumberTable(method);
+			HashMap<Integer, Integer> lineNumberMap = getLineNumberMap(method);
 
 			checkMethodCall(method, codeIterator, localVariableTableAsList,
 					lineNumberMap, lineNumberTable);
