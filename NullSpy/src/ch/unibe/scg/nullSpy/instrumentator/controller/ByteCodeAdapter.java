@@ -101,17 +101,32 @@ public class ByteCodeAdapter {
 		testMethodByteCode.addLdc(behavior.getDeclaringClass().getName());
 		testMethodByteCode.addLdc(behavior.getName());
 		if (varID.equals("field")) {
+
+			// FIELD
 			if (!var.isStatic()) {
+
+				// not static
 				if (((Field) var).getIndirectFieldObject() == null) {
+
+					// direct field: this.f
+					// aload_0, getfield
 					testMethodByteCode.addAload(0);
+
 				} else if (((Field) var).getIndirectFieldObject()
 						.getOpCode_field().matches("a{1,2}load.*")) {
+
+					// indirect field: localVar.f
+					// aload_X, getfield
 					String localVarOpCode = ((Field) var)
 							.getIndirectFieldObject().getOpCode_field();
 					int localVarSlot = ((Field) var).getIndirectFieldObject()
 							.getLocalVarSlot(localVarOpCode);
 					testMethodByteCode.addAload(localVarSlot);
+
 				} else {
+
+					// indirect field: this.field.f
+					// aload_0, getfield, getfield
 					testMethodByteCode.addAload(0);
 					IndirectFieldObject OBJECT_field = ((Field) var)
 							.getIndirectFieldObject();
@@ -119,16 +134,25 @@ public class ByteCodeAdapter {
 							OBJECT_field.getObjectBelongedClassName_field(),
 							OBJECT_field.getObjectName_field(),
 							OBJECT_field.getObjectType_field());
+
 				}
+
 				testMethodByteCode.addGetfield(varBelongedClassName, varName,
 						varType);
+
 			} else {
+
+				// static field
+				// getstatic
 				testMethodByteCode.addGetstatic(
 						((Field) var).getFieldBelongedClassName(),
 						var.getVarName(), var.getVarType());
 			}
 
 		} else {
+
+			// LOCAL VAR
+			// aload_X
 			String indexAsString = varID.substring(varID.indexOf("_") + 1,
 					varID.length());
 			int index = Integer.parseInt(indexAsString);

@@ -4,8 +4,19 @@ public class Main2 {
 	private Object obj = null;
 	private PrivateClass thisPrivateClassField;
 	private Person pers;
+	private String s;
+
+	public void setString(String s, String s2) {
+		String t = "gla" + "bla";
+		this.s = "gla";
+	}
+
+	public Object getObject(Object param) {
+		return obj;
+	}
 
 	public void testStackMapTable() {
+		setString("bla", "bla");
 		Object o = null;
 		Object o2;
 		int i = 1;

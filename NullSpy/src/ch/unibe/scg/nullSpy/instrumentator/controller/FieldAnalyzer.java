@@ -57,6 +57,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				if (field.isWriter()) {
 					try {
 						Variable var = null;
+						System.out.println();
 						if (fieldIsNotPrimitive(field)) {
 							// check if field is instantiated outside, not in
 							// method nor constructor
@@ -79,6 +80,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 									var = storeFieldInitiatedOutsideMethod(field);
 								}
 							} else {
+								System.out.println();
 								CtMethod method = cc.getDeclaredMethod(field
 										.where().getMethodInfo().getName());
 
@@ -168,7 +170,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	private boolean isFieldInstantiatedInConstructor(FieldAccess field)
 			throws BadBytecode {
 		boolean inConstructor = isInMethodOrConstructorBody(field,
-				cc.getConstructors());
+				cc.getDeclaredConstructors());
 
 		return inConstructor;
 	}
@@ -184,7 +186,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	 */
 	private boolean isFieldInstantiatedInMethod(FieldAccess field)
 			throws NotFoundException, BadBytecode {
-		boolean inMethod = isInMethodOrConstructorBody(field, cc.getMethods());
+		boolean inMethod = isInMethodOrConstructorBody(field,
+				cc.getDeclaredMethods());
 
 		return inMethod;
 	}
@@ -234,6 +237,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 	private Variable storeFieldInitiatedOutsideMethod(FieldAccess field)
 			throws NotFoundException, BadBytecode {
+		System.out.println();
 		return storeFieldOfCurrentClass(field, null);
 	}
 
@@ -298,7 +302,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			boolean isfieldStatic_field = false;
 
 			if (Mnemonic.OPCODE[op].matches("aload.*")) {
-				// localVar_field
+				// localVar.field
 				// store locVar e.g. p.a -> get p
 				int localVarTableIndex = 0;
 
@@ -307,14 +311,14 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				int locVarSlot = getLocVarArraySlot(codeIterator, pos);
 				opCode_field = "aload_" + locVarSlot;
 
-				// localVarName_field
+				// localVarName.field
 				objectName_field = localVariableTableList
 						.get(localVarTableIndex).varName;
 				objectType_field = localVariableTableList
 						.get(localVarTableIndex).varType;
 
 			} else {
-				// field_field
+				// field.field
 				String instruction = InstructionPrinter.instructionString(
 						codeIterator, pos, field.where().getMethodInfo2()
 								.getConstPool());
@@ -333,43 +337,45 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				// variableName, variableType);
 			}
 
-			if (isAnotherClassAnInnerClass && objectName_field.equals("this")) {
-				// innerClass: this.
-				codeIterator.move(pos);
-				codeIterator.next();
-				int innerClassGetFieldPos = codeIterator.next();
-				int index = codeIterator.u16bitAt(innerClassGetFieldPos + 1);
+			// if (isAnotherClassAnInnerClass &&
+			// objectName_field.equals("this")) {
+			// // innerClass: this.innerClassField.field
+			// codeIterator.move(pos);
+			// codeIterator.next();
+			// int innerClassGetFieldPos = codeIterator.next();
+			// int index = codeIterator.u16bitAt(innerClassGetFieldPos + 1);
+			//
+			// // innerClassField_field
+			// innerClassFieldName = behavior.getMethodInfo2().getConstPool()
+			// .getFieldrefName(index);
+			// fieldName = objectName_field + "." + innerClassFieldName + "."
+			// + field.getFieldName();
+			// } else {
+			// fieldName = objectName_field + "." + field.getFieldName();
+			// }
+			//
+			// if (opCode_field.matches("get.*") && !isfieldStatic_field) {
+			// fieldName = "this." + fieldName;
+			// }
 
-				// innerClassField_field
-				innerClassFieldName = behavior.getMethodInfo2().getConstPool()
-						.getFieldrefName(index);
-				fieldName = objectName_field + "." + innerClassFieldName + "."
-						+ field.getFieldName();
-			} else {
-				fieldName = objectName_field + "." + field.getFieldName();
-			}
-
-			if (opCode_field.matches("get.*") && !isfieldStatic_field) {
-				fieldName = "this." + fieldName;
-			}
-
-		} else {
-			fieldName = field.getClassName() + "." + field.getFieldName();
 		}
+		// else {
+		// fieldName = field.getClassName() + "." + field.getFieldName();
+		// }
 
 		indirectFieldObject = new IndirectFieldObject(objectName_field,
 				objectType_field, objectBelongedClassName_field, opCode_field);
 
 		String fieldType = field.getSignature();
 		String fieldBelongedClassName = field.getClassName();
-
-		fieldIsWritterInfoList.add(new Field("field", fieldName, fieldType,
+		pos = posAfterAssignment;
+		Field var = new Field("field", fieldName, fieldType,
 				fieldBelongedClassName, fieldLineNr, pos, posAfterAssignment,
-				behavior, field.isStatic(), indirectFieldObject));
+				behavior, field.isStatic(), indirectFieldObject);
 
-		return new Field("field", fieldName, fieldType, fieldBelongedClassName,
-				fieldLineNr, pos, posAfterAssignment, behavior,
-				field.isStatic(), indirectFieldObject);
+		fieldIsWritterInfoList.add(var);
+
+		return var;
 	}
 
 	private boolean isAnotherClassAnInnerClass(FieldAccess field)
@@ -422,6 +428,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 					.getAttribute(LineNumberAttribute.tag);
 			int startPos = getInstrStartPos(field, pos);
 			fieldLineNr = lineNrAttr.toLineNumber(startPos);
+			System.out.println();
 
 			posAfterAssignment = getPosAfterAssignment(pos, codeIterator,
 					"put.*");
@@ -441,16 +448,19 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// instrument
 		// directly doesn't work here...
 		// if field is initiated outside a method -> method is null
-		fieldIsWritterInfoList.add(new Field("field", fieldName, fieldType,
+
+		Field var = new Field("field", fieldName, fieldType,
 				fieldBelongedClassName, fieldLineNr, pos, posAfterAssignment,
-				behavior, field.isStatic(), null));
-		return new Field("field", fieldName, fieldType, fieldBelongedClassName,
-				fieldLineNr, pos, posAfterAssignment, behavior,
-				field.isStatic(), null);
+				behavior, field.isStatic(), null);
+		fieldIsWritterInfoList.add(var);
+		return var;
 	}
 
-	private int getInstrStartPos(FieldAccess field, int pos) {
+	private int getInstrStartPos(FieldAccess field, int pos) throws BadBytecode {
+		int res = 0;
 		CtBehavior behavior = field.where();
+		CodeIterator iter = behavior.getMethodInfo().getCodeAttribute()
+				.iterator();
 		HashMap<Integer, Integer> lineNrMap = getLineNumberMap(behavior);
 		ArrayList<PcLine> sortedLineNrMapAsList = getSortedLineNrMapAsList(lineNrMap);
 
@@ -459,17 +469,46 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		for (int i = 0; i < keys.length; i++) {
 			if ((int) keys[i] > pos) {
-				return (int) keys[i - 1];
+				res = (int) keys[i - 1];
+
+				Variable lastVar = fieldIsWritterInfoList
+						.get(fieldIsWritterInfoList.size() - 1);
+				iter.move(lastVar.getPos());
+				iter.next();
+				int nextPosAfterLastVar = iter.next();
+
+				if (iter.hasNext() && isSameBehavior(field, lastVar)
+						&& nextPosAfterLastVar == res) {
+					int op = iter.byteAt(res);
+					String instr = Mnemonic.OPCODE[op];
+					if (instr.matches("ldc.*")) {
+
+						while (iter.hasNext()
+								&& !instr.matches("invokestatic.*")) {
+							nextPosAfterLastVar = iter.next();
+							op = iter.byteAt(nextPosAfterLastVar);
+							instr = Mnemonic.OPCODE[op];
+						}
+						res = iter.next();
+					}
+
+				}
+
+				return res;
 			}
 		}
 
-		return 0;
+		return res;
 	}
 
 	private int getPos(FieldAccess field) throws BadBytecode {
 		Variable lastVar = fieldIsWritterInfoList.get(fieldIsWritterInfoList
 				.size() - 1);
-		int pos = lastVar.getPos();
+
+		int pos = 0;
+		if (isSameBehavior(field, lastVar)) {
+			pos = lastVar.getPos();
+		}
 
 		CtBehavior behavior = field.where();
 		CodeAttribute attr = behavior.getMethodInfo().getCodeAttribute();
@@ -492,6 +531,15 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				behavior.getMethodInfo2().getConstPool()));
 
 		return pos;
+	}
+
+	private boolean isSameBehavior(FieldAccess field, Variable lastVar) {
+		return field.where().getName().equals(lastVar.getBehavior().getName())
+				&& field.where()
+						.getDeclaringClass()
+						.getName()
+						.equals(lastVar.getBehavior().getDeclaringClass()
+								.getName());
 	}
 
 	private boolean isFieldFromCurrentCtClass(FieldAccess field)
