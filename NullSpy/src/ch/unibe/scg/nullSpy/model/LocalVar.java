@@ -8,11 +8,11 @@ public class LocalVar extends Variable {
 	private int localVarSlot;
 
 	public LocalVar(String varID, String localVarName, int localVarLineNr,
-			String localVarType, int pos, int posAfterAssignment,
+			String localVarType, int storePos, int startPos, int afterPos,
 			CtBehavior behavior, int localVarTableIndex, int localVarSlot) {
 
 		super(varID, localVarName, localVarLineNr, localVarType, false,
-				behavior, pos, posAfterAssignment);
+				behavior, storePos, startPos, afterPos);
 
 		this.localVarTableIndex = localVarTableIndex;
 		this.localVarSlot = localVarSlot;
@@ -24,6 +24,10 @@ public class LocalVar extends Variable {
 
 	public int getLocalVarSlot() {
 		return localVarSlot;
+	}
+
+	public String toString() {
+		return super.toString();
 	}
 
 }

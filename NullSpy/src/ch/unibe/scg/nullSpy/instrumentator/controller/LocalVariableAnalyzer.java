@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import javassist.CannotCompileException;
+import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
@@ -74,7 +75,24 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			// calculates the time modified project uses
 			// addTimeToModifiedProject(method);
 			// }
+
+			Printer p = new Printer();
+
+			for (CtBehavior behavior : cc.getDeclaredBehaviors()) {
+				System.out.println();
+				System.out.println(behavior.getName());
+				p.printMethod(behavior, 0);
+			}
+
+			for (CtBehavior behavior : cc.getDeclaredConstructors()) {
+				System.out.println();
+				System.out.println(behavior.getName());
+				p.printMethod(behavior, 0);
+			}
+
+			System.out.println();
 		}
+
 	}
 
 	private void addTimeToModifiedProject(CtMethod method)
@@ -135,29 +153,24 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 				lineNumberTable = (LineNumberAttribute) codeAttribute
 						.getAttribute(LineNumberAttribute.tag);
 
-				// System.out.println(InstructionPrinter.instructionString(
-				// codeIterator, pos, method.getMethodInfo2()
-				// .getConstPool()));
-				Printer p = new Printer();
-				p.printMethod(method, pos);
-
-				int localVarTableIndex = getLocVarIndexInLocVarTable(
-						codeIterator, localVariableList, pos, "astore.*");
+				int localVarTableIndex = getLocalVarTableIndex(codeIterator,
+						localVariableList, pos, "astore.*");
 				String localVarName = localVariableList.get(localVarTableIndex).varName;
+				int startPos = localVariableList.get(localVarTableIndex).startPc;
 
-				int lineNr2 = lineNumberTable.toLineNumber(pos);
-				int localVarLineNr = getLineNumber(lineNumberMap, pos);
+				int localVarLineNr = lineNumberTable.toLineNumber(pos);
+				// int localVarLineNr = getLineNumber(lineNumberMap, pos);
 
 				String localVarType = localVariableList.get(localVarTableIndex).varType;
 
 				int localVarSlot = localVariableList.get(localVarTableIndex).index;
 				String varID = "localVariable_" + localVarSlot;
 
-				int posAfter = codeIterator.next();
+				int afterPos = codeIterator.next();
 
 				LocalVar localVar = new LocalVar(varID, localVarName,
-						localVarLineNr, localVarType, pos, posAfter, method,
-						localVarTableIndex, localVarSlot);
+						localVarLineNr, localVarType, pos, startPos, afterPos,
+						method, localVarTableIndex, localVarSlot);
 
 				localVarList.add(localVar);
 
@@ -167,11 +180,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 				codeIterator = codeAttribute.iterator();
 
-				p.printMethod(method, 0);
+				codeIterator.move(afterPos);
 
-				codeIterator.move(posAfter);
-				System.out
-						.println("\n------------------------------------------------------------------------------------------\n");
 				methodMaxPc = lineNumberTable.startPc(lineNumberTable
 						.tableLength() - 1);
 

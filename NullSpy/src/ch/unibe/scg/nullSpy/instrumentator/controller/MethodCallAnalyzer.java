@@ -79,7 +79,7 @@ public class MethodCallAnalyzer extends Analyzer {
 			if (opString.matches("aload.*")
 					&& (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <= methodMaxPc)) {
 				aloadsInInstructionsOfOneLine.add(pos);
-				int locVarIndexInLocVarTable = getLocVarIndexInLocVarTable(
+				int locVarIndexInLocVarTable = getLocalVarTableIndex(
 						codeIterator, localVariableTableAsList, pos, "aload.*");
 
 				// store locVar

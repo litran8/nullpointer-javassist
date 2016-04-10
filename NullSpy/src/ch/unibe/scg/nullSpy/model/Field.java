@@ -18,12 +18,12 @@ public class Field extends Variable {
 	private IndirectFieldObject indirectFieldObject;
 
 	public Field(String varID, String fieldName, String fieldType,
-			String fieldBelongedClassName, int fieldSourceLineNr, int pos,
-			int posAfterAssignment, CtBehavior behavior, boolean isStatic,
+			String fieldBelongedClassName, int fieldSourceLineNr, int storePos,
+			int startPos, int afterPos, CtBehavior behavior, boolean isStatic,
 			IndirectFieldObject indirectFieldObject) {
 
 		super(varID, fieldName, fieldSourceLineNr, fieldType, isStatic,
-				behavior, pos, posAfterAssignment);
+				behavior, storePos, startPos, afterPos);
 
 		this.fieldBelongedClassName = fieldBelongedClassName;
 
@@ -38,6 +38,10 @@ public class Field extends Variable {
 
 	public IndirectFieldObject getIndirectFieldObject() {
 		return indirectFieldObject;
+	}
+
+	public String toString() {
+		return super.toString();
 	}
 
 }

@@ -147,7 +147,7 @@ public abstract class Analyzer {
 	 * @param pos
 	 * @return index of locVar in locVarTable
 	 */
-	protected int getLocVarIndexInLocVarTable(CodeIterator codeIterator,
+	protected int getLocalVarTableIndex(CodeIterator codeIterator,
 			ArrayList<LocalVariableTableEntry> localVarTable, int pos,
 			String checkFor) {
 		int res = 0;

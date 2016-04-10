@@ -27,70 +27,52 @@ public class ByteCodeAdapter {
 
 		CodeAttribute codeAttribute = behavior.getMethodInfo()
 				.getCodeAttribute();
+		CodeIterator iter = codeAttribute.iterator();
 
-		// if (insertedLineNumber == varLineNr + 1) {
+		byte[] byteCode = getInsertCodeByteArray(var);
+
+		boolean insertInExpectedLineNr = insertedLineNumber == varLineNr + 1;
+
+		if (insertInExpectedLineNr) {
+			iter.move(var.getStorePos());
+			iter.next();
+
+			iter.insert(byteCode);
+
+		} else {
+			iter.insertEx(var.getAfterPos(), byteCode);
+		}
+
+		codeAttribute.computeMaxStack();
+		int maxLocals = codeAttribute.getMaxLocals();
+
 		// Printer p = new Printer();
 		// p.printMethod(behavior, 0);
+		// if (insertedLineNumber == varLineNr + 1) {
 		// behavior.insertAt(varLineNr + 1,
 		// getTestMethodAsString(behavior, var));
 		// } else {
-		// Printer p = new Printer();
-		// p.printMethod(behavior, 0);
-		byte[] byteCode = getInsertCodeByteArray(var);
-
-		CodeIterator iter = codeAttribute.iterator();
-		iter.move(var.getPos());
-		iter.next();
-
-		iter.insert(byteCode);
-
 		// iter.insertEx(var.getPosAfterAssignment(), byteCode);
+		// }
 
 		// behavior.getMethodInfo().rebuildStackMap(
 		// behavior.getDeclaringClass().getClassPool());
 		behavior.getMethodInfo().rebuildStackMapIf6(
 				behavior.getDeclaringClass().getClassPool(),
 				behavior.getDeclaringClass().getClassFile2());
-		// }
 
 	}
 
 	private byte[] getInsertCodeByteArray(Variable var)
 			throws NotFoundException {
 
-		// LOCAL VARIABLE
-		// 27 ldc <String "Main2"> [17]
-		// 29 ldc <String "testStackMapTable"> [17]
-		// 31 aload_1 [o]
-		// 32 bipush 16
-		// 34 ldc <String "o"> [18]
-		// 36 ldc <String "localVariable"> [20]
-		// 38 ldc <String "localVariable"> [20]
-		// 40 invokestatic
-		// ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test(java.lang.String,
-		// java.lang.String, java.lang.Object, int, java.lang.String,
-		// java.lang.String, java.lang.String) : void [22]
-
-		// FIELD
-		// 54 ldc <String "Main2"> [17]
-		// 56 ldc <String "testStackMapTable"> [19]
-		// 58 aload_0 [this]
-		// 59 getfield isFieldOrLocalVariableNullExample.Main2.obj :
-		// java.lang.Object [41]
-		// 62 bipush 21
-		// 64 ldc <String "obj"> [43]
-		// 66 ldc <String "object"> [44]
-		// 68 ldc <String "field"> [46]
-		// 70 invokestatic
-		// ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test(java.lang.String,
-		// java.lang.String, java.lang.Object, int, java.lang.String,
-		// java.lang.String, java.lang.String) : void [24]
-
 		CtBehavior behavior = var.getBehavior();
+
 		String varName = var.getVarName();
 		String varType = var.getVarType();
 		String varBelongedClassName = "";
 		String varID = var.getVarID();
+
 		if (varID.equals("field")) {
 			varBelongedClassName = ((Field) var).getFieldBelongedClassName();
 		}
@@ -100,6 +82,7 @@ public class ByteCodeAdapter {
 
 		testMethodByteCode.addLdc(behavior.getDeclaringClass().getName());
 		testMethodByteCode.addLdc(behavior.getName());
+
 		if (varID.equals("field")) {
 
 			// FIELD
@@ -175,7 +158,36 @@ public class ByteCodeAdapter {
 						CtClass.intType, str, str, str });
 
 		byte[] byteCode = testMethodByteCode.get();
+
 		return byteCode;
+
+		// LOCAL VARIABLE
+		// 27 ldc <String "Main2"> [17]
+		// 29 ldc <String "testStackMapTable"> [17]
+		// 31 aload_1 [o]
+		// 32 bipush 16
+		// 34 ldc <String "o"> [18]
+		// 36 ldc <String "localVariable"> [20]
+		// 38 ldc <String "localVariable"> [20]
+		// 40 invokestatic
+		// ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test(java.lang.String,
+		// java.lang.String, java.lang.Object, int, java.lang.String,
+		// java.lang.String, java.lang.String) : void [22]
+
+		// FIELD
+		// 54 ldc <String "Main2"> [17]
+		// 56 ldc <String "testStackMapTable"> [19]
+		// 58 aload_0 [this]
+		// 59 getfield isFieldOrLocalVariableNullExample.Main2.obj :
+		// java.lang.Object [41]
+		// 62 bipush 21
+		// 64 ldc <String "obj"> [43]
+		// 66 ldc <String "object"> [44]
+		// 68 ldc <String "field"> [46]
+		// 70 invokestatic
+		// ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test(java.lang.String,
+		// java.lang.String, java.lang.Object, int, java.lang.String,
+		// java.lang.String, java.lang.String) : void [24]
 	}
 
 	public void insertTestLineAfterFieldInstantiatedOutSideMethod(

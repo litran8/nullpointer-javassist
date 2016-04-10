@@ -14,12 +14,13 @@ public class Variable {
 
 	protected CtBehavior behavior;
 
-	protected int pos;
-	protected int posAfterAssignment;
+	protected int startPos;
+	protected int storePos;
+	protected int afterPos;
 
 	public Variable(String varID, String varName, int varLineNr,
-			String varType, boolean isStatic, CtBehavior behavior, int pos,
-			int posAfterAssignment) {
+			String varType, boolean isStatic, CtBehavior behavior,
+			int storePos, int startPos, int afterPos) {
 
 		this.varID = varID;
 		this.varName = varName;
@@ -30,8 +31,9 @@ public class Variable {
 
 		this.behavior = behavior;
 
-		this.pos = pos;
-		this.posAfterAssignment = posAfterAssignment;
+		this.storePos = storePos;
+		this.startPos = startPos;
+		this.afterPos = afterPos;
 	}
 
 	public String getVarID() {
@@ -58,12 +60,16 @@ public class Variable {
 		return behavior;
 	}
 
-	public int getPos() {
-		return pos;
+	public int getStorePos() {
+		return storePos;
 	}
 
-	public int getPosAfterAssignment() {
-		return posAfterAssignment;
+	public int getStartPos() {
+		return startPos;
+	}
+
+	public int getAfterPos() {
+		return afterPos;
 	}
 
 	public String toString() {
@@ -71,10 +77,12 @@ public class Variable {
 				+ varName
 				+ ", LineNr: "
 				+ varLineNr
-				+ ",\nPos: "
-				+ pos
-				+ ", PosAfter: "
-				+ posAfterAssignment
+				+ ",\nStorePos: "
+				+ storePos
+				+ ", StartPos: "
+				+ startPos
+				+ ", AfterPos:"
+				+ afterPos
 				+ (behavior == null ? "" : ", Behavior: " + behavior.getName()
 						+ ", Class: " + behavior.getDeclaringClass().getName());
 		return s;
