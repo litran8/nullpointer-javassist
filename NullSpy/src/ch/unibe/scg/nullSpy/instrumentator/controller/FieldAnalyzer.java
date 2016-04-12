@@ -57,18 +57,42 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				if (field.isWriter()) {
 					try {
 						Variable var = null;
+						// CtConstructor[] constructorList = cc
+						// .getDeclaredConstructors();
+						// for (CtConstructor c : constructorList) {
+						// Printer p = new Printer();
+						// p.printMethod(c, 0);
+						// }
 						if (fieldIsNotPrimitive(field)) {
+
 							// check if field is instantiated outside, not in
 							// method nor constructor
 							if (!isFieldInstantiatedInMethod(field)) {
-								// check if is instatiated in a constructor
+
+								// not instantiated in method, so check if is
+								// instantiated in a constructor
 								if (isFieldInstantiatedInConstructor(field)) {
-									CtConstructor constructor = getConstructor(field);
+
+									// instantiated inside constructor
 									// check if it's field itself, or a field of
 									// the field (direct or indirect)
+
+									CtConstructor constructor = getConstructor(field);
+									constructor = (CtConstructor) field.where();
+
 									if (isFieldFromCurrentCtClass(field)) {
+
 										var = storeFieldOfCurrentClass(field,
 												constructor);
+
+										// int behaviorLineNr =
+										// var.getBehavior()
+										// .getMethodInfo()
+										// .getLineNumber(0);
+										// if (var.getVarLineNr() <
+										// behaviorLineNr) {
+										// var.setBehavior(null);
+										// }
 									} else {
 										// field of an object/field in current
 										// class
@@ -76,7 +100,11 @@ public class FieldAnalyzer extends VariableAnalyzer {
 												constructor);
 									}
 								} else {
+
+									// not instantiated inside constructor (and
+									// not in method)
 									var = storeFieldInitiatedOutsideMethod(field);
+									System.out.println();
 								}
 							} else {
 								CtMethod method = cc.getDeclaredMethod(field
@@ -185,10 +213,18 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				continue;
 			}
 
-			inBehavior = field.getLineNumber() >= behavior.getMethodInfo()
-					.getLineNumber(0)
-					&& field.getLineNumber() <= getLastLineNrOfBehavior(behavior);
+			CtBehavior fieldbeh = field.where();
+			String m1 = behavior.getSignature();
+			String m2 = fieldbeh.getSignature();
 
+			if (behavior.getMethodInfo().isConstructor()) {
+				inBehavior = behavior.getMethodInfo() == fieldbeh
+						.getMethodInfo();
+			} else {
+				inBehavior = field.getLineNumber() >= behavior.getMethodInfo()
+						.getLineNumber(0)
+						&& field.getLineNumber() <= getLastLineNrOfBehavior(behavior);
+			}
 			if (inBehavior) {
 				break;
 			}
@@ -253,7 +289,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			afterPos = codeIterator.next();
 		}
 
-		int fieldLineNr = lineNrAttr.toLineNumber(startPos);
+		int fieldLineNr = lineNrAttr.toLineNumber(pos); // --------------------HEREEE
+														// startPos
 
 		// pos and posAfterAssignment
 		// int pos = getPc(lineNumberMap, fieldLineNumber);
@@ -276,10 +313,9 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		String objectName_field = "";
 		String objectType_field = "";
 		String objectBelongedClassName_field = "";
+		boolean isfieldStatic_field = false;
 
 		if (!field.isStatic()) {
-
-			boolean isfieldStatic_field = false;
 
 			if (Mnemonic.OPCODE[op].matches("aload.*")) {
 				// localVar.field
@@ -344,14 +380,15 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// }
 
 		indirectFieldObject = new IndirectFieldObject(objectName_field,
-				objectType_field, objectBelongedClassName_field, opCode_field);
+				objectType_field, objectBelongedClassName_field,
+				isfieldStatic_field, opCode_field);
 
 		String fieldType = field.getSignature();
 		String fieldBelongedClassName = field.getClassName();
 
 		Field var = new Field("field", fieldName, fieldType,
 				fieldBelongedClassName, fieldLineNr, pos, startPos, afterPos,
-				behavior, field.isStatic(), indirectFieldObject);
+				cc, behavior, field.isStatic(), indirectFieldObject);
 
 		fieldIsWritterInfoList.add(var);
 
@@ -385,12 +422,20 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			// p.printMethod(method, 0);
 		}
 
+		// behavior = field.where();
+		// CodeIterator iter = behavior.getMethodInfo().getCodeAttribute()
+		// .iterator();
+		// HashMap<Integer, Integer> lineNrMap = getLineNumberMap(behavior);
+		// ArrayList<PcLine> sortedLineNrMapAsList =
+		// getSortedLineNrMapAsList(lineNrMap);
+		String fieldName2 = field.getFieldName();
 		int fieldLineNr = field.getLineNumber();
 		String objectName_Field = "";
 		int pos = 0;
 		int startPos = 0;
 		int posAfterAssignment = 0;
 
+		// if field is initiated outside a method -> method is null
 		if (behavior != null) {
 			CodeAttribute codeAttribute = behavior.getMethodInfo()
 					.getCodeAttribute();
@@ -400,7 +445,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			// getLineNumberMap(behavior);
 			// ArrayList<PcLine> sortedLineNrMapAsList =
 			// getSortedLineNrMapAsList(lineNumberMap);
-
+			Printer p = new Printer();
+			p.printMethod(behavior, 0);
 			pos = getPos(field);
 			startPos = getInstrStartPos(field, pos);
 			codeIterator.move(pos);
@@ -412,7 +458,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 			LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttribute
 					.getAttribute(LineNumberAttribute.tag);
-			fieldLineNr = lineNrAttr.toLineNumber(startPos);
+			fieldLineNr = lineNrAttr.toLineNumber(pos);
 
 			// posAfterAssignment = getPosAfterAssignment(pos, codeIterator,
 			// "put.*");
@@ -424,22 +470,79 @@ public class FieldAnalyzer extends VariableAnalyzer {
 					localVariableTableList, pos, "aload.*");
 			objectName_Field = localVariableTableList.get(localVarTableIndex).varName
 					+ ".";
+		} else {
+
+			// field instantiated outside behavior, that means insert in every
+			// constructor
+
+			CtBehavior voidConstructor = cc.getDeclaredConstructors()[0];
+			CodeAttribute codeAttr = voidConstructor.getMethodInfo()
+					.getCodeAttribute();
+			CodeIterator codeIter = codeAttr.iterator();
+
+			if (fieldIsWritterInfoList.size() != 0) {
+
+				if (field.isStatic()) {
+					int fieldListSize = fieldIsWritterInfoList.size();
+
+					Variable lastOutsideInstatiatedStaticField = null;
+
+					// gets the last static outside field
+					for (int i = fieldListSize - 1; i >= 0; i--) {
+						lastOutsideInstatiatedStaticField = fieldIsWritterInfoList
+								.get(i);
+
+						if (lastOutsideInstatiatedStaticField.getBehavior() == null
+								&& lastOutsideInstatiatedStaticField.isStatic()
+								&& cc.getName().equals(
+										lastOutsideInstatiatedStaticField
+												.getBelongedClass().getName())) {
+							break;
+						}
+					}
+
+					if (lastOutsideInstatiatedStaticField == null) {
+						// first static outside field
+						pos = 1;
+					} else {
+						// set pos to last static outside field afterPos
+						// iterate until inovke.* -> pos = invoke.*-pc
+						codeIter.move(lastOutsideInstatiatedStaticField
+								.getAfterPos());
+						pos = codeIter.next();
+						int op = codeIter.byteAt(pos);
+
+						while (!Mnemonic.OPCODE[op].matches("invoke.*")) {
+							pos = codeIter.next();
+							op = codeIter.byteAt(pos);
+						}
+					}
+				} else {
+					pos = field.indexOfBytecode();
+				}
+
+			} else {
+
+				// first field (static or nonStatic)
+				// should be pc 1
+				pos = field.indexOfBytecode();
+			}
+
+			codeIter.move(pos);
+			codeIter.next();
+			posAfterAssignment = codeIter.next();
+
 		}
 
-		String fieldName = (field.isStatic() ? "" : objectName_Field)
-				+ field.getFieldName();
+		// String fieldName = (field.isStatic() ? "" : objectName_Field)
+		// + field.getFieldName();
+		String fieldName = field.getFieldName();
 		String fieldType = field.getSignature();
-		// int fieldLineNumber = field.getLineNumber();
 		String fieldBelongedClassName = cc.getName();
-
-		// stores field (inner class), because
-		// instrument
-		// directly doesn't work here...
-		// if field is initiated outside a method -> method is null
 
 		Field var = new Field("field", fieldName, fieldType,
 				fieldBelongedClassName, fieldLineNr, pos, startPos,
-				posAfterAssignment, behavior, field.isStatic(), null);
+				posAfterAssignment, cc, behavior, field.isStatic(), null);
 		fieldIsWritterInfoList.add(var);
 		return var;
 	}
@@ -459,29 +562,30 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			if ((int) keys[i] > pos) {
 				res = (int) keys[i - 1];
 
-				Variable lastVar = fieldIsWritterInfoList
-						.get(fieldIsWritterInfoList.size() - 1);
+				if (fieldIsWritterInfoList.size() != 0) {
+					Variable lastVar = fieldIsWritterInfoList
+							.get(fieldIsWritterInfoList.size() - 1);
 
-				if (isSameBehavior(field, lastVar)) {
+					if (isSameBehavior(field, lastVar)) {
 
-					iter.move(lastVar.getStorePos());
-					iter.next();
-					int nextPosAfterLastVar = iter.next();
+						iter.move(lastVar.getStorePos());
+						iter.next();
+						int nextPosAfterLastVar = iter.next();
 
-					if (iter.hasNext() && nextPosAfterLastVar == res) {
-						int op = iter.byteAt(res);
-						String instr = Mnemonic.OPCODE[op];
-						if (instr.matches("ldc.*")) {
+						if (iter.hasNext() && nextPosAfterLastVar == res) {
+							int op = iter.byteAt(res);
+							String instr = Mnemonic.OPCODE[op];
+							if (instr.matches("ldc.*")) {
 
-							while (iter.hasNext()
-									&& !instr.matches("invokestatic.*")) {
-								nextPosAfterLastVar = iter.next();
-								op = iter.byteAt(nextPosAfterLastVar);
-								instr = Mnemonic.OPCODE[op];
+								while (iter.hasNext()
+										&& !instr.matches("invokestatic.*")) {
+									nextPosAfterLastVar = iter.next();
+									op = iter.byteAt(nextPosAfterLastVar);
+									instr = Mnemonic.OPCODE[op];
+								}
+								res = iter.next();
 							}
-							res = iter.next();
 						}
-
 					}
 				}
 
@@ -493,23 +597,31 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	}
 
 	private int getPos(FieldAccess field) throws BadBytecode {
-		Variable lastVar = fieldIsWritterInfoList.get(fieldIsWritterInfoList
-				.size() - 1);
-
-		int pos = 0;
-		if (isSameBehavior(field, lastVar)) {
-			pos = lastVar.getStorePos();
-		}
-
 		CtBehavior behavior = field.where();
 		CodeAttribute attr = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator iter = attr.iterator();
+		int pos = 0;
+		if (behavior.getMethodInfo().isConstructor()) {
+			pos = field.indexOfBytecode();
+		}
+		int op = iter.byteAt(pos);
+		if (Mnemonic.OPCODE[op].matches("put.*"))
+			return pos;
+
+		if (fieldIsWritterInfoList.size() != 0) {
+			Variable lastVar = fieldIsWritterInfoList
+					.get(fieldIsWritterInfoList.size() - 1);
+
+			if (isSameBehavior(field, lastVar)) {
+				pos = lastVar.getStorePos();
+			}
+		}
 
 		iter.move(pos);
 		iter.next();
 		pos = iter.next();
 
-		int op = iter.byteAt(pos);
+		op = iter.byteAt(pos);
 		String s = Mnemonic.OPCODE[op];
 
 		while (!s.matches("put.*") && iter.hasNext()) {
@@ -518,22 +630,23 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			s = Mnemonic.OPCODE[op];
 		}
 
-		System.out.println(InstructionPrinter.instructionString(iter, pos,
-				behavior.getMethodInfo2().getConstPool()));
+		// System.out.println(InstructionPrinter.instructionString(iter, pos,
+		// behavior.getMethodInfo2().getConstPool()));
 
 		return pos;
 	}
 
 	private boolean isSameBehavior(FieldAccess field, Variable lastVar) {
 		boolean inSameBehavior = false;
-		if (!(lastVar.getBehavior() == null)) {
-			inSameBehavior = field.where().getName()
-					.equals(lastVar.getBehavior().getName())
-					&& field.where()
-							.getDeclaringClass()
-							.getName()
-							.equals(lastVar.getBehavior().getDeclaringClass()
-									.getName());
+		CtBehavior currentBehavior = field.where();
+		CtBehavior lastBehavior = lastVar.getBehavior();
+		if (!(lastBehavior == null)) {
+			inSameBehavior = currentBehavior.getName().equals(
+					lastBehavior.getName())
+					&& currentBehavior.getDeclaringClass().getName()
+							.equals(lastVar.getBelongedClass().getName())
+					&& currentBehavior.getSignature().equals(
+							lastBehavior.getSignature());
 		}
 		return inSameBehavior;
 	}

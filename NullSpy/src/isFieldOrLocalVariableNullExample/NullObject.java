@@ -5,9 +5,13 @@ public class NullObject {
 	private static String str2 = null;
 	private Object o = null;
 
-	private String s = null;;
+	private String s = null;
 
 	public NullObject() {
+		this.s = null;
+	}
+
+	public NullObject(Object k) {
 		this.s = null;
 	}
 

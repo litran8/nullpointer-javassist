@@ -35,10 +35,20 @@ public abstract class Analyzer {
 		if (method != null) {
 			byteCodeAdapter.insertTestLineAfterVariableAssignment(var);
 		} else {
-			for (CtConstructor constructor : cc.getConstructors()) {
-				byteCodeAdapter
-						.insertTestLineAfterFieldInstantiatedOutSideMethod(
-								constructor, var);
+			for (CtConstructor constructor : cc.getDeclaredConstructors()) {
+				System.out.println(constructor.getLongName());
+				Printer p = new Printer();
+				p.printMethod(constructor, 0);
+				System.out.println();
+			}
+			CtConstructor[] constructorList = cc.getDeclaredConstructors();
+			for (CtConstructor constructor : constructorList) {
+				var.setBehavior(constructor);
+				byteCodeAdapter.insertTestLineAfterVariableAssignment(var);
+				// byteCodeAdapter
+				// .insertTestLineAfterFieldInstantiatedOutSideMethod(
+				// constructor, var);
+				var.setBehavior(null);
 			}
 		}
 	}

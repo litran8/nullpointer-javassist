@@ -8,6 +8,7 @@ package ch.unibe.scg.nullSpy.model;
  *
  */
 import javassist.CtBehavior;
+import javassist.CtClass;
 
 public class Field extends Variable {
 
@@ -19,11 +20,12 @@ public class Field extends Variable {
 
 	public Field(String varID, String fieldName, String fieldType,
 			String fieldBelongedClassName, int fieldSourceLineNr, int storePos,
-			int startPos, int afterPos, CtBehavior behavior, boolean isStatic,
+			int startPos, int afterPos, CtClass belongedClass,
+			CtBehavior behavior, boolean isStatic,
 			IndirectFieldObject indirectFieldObject) {
 
 		super(varID, fieldName, fieldSourceLineNr, fieldType, isStatic,
-				behavior, storePos, startPos, afterPos);
+				belongedClass, behavior, storePos, startPos, afterPos);
 
 		this.fieldBelongedClassName = fieldBelongedClassName;
 

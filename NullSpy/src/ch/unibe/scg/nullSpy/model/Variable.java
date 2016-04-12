@@ -1,6 +1,7 @@
 package ch.unibe.scg.nullSpy.model;
 
 import javassist.CtBehavior;
+import javassist.CtClass;
 
 public class Variable {
 
@@ -12,6 +13,7 @@ public class Variable {
 
 	private boolean isStatic;
 
+	protected CtClass belongedClass;
 	protected CtBehavior behavior;
 
 	protected int startPos;
@@ -19,16 +21,22 @@ public class Variable {
 	protected int afterPos;
 
 	public Variable(String varID, String varName, int varLineNr,
-			String varType, boolean isStatic, CtBehavior behavior,
-			int storePos, int startPos, int afterPos) {
+			String varType, boolean isStatic, CtClass belongedClass,
+			CtBehavior behavior, int storePos, int startPos, int afterPos) {
 
 		this.varID = varID;
 		this.varName = varName;
 		this.varLineNr = varLineNr;
-		this.varType = varType;
+
+		if (varType.startsWith("[")) {
+			varType = varType.substring(1);
+		}
+
+		this.varType = varType.substring(0);
 
 		this.isStatic = isStatic;
 
+		this.belongedClass = belongedClass;
 		this.behavior = behavior;
 
 		this.storePos = storePos;
@@ -56,8 +64,16 @@ public class Variable {
 		return this.isStatic;
 	}
 
+	public CtClass getBelongedClass() {
+		return this.belongedClass;
+	}
+
 	public CtBehavior getBehavior() {
 		return behavior;
+	}
+
+	public void setBehavior(CtBehavior behavior) {
+		this.behavior = behavior;
 	}
 
 	public int getStorePos() {
@@ -77,13 +93,15 @@ public class Variable {
 				+ varName
 				+ ", LineNr: "
 				+ varLineNr
+				+ ",\nVarType: "
+				+ varType
 				+ ",\nStorePos: "
 				+ storePos
 				+ ", StartPos: "
 				+ startPos
 				+ ", AfterPos:"
 				+ afterPos
-				+ (behavior == null ? "" : ", Behavior: " + behavior.getName()
+				+ (behavior == null ? "" : ",\nBehavior: " + behavior.getName()
 						+ ", Class: " + behavior.getDeclaringClass().getName());
 		return s;
 	}

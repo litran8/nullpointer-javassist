@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import javassist.CannotCompileException;
-import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
@@ -78,17 +77,9 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			Printer p = new Printer();
 
-			for (CtBehavior behavior : cc.getDeclaredBehaviors()) {
-				System.out.println();
-				System.out.println(behavior.getName());
-				p.printMethod(behavior, 0);
-			}
-
-			for (CtBehavior behavior : cc.getDeclaredConstructors()) {
-				System.out.println();
-				System.out.println(behavior.getName());
-				p.printMethod(behavior, 0);
-			}
+			System.out.println();
+			System.out.println(method.getName());
+			p.printMethod(method, 0);
 
 			System.out.println();
 		}
@@ -170,7 +161,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 				LocalVar localVar = new LocalVar(varID, localVarName,
 						localVarLineNr, localVarType, pos, startPos, afterPos,
-						method, localVarTableIndex, localVarSlot);
+						cc, method, localVarTableIndex, localVarSlot);
 
 				localVarList.add(localVar);
 

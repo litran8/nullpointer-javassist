@@ -5,6 +5,7 @@ import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.NotFoundException;
+import javassist.bytecode.AccessFlag;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.Bytecode;
 import javassist.bytecode.CodeAttribute;
@@ -40,14 +41,17 @@ public class ByteCodeAdapter {
 			iter.insert(byteCode);
 
 		} else {
+			// Printer p = new Printer();
+			// p.printMethod(behavior, 0);
 			iter.insertEx(var.getAfterPos(), byteCode);
 		}
 
+		System.out.println(behavior.getLongName());
+		Printer p = new Printer();
+		p.printMethod(behavior, 0);
+		System.out.println();
+		System.out.println();
 		codeAttribute.computeMaxStack();
-		int maxLocals = codeAttribute.getMaxLocals();
-
-		// Printer p = new Printer();
-		// p.printMethod(behavior, 0);
 		// if (insertedLineNumber == varLineNr + 1) {
 		// behavior.insertAt(varLineNr + 1,
 		// getTestMethodAsString(behavior, var));
@@ -93,7 +97,9 @@ public class ByteCodeAdapter {
 
 					// direct field: this.f
 					// aload_0, getfield
-					testMethodByteCode.addAload(0);
+					if (behavior.getModifiers() != AccessFlag.STATIC) {
+						testMethodByteCode.addAload(0);
+					}
 
 				} else if (((Field) var).getIndirectFieldObject()
 						.getOpCode_field().matches("a{1,2}load.*")) {
@@ -110,13 +116,27 @@ public class ByteCodeAdapter {
 
 					// indirect field: this.field.f
 					// aload_0, getfield, getfield
-					testMethodByteCode.addAload(0);
+					if (behavior.getModifiers() != AccessFlag.STATIC) {
+						testMethodByteCode.addAload(0);
+					}
 					IndirectFieldObject OBJECT_field = ((Field) var)
 							.getIndirectFieldObject();
-					testMethodByteCode.addGetfield(
-							OBJECT_field.getObjectBelongedClassName_field(),
-							OBJECT_field.getObjectName_field(),
-							OBJECT_field.getObjectType_field());
+
+					if (OBJECT_field.isObjectStatic_field()) {
+						// staticObject_field
+						testMethodByteCode
+								.addGetstatic(OBJECT_field
+										.getObjectBelongedClassName_field(),
+										OBJECT_field.getObjectName_field(),
+										OBJECT_field.getObjectType_field());
+					} else {
+						// nonStaticObject_field
+						testMethodByteCode
+								.addGetfield(OBJECT_field
+										.getObjectBelongedClassName_field(),
+										OBJECT_field.getObjectName_field(),
+										OBJECT_field.getObjectType_field());
+					}
 
 				}
 
@@ -191,8 +211,13 @@ public class ByteCodeAdapter {
 	}
 
 	public void insertTestLineAfterFieldInstantiatedOutSideMethod(
-			CtBehavior constructor, Variable var) throws CannotCompileException {
-		constructor.insertAfter(getTestMethodAsString(constructor, var));
+			CtBehavior constructor, Variable var)
+			throws CannotCompileException, BadBytecode {
+		// insert before or after ????
+		constructor.insertBefore(getTestMethodAsString(constructor, var));
+		Printer p = new Printer();
+		p.printMethod(var.getBehavior(), 0);
+		System.out.println();
 	}
 
 	private String getTestMethodAsString(CtBehavior behavior, Variable var) {

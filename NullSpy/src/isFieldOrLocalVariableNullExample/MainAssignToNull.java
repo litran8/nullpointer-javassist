@@ -3,11 +3,23 @@ package isFieldOrLocalVariableNullExample;
 public class MainAssignToNull {
 
 	public static Object a = null;
-	public static Object b;
+	public static Object b = null;
 	public static Object c;
 	public static Integer i;
 	public static NullObject nullObject;
 	public static Person o;
+	public Object k;
+	public Object k2 = null;
+	public Object k3;
+
+	public MainAssignToNull() {
+		k = null;
+	}
+
+	public MainAssignToNull(Object q) {
+		k = q;
+		k2 = null;
+	}
 
 	public static void main(String[] args) {
 		// long startTime = System.nanoTime();
