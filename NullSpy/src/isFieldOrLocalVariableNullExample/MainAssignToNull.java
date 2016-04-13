@@ -13,6 +13,7 @@ public class MainAssignToNull {
 	public Object k3;
 
 	public MainAssignToNull() {
+		Object o = null;
 		k = null;
 	}
 
@@ -22,7 +23,7 @@ public class MainAssignToNull {
 	}
 
 	public static void main(String[] args) {
-		long startTime = System.nanoTime();
+		// long startTime = System.nanoTime();
 		System.out.println("\nMethod main starts.");
 		MainAssignToNull m = new MainAssignToNull();
 		int i = 0;

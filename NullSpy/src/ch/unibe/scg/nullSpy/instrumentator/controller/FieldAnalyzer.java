@@ -53,41 +53,17 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				if (field.isWriter()) {
 					try {
 						Variable var = null;
-						if (fieldIsNotPrimitive(field)) {
 
-							// fieldType is an object -> starts with L.*
+						// fieldType is an object -> starts with L.*
+						if (isFieldNotPrimitive(field)) {
 
-							if (!field.where().getMethodInfo().isMethod()) {
-
-								// field in constructor
-
-								if (field.isStatic()) {
-									var = storeFieldOfCurrentClass(field);
-								} else {
-
-									if (isFieldFromCurrentCtClass(field)) {
-										// direct fields in constructor
-										var = storeFieldOfCurrentClass(field);
-
-									} else {
-										// indirect fields in constructor
-										var = storeFieldOfAnotherClass(field);
-									}
-								}
+							if (isFieldFromCurrentCtClass(field)) {
+								// direct fields
+								var = storeFieldOfCurrentClass(field);
 
 							} else {
-
-								// field in method
-
-								if (isFieldFromCurrentCtClass(field)) {
-
-									// direct fields in method: this. or static
-									var = storeFieldOfCurrentClass(field);
-								} else {
-
-									// indirect fields in method: p.a, Person.o
-									var = storeFieldOfAnotherClass(field);
-								}
+								// indirect fields
+								var = storeFieldOfAnotherClass(field);
 							}
 						}
 
@@ -101,113 +77,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			}
 
 		});
-
-		// Printer p = new Printer();
-		//
-		// for (CtBehavior behavior : cc.getDeclaredBehaviors()) {
-		// System.out.println();
-		// System.out.println(behavior.getName());
-		// p.printMethod(behavior, 0);
-		// }
-		//
-		// for (CtBehavior behavior : cc.getDeclaredConstructors()) {
-		// System.out.println();
-		// System.out.println(behavior.getName());
-		// p.printMethod(behavior, 0);
-		// }
-		//
-		// System.out.println();
-
 	}
-
-	// private CtConstructor getConstructor(FieldAccess field) throws
-	// BadBytecode {
-	// int fieldLineNr = field.getLineNumber();
-	// CtConstructor aimConstructor = null;
-	// for (CtConstructor constructor : cc.getDeclaredConstructors()) {
-	// CodeAttribute codeAttribute = constructor.getMethodInfo()
-	// .getCodeAttribute();
-	//
-	// if (codeAttribute == null) {
-	// continue;
-	// }
-	//
-	// if (fieldLineNr >= constructor.getMethodInfo().getLineNumber(0)
-	// && fieldLineNr <= getLastLineNrOfBehavior(constructor)) {
-	// aimConstructor = constructor;
-	// break;
-	// }
-	// }
-	// return aimConstructor;
-	// }
-
-	// private boolean isFieldInstantiatedInConstructor(FieldAccess field)
-	// throws BadBytecode {
-	// boolean inConstructor = isInBehavior(field,
-	// cc.getDeclaredConstructors());
-	//
-	// return inConstructor;
-	// }
-
-	// /**
-	// * Check if field is instantiated in a method or a constructor. If not, it
-	// * returns false.
-	// *
-	// * @param field
-	// * @return
-	// * @throws NotFoundException
-	// * @throws BadBytecode
-	// */
-	// private boolean isFieldInstantiatedInMethod(FieldAccess field)
-	// throws NotFoundException, BadBytecode {
-	// boolean inMethod = isInBehavior(field, cc.getDeclaredMethods());
-	//
-	// return inMethod;
-	// }
-
-	// private boolean isInBehavior(FieldAccess field, CtBehavior[]
-	// ctBehaviorList)
-	// throws BadBytecode {
-	// boolean inBehavior = false;
-	//
-	// for (CtBehavior behavior : ctBehaviorList) {
-	// CodeAttribute codeAttribute = behavior.getMethodInfo()
-	// .getCodeAttribute();
-	//
-	// if (codeAttribute == null) {
-	// continue;
-	// }
-	//
-	// CtBehavior fieldbeh = field.where();
-	//
-	// if (behavior.getMethodInfo().isConstructor()) {
-	// inBehavior = behavior.getMethodInfo() == fieldbeh
-	// .getMethodInfo();
-	// } else {
-	// inBehavior = field.getLineNumber() >= behavior.getMethodInfo()
-	// .getLineNumber(0)
-	// && field.getLineNumber() <= getLastLineNrOfBehavior(behavior);
-	// }
-	// if (inBehavior) {
-	// break;
-	// }
-	//
-	// }
-	// return inBehavior;
-	// }
-
-	// private int getLastLineNrOfBehavior(CtBehavior behavior) throws
-	// BadBytecode {
-	// int pos = 0;
-	// CodeIterator codeIterator = behavior.getMethodInfo().getCodeAttribute()
-	// .iterator();
-	// // get last pc of method (end of method)
-	// while (codeIterator.hasNext()) {
-	// pos = codeIterator.next();
-	// }
-	//
-	// return behavior.getMethodInfo().getLineNumber(pos);
-	// }
 
 	/**
 	 * If the field is of another class than the current analyzed one. E.g. p.a:
@@ -230,27 +100,23 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttribute
 				.getAttribute(LineNumberAttribute.tag);
-		// HashMap<Integer, Integer> lineNumberMap = getLineNumberMap(behavior);
-		// ArrayList<PcLine> sortedLineNrMap =
-		// getSortedLineNrMapAsList(lineNumberMap);
 
 		LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
 				.getAttribute(LocalVariableAttribute.tag);
 		ArrayList<LocalVariableTableEntry> localVariableTableList = getStableLocalVariableTableAsList(localVariableTable);
 
-		// lineNr
 		int pos = getPos(field);
-		int startPos = getInstrStartPos(field, pos);
+		int startPos = getStartPos(field, pos);
 
 		codeIterator.move(pos);
 		codeIterator.next();
+
 		int afterPos = 0;
 		if (codeIterator.hasNext()) {
 			afterPos = codeIterator.next();
 		}
 
-		int fieldLineNr = lineNrAttr.toLineNumber(pos); // --------------------HEREEE
-														// startPos
+		int fieldLineNr = lineNrAttr.toLineNumber(pos);
 
 		// innerclass
 		// String innerClassFieldName = "";
@@ -382,7 +248,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			CodeIterator codeIterator = codeAttribute.iterator();
 
 			pos = getPos(field);
-			startPos = getInstrStartPos(field, pos);
+			startPos = getStartPos(field, pos);
 			codeIterator.move(pos);
 			codeIterator.next();
 
@@ -469,7 +335,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		return var;
 	}
 
-	private int getInstrStartPos(FieldAccess field, int pos) throws BadBytecode {
+	private int getStartPos(FieldAccess field, int pos) throws BadBytecode {
 		int res = 0;
 		CtBehavior behavior = field.where();
 		CodeIterator iter = behavior.getMethodInfo().getCodeAttribute()
@@ -577,7 +443,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			return false;
 	}
 
-	private boolean fieldIsNotPrimitive(FieldAccess field) {
+	private boolean isFieldNotPrimitive(FieldAccess field) {
 		if (field.getSignature().matches("L.*"))
 			return true;
 		else

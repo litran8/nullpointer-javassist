@@ -29,18 +29,7 @@ public abstract class Analyzer {
 
 	protected void adaptByteCode(Variable var) throws CannotCompileException,
 			NotFoundException, BadBytecode {
-		// CtBehavior method = var.getBehavior();
-		// null if field is instantiated outside method
-		// if (method != null) {
 		byteCodeAdapter.insertTestLineAfterVariableAssignment(var);
-		// } else {
-		// CtConstructor[] constructorList = cc.getDeclaredConstructors();
-		// for (CtConstructor constructor : constructorList) {
-		// var.setBehavior(constructor);
-		// byteCodeAdapter.insertTestLineAfterVariableAssignment(var);
-		// var.setBehavior(null);
-		// }
-		// }
 	}
 
 	protected HashMap<Integer, Integer> getLineNumberMap(CtBehavior method) {

@@ -8,15 +8,14 @@ public class TestInstrumentor {
 	public static String className = "isFieldOrLocalVariableNullExample.MainAssignToNull";
 
 	public static void main(String[] args) throws Throwable {
-
+		long startTime = System.nanoTime();
 		Translator translator = new ClassFileTranslator();
 		ClassPool pool = ClassPool.getDefault();
 		Loader loader = new Loader();
 		loader.addTranslator(pool, translator);
 
-		long startTime = System.nanoTime();
 		loader.run(className, args);
-		System.out.println("Modified class time: "
+		System.out.println("Modification + modified class time: "
 				+ ((System.nanoTime() - startTime) / 1000000) + "ms");
 
 	}

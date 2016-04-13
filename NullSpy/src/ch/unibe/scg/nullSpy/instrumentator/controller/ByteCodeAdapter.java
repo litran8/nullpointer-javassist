@@ -21,18 +21,17 @@ public class ByteCodeAdapter {
 	public void insertTestLineAfterVariableAssignment(Variable var)
 			throws CannotCompileException, NotFoundException, BadBytecode {
 
+		// get if statement
 		CtBehavior behavior = var.getBehavior();
 		int varLineNr = var.getVarLineNr();
-
 		int insertedLineNumber = behavior.insertAt(varLineNr + 1, false, null);
+		boolean insertInExpectedLineNr = insertedLineNumber == varLineNr + 1;
 
 		CodeAttribute codeAttribute = behavior.getMethodInfo()
 				.getCodeAttribute();
 		CodeIterator iter = codeAttribute.iterator();
 
 		byte[] byteCode = getInsertCodeByteArray(var);
-
-		boolean insertInExpectedLineNr = insertedLineNumber == varLineNr + 1;
 
 		if (insertInExpectedLineNr) {
 			iter.move(var.getStorePos());
@@ -41,23 +40,10 @@ public class ByteCodeAdapter {
 			iter.insert(byteCode);
 
 		} else {
-			// Printer p = new Printer();
-			// p.printMethod(behavior, 0);
 			iter.insertEx(var.getAfterPos(), byteCode);
 		}
 
-		// System.out.println(behavior.getLongName());
-		// Printer p = new Printer();
-		// p.printMethod(behavior, 0);
-		// System.out.println();
-		// System.out.println();
 		codeAttribute.computeMaxStack();
-		// if (insertedLineNumber == varLineNr + 1) {
-		// behavior.insertAt(varLineNr + 1,
-		// getTestMethodAsString(behavior, var));
-		// } else {
-		// iter.insertEx(var.getPosAfterAssignment(), byteCode);
-		// }
 
 		// behavior.getMethodInfo().rebuildStackMap(
 		// behavior.getDeclaringClass().getClassPool());
@@ -84,12 +70,14 @@ public class ByteCodeAdapter {
 		ConstPool cp = behavior.getMethodInfo2().getConstPool();
 		Bytecode testMethodByteCode = new Bytecode(cp);
 
+		// testMethod params
 		testMethodByteCode.addLdc(behavior.getDeclaringClass().getName());
 		testMethodByteCode.addLdc(behavior.getName());
 
 		if (varID.equals("field")) {
 
 			// FIELD
+
 			if (!var.isStatic()) {
 
 				// not static
@@ -114,12 +102,13 @@ public class ByteCodeAdapter {
 
 				} else {
 
-					// indirect field non-static: this.field.f
-					// static_field.f: getstatic, getfield
-					// this.non-static_field.f: aload_0, getfield, getfield
+					// indirect field non-static:
+					// staticObject.f: getstatic, getfield
+					// this.nonStaticObject.f: aload_0, getfield, getfield
 					IndirectFieldObject OBJECT_field = ((Field) var)
 							.getIndirectFieldObject();
 
+					// non-static_field.field: aload_0
 					if (behavior.getModifiers() != AccessFlag.STATIC
 							&& !OBJECT_field.isObjectStatic_field()) {
 						testMethodByteCode.addAload(0);
@@ -140,9 +129,9 @@ public class ByteCodeAdapter {
 										OBJECT_field.getObjectName_field(),
 										OBJECT_field.getObjectType_field());
 					}
-
 				}
 
+				// field itself
 				testMethodByteCode.addGetfield(varBelongedClassName, varName,
 						varType);
 
@@ -165,17 +154,20 @@ public class ByteCodeAdapter {
 			testMethodByteCode.addAload(index);
 		}
 
+		// more testMethod params
 		testMethodByteCode.addOpcode(Opcode.BIPUSH);
 		testMethodByteCode.addOpcode(var.getVarLineNr());
 		testMethodByteCode.addLdc(varName);
 		testMethodByteCode.addLdc(varType);
 		testMethodByteCode.addLdc(varID);
 
+		// testMethod needs
 		CtClass nullDisplayer = ClassPool.getDefault().get(
 				"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer");
 		CtClass str = ClassPool.getDefault().get("java.lang.String");
 		CtClass object = ClassPool.getDefault().get("java.lang.Object");
 
+		// testMethod
 		testMethodByteCode.addInvokestatic(nullDisplayer, "test",
 				CtClass.voidType, new CtClass[] { str, str, object,
 						CtClass.intType, str, str, str });
