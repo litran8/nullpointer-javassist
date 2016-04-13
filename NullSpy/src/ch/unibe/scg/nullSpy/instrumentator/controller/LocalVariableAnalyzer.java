@@ -78,8 +78,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			Printer p = new Printer();
 
 			System.out.println();
-			System.out.println(method.getName());
-			p.printMethod(method, 0);
+			// System.out.println(method.getName());
+			// p.printMethod(method, 0);
 
 			System.out.println();
 		}
@@ -172,7 +172,9 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 				codeIterator = codeAttribute.iterator();
 
 				codeIterator.move(afterPos);
-
+				System.out.println();
+				Printer p = new Printer();
+				// p.printMethod(method, pos);
 				methodMaxPc = lineNumberTable.startPc(lineNumberTable
 						.tableLength() - 1);
 

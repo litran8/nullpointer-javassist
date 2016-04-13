@@ -46,11 +46,11 @@ public class ByteCodeAdapter {
 			iter.insertEx(var.getAfterPos(), byteCode);
 		}
 
-		System.out.println(behavior.getLongName());
-		Printer p = new Printer();
-		p.printMethod(behavior, 0);
-		System.out.println();
-		System.out.println();
+		// System.out.println(behavior.getLongName());
+		// Printer p = new Printer();
+		// p.printMethod(behavior, 0);
+		// System.out.println();
+		// System.out.println();
 		codeAttribute.computeMaxStack();
 		// if (insertedLineNumber == varLineNr + 1) {
 		// behavior.insertAt(varLineNr + 1,
@@ -95,7 +95,7 @@ public class ByteCodeAdapter {
 				// not static
 				if (((Field) var).getIndirectFieldObject() == null) {
 
-					// direct field: this.f
+					// direct field non-static: this.f
 					// aload_0, getfield
 					if (behavior.getModifiers() != AccessFlag.STATIC) {
 						testMethodByteCode.addAload(0);
@@ -104,7 +104,7 @@ public class ByteCodeAdapter {
 				} else if (((Field) var).getIndirectFieldObject()
 						.getOpCode_field().matches("a{1,2}load.*")) {
 
-					// indirect field: localVar.f
+					// indirect field non-static: localVar.f
 					// aload_X, getfield
 					String localVarOpCode = ((Field) var)
 							.getIndirectFieldObject().getOpCode_field();
@@ -114,13 +114,16 @@ public class ByteCodeAdapter {
 
 				} else {
 
-					// indirect field: this.field.f
-					// aload_0, getfield, getfield
-					if (behavior.getModifiers() != AccessFlag.STATIC) {
-						testMethodByteCode.addAload(0);
-					}
+					// indirect field non-static: this.field.f
+					// static_field.f: getstatic, getfield
+					// this.non-static_field.f: aload_0, getfield, getfield
 					IndirectFieldObject OBJECT_field = ((Field) var)
 							.getIndirectFieldObject();
+
+					if (behavior.getModifiers() != AccessFlag.STATIC
+							&& !OBJECT_field.isObjectStatic_field()) {
+						testMethodByteCode.addAload(0);
+					}
 
 					if (OBJECT_field.isObjectStatic_field()) {
 						// staticObject_field
@@ -215,9 +218,9 @@ public class ByteCodeAdapter {
 			throws CannotCompileException, BadBytecode {
 		// insert before or after ????
 		constructor.insertBefore(getTestMethodAsString(constructor, var));
-		Printer p = new Printer();
-		p.printMethod(var.getBehavior(), 0);
-		System.out.println();
+		// Printer p = new Printer();
+		// p.printMethod(var.getBehavior(), 0);
+		// System.out.println();
 	}
 
 	private String getTestMethodAsString(CtBehavior behavior, Variable var) {

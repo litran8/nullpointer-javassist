@@ -7,7 +7,6 @@ import java.util.HashMap;
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
 import javassist.CtClass;
-import javassist.CtConstructor;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
@@ -30,27 +29,18 @@ public abstract class Analyzer {
 
 	protected void adaptByteCode(Variable var) throws CannotCompileException,
 			NotFoundException, BadBytecode {
-		CtBehavior method = var.getBehavior();
+		// CtBehavior method = var.getBehavior();
 		// null if field is instantiated outside method
-		if (method != null) {
-			byteCodeAdapter.insertTestLineAfterVariableAssignment(var);
-		} else {
-			for (CtConstructor constructor : cc.getDeclaredConstructors()) {
-				System.out.println(constructor.getLongName());
-				Printer p = new Printer();
-				p.printMethod(constructor, 0);
-				System.out.println();
-			}
-			CtConstructor[] constructorList = cc.getDeclaredConstructors();
-			for (CtConstructor constructor : constructorList) {
-				var.setBehavior(constructor);
-				byteCodeAdapter.insertTestLineAfterVariableAssignment(var);
-				// byteCodeAdapter
-				// .insertTestLineAfterFieldInstantiatedOutSideMethod(
-				// constructor, var);
-				var.setBehavior(null);
-			}
-		}
+		// if (method != null) {
+		byteCodeAdapter.insertTestLineAfterVariableAssignment(var);
+		// } else {
+		// CtConstructor[] constructorList = cc.getDeclaredConstructors();
+		// for (CtConstructor constructor : constructorList) {
+		// var.setBehavior(constructor);
+		// byteCodeAdapter.insertTestLineAfterVariableAssignment(var);
+		// var.setBehavior(null);
+		// }
+		// }
 	}
 
 	protected HashMap<Integer, Integer> getLineNumberMap(CtBehavior method) {
@@ -165,12 +155,12 @@ public abstract class Analyzer {
 
 		for (int j = 0; j < localVarTable.size(); j++) {
 			if (opString.matches(checkFor)) {
-				int i = getLocVarArraySlot(codeIterator, pos);
+				// int i = getLocVarArraySlot(codeIterator, pos);
 				LocalVariableTableEntry entry = localVarTable.get(j);
-				int k = entry.index;
-				int slot = getLocVarArraySlot(codeIterator, pos);
+				// int k = entry.index;
+				// int slot = getLocVarArraySlot(codeIterator, pos);
 				if (entry.getIndex() == getLocVarArraySlot(codeIterator, pos)) {
-					String varName = entry.varName;
+					// String varName = entry.varName;
 					int start = entry.startPc;
 					int length = entry.length;
 					int end = start + length;
@@ -205,11 +195,11 @@ public abstract class Analyzer {
 					opString.length()));
 		else if (opString.matches("aload.*")) {
 			// aload X
-			int i = codeIterator.u16bitAt(pos);
+			// int i = codeIterator.u16bitAt(pos);
 			return codeIterator.u16bitAt(pos) - 6400;
 		} else {
 			// astore X
-			int i = codeIterator.u16bitAt(pos);
+			// int i = codeIterator.u16bitAt(pos);
 			return codeIterator.u16bitAt(pos) - 14848;
 		}
 	}

@@ -22,9 +22,9 @@ public class MainAssignToNull {
 	}
 
 	public static void main(String[] args) {
-		// long startTime = System.nanoTime();
-
+		long startTime = System.nanoTime();
 		System.out.println("\nMethod main starts.");
+		MainAssignToNull m = new MainAssignToNull();
 		int i = 0;
 		if (i > 0) {
 			o = null;
@@ -45,6 +45,7 @@ public class MainAssignToNull {
 		p.a = null; // aload, aconst, putfield Person.a
 		p.o = null;
 		o.a = null;
+		Object o19 = o.a;
 		o.o = null;
 		Person.o = null;// putstatic Person.o
 		a = Person.say();
@@ -113,5 +114,13 @@ public class MainAssignToNull {
 
 	private static Object setNull() {
 		return null;
+	}
+
+	private class InnerClass {
+		public Object innerClassObject;
+
+		public InnerClass() {
+			this.innerClassObject = null;
+		}
 	}
 }
