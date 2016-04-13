@@ -74,11 +74,11 @@ public class Main2 {
 		// : java.lang.Object [36]
 		// 126 astore 5 [r]
 
-		// // var
-		// o = null;
-		// ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test("Main2",
-		// "testStackMapTable", o, 18, "o", "localVariable",
-		// "localVariable_1");
+		// var
+		o = null;
+		ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test("Main2",
+				"testStackMapTable", o, 10000, "o", "localVariable",
+				"localVariable_1");
 		//
 		// // 31 aload_1 [o] <---
 		//

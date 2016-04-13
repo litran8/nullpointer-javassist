@@ -95,10 +95,10 @@ public class Variable {
 				+ varLineNr
 				+ ",\nVarType: "
 				+ varType
-				+ ",\nStorePos: "
-				+ storePos
-				+ ", StartPos: "
+				+ ",\nStartPos: "
 				+ startPos
+				+ ", StorePos: "
+				+ storePos
 				+ ", AfterPos:"
 				+ afterPos
 				+ (behavior == null ? "" : ",\nBehavior: " + behavior.getName()

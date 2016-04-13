@@ -186,9 +186,9 @@ public class MainProjectModifier {
 			// modify class
 			ClassAdapter classAdapter = ClassAdapter.getInstance();
 			String name = cc.getName();
-			if (!cc.isInterface()
-					&& cc.getName().equals("net.n3.nanoxml.StdXMLReader")) {
-				// if (!cc.isInterface()) {
+			// if (!cc.isInterface()
+			// && cc.getName().equals("net.n3.nanoxml.StdXMLReader")) {
+			if (!cc.isInterface()) {
 				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc);
 			}
 		} catch (Throwable e) {

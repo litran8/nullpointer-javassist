@@ -39,6 +39,7 @@ public class MainAssignToNull {
 		d = a;
 		Object d2 = null;
 		d = d2;
+		int l = 1000;
 
 		Person p = new Person(); // here
 		o = new Person();

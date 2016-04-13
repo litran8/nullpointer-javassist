@@ -28,10 +28,11 @@ import ch.unibe.scg.nullSpy.model.Variable;
  */
 public class FieldAnalyzer extends VariableAnalyzer {
 
-	private ArrayList<Variable> fieldIsWritterInfoList = new ArrayList<Variable>();
+	private ArrayList<Variable> fieldIsWritterInfoList;
 
-	public FieldAnalyzer(CtClass cc) {
+	public FieldAnalyzer(CtClass cc, ArrayList<Variable> fieldIsWritterInfoList) {
 		super(cc);
+		this.fieldIsWritterInfoList = fieldIsWritterInfoList;
 	}
 
 	/**
@@ -54,6 +55,10 @@ public class FieldAnalyzer extends VariableAnalyzer {
 					try {
 						Variable var = null;
 
+						// Printer p = new Printer();
+						// System.out.println("\nBefore:");
+						// p.printMethod(field.where(), 0);
+
 						// fieldType is an object -> starts with L.*
 						if (isFieldNotPrimitive(field)) {
 
@@ -65,10 +70,13 @@ public class FieldAnalyzer extends VariableAnalyzer {
 								// indirect fields
 								var = storeFieldOfAnotherClass(field);
 							}
-						}
 
-						// insert code after assignment
-						adaptByteCode(var);
+							System.out.println("Method: "
+									+ var.getBehavior().getName());
+
+							// insert code after assignment
+							adaptByteCode(var);
+						}
 
 					} catch (NotFoundException | BadBytecode e) {
 						e.printStackTrace();
@@ -77,6 +85,32 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			}
 
 		});
+
+		// Printer p = new Printer();
+		//
+		// CtBehavior classInit = cc.getClassInitializer();
+		// if (classInit != null) {
+		// System.out.println("\n" + classInit.getName());
+		// p.printMethod(classInit, 0);
+		// }
+		//
+		// for (CtBehavior b : cc.getDeclaredConstructors()) {
+		//
+		// if (b.getMethodInfo().getCodeAttribute() != null) {
+		// System.out.println("\n" + b.getName());
+		// System.out.println(b.getSignature());
+		// p.printMethod(b, 0);
+		// }
+		// }
+		//
+		// for (CtBehavior b : cc.getDeclaredMethods()) {
+		// if (b.getMethodInfo().getCodeAttribute() != null) {
+		// System.out.println("\n" + b.getName());
+		// p.printMethod(b, 0);
+		// }
+		// }
+		//
+		// System.out.println();
 	}
 
 	/**
@@ -91,8 +125,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			throws NotFoundException, BadBytecode {
 
 		CtBehavior behavior = field.where();
-		// boolean isAnotherClassAnInnerClass =
-		// isAnotherClassAnInnerClass(field);
+		boolean isAnotherClassAnInnerClass = isAnotherClassAnInnerClass(field);
 
 		CodeAttribute codeAttribute = behavior.getMethodInfo()
 				.getCodeAttribute();
@@ -107,7 +140,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		int pos = getPos(field);
 		int startPos = getStartPos(field, pos);
-
+		System.out.println();
 		codeIterator.move(pos);
 		codeIterator.next();
 
@@ -119,7 +152,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		int fieldLineNr = lineNrAttr.toLineNumber(pos);
 
 		// innerclass
-		// String innerClassFieldName = "";
+		String innerClassFieldName = "";
 
 		String fieldName = field.getFieldName();
 
@@ -173,31 +206,28 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				// variableName, variableType);
 			}
 
-			// if (isAnotherClassAnInnerClass &&
-			// objectName_field.equals("this")) {
-			// // innerClass: this.innerClassField.field
-			// codeIterator.move(pos);
-			// codeIterator.next();
-			// int innerClassGetFieldPos = codeIterator.next();
-			// int index = codeIterator.u16bitAt(innerClassGetFieldPos + 1);
-			//
-			// // innerClassField_field
-			// innerClassFieldName = behavior.getMethodInfo2().getConstPool()
-			// .getFieldrefName(index);
-			// fieldName = objectName_field + "." + innerClassFieldName + "."
-			// + field.getFieldName();
-			// } else {
-			// fieldName = objectName_field + "." + field.getFieldName();
-			// }
-			//
-			// if (opCode_field.matches("get.*") && !isfieldStatic_field) {
-			// fieldName = "this." + fieldName;
-			// }
-
 		}
-		// else {
-		// fieldName = field.getClassName() + "." + field.getFieldName();
-		// }
+
+		if (isAnotherClassAnInnerClass && objectName_field.equals("this")) {
+			// innerClass: this.innerClassField.field
+			codeIterator.move(startPos);
+			codeIterator.next();
+			int innerClassGetFieldPos = codeIterator.next();
+			op = codeIterator.byteAt(innerClassGetFieldPos);
+			opCode_field = Mnemonic.OPCODE[op];
+			int index = codeIterator.u16bitAt(innerClassGetFieldPos + 1);
+
+			// innerClassField_field
+			innerClassFieldName = behavior.getMethodInfo2().getConstPool()
+					.getFieldrefName(index);
+
+			CtField ctField_field = cc.getField(innerClassFieldName);
+			objectName_field = ctField_field.getName();
+			objectBelongedClassName_field = ctField_field.getDeclaringClass()
+					.getName();
+			objectType_field = ctField_field.getSignature();
+			isfieldStatic_field = op == Opcode.GETSTATIC;
+		}
 
 		indirectFieldObject = new IndirectFieldObject(objectName_field,
 				objectType_field, objectBelongedClassName_field,
@@ -215,15 +245,15 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		return var;
 	}
 
-	// private boolean isAnotherClassAnInnerClass(FieldAccess field)
-	// throws NotFoundException {
-	// for (CtClass c : cc.getNestedClasses()) {
-	// if (c.getName().equals(field.getClassName())) {
-	// return true;
-	// }
-	// }
-	// return false;
-	// }
+	private boolean isAnotherClassAnInnerClass(FieldAccess field)
+			throws NotFoundException {
+		for (CtClass c : cc.getNestedClasses()) {
+			if (c.getName().equals(field.getClassName())) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * If the field is of the current analyzed class.
@@ -338,49 +368,54 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	private int getStartPos(FieldAccess field, int pos) throws BadBytecode {
 		int res = 0;
 		CtBehavior behavior = field.where();
-		CodeIterator iter = behavior.getMethodInfo().getCodeAttribute()
-				.iterator();
+		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
+		CodeIterator iter = codeAttr.iterator();
+
+		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+				.getAttribute(LineNumberAttribute.tag);
+		int line = lineNrAttr.toLineNumber(pos);
+		res = lineNrAttr.toStartPc(line);
 		HashMap<Integer, Integer> lineNrMap = getLineNumberMap(behavior);
 
 		Object[] keys = lineNrMap.keySet().toArray();
 		Arrays.sort(keys);
 
-		for (int i = 0; i < keys.length; i++) {
-			if ((int) keys[i] > pos) {
-				res = (int) keys[i - 1];
+		// for (int i = 0; i < keys.length; i++) {
+		// if ((int) keys[i] > pos) {
+		// res = (int) keys[i - 1];
 
-				if (fieldIsWritterInfoList.size() != 0) {
-					Variable lastVar = fieldIsWritterInfoList
-							.get(fieldIsWritterInfoList.size() - 1);
+		if (fieldIsWritterInfoList.size() != 0) {
+			Variable lastVar = fieldIsWritterInfoList
+					.get(fieldIsWritterInfoList.size() - 1);
 
-					if (isSameBehavior(field, lastVar)) {
+			if (isSameBehavior(field, lastVar)) {
 
-						iter.move(lastVar.getStorePos());
-						iter.next();
-						int nextPosAfterLastVar = iter.next();
+				iter.move(lastVar.getStorePos());
+				iter.next();
+				int nextPosAfterLastVar = iter.next();
 
-						if (iter.hasNext() && nextPosAfterLastVar == res) {
-							int op = iter.byteAt(res);
-							String instr = Mnemonic.OPCODE[op];
-							if (instr.matches("ldc.*")) {
+				if (iter.hasNext() && nextPosAfterLastVar == res) {
+					int op = iter.byteAt(res);
+					String instr = Mnemonic.OPCODE[op];
+					if (instr.matches("ldc.*")) {
 
-								while (iter.hasNext()
-										&& !instr.matches("invokestatic.*")) {
-									nextPosAfterLastVar = iter.next();
-									op = iter.byteAt(nextPosAfterLastVar);
-									instr = Mnemonic.OPCODE[op];
-								}
-								res = iter.next();
-							}
+						while (iter.hasNext()
+								&& !instr.matches("invokestatic.*")) {
+							nextPosAfterLastVar = iter.next();
+							op = iter.byteAt(nextPosAfterLastVar);
+							instr = Mnemonic.OPCODE[op];
 						}
+						res = iter.next();
 					}
 				}
-
-				return res;
 			}
 		}
 
 		return res;
+		// }
+		// }
+		//
+		// return res;
 	}
 
 	private int getPos(FieldAccess field) throws BadBytecode {

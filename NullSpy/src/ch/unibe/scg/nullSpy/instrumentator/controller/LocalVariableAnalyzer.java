@@ -1,8 +1,6 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
@@ -16,7 +14,6 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
-import javassist.expr.FieldAccess;
 import ch.unibe.scg.nullSpy.model.LocalVar;
 import ch.unibe.scg.nullSpy.model.Variable;
 
@@ -28,10 +25,11 @@ import ch.unibe.scg.nullSpy.model.Variable;
  */
 public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
-	private ArrayList<Variable> localVarList = new ArrayList<>();
+	private ArrayList<Variable> localVarList;
 
-	public LocalVariableAnalyzer(CtClass cc) {
+	public LocalVariableAnalyzer(CtClass cc, ArrayList<Variable> localVarList) {
 		super(cc);
+		this.localVarList = localVarList;
 	}
 
 	/**
@@ -49,6 +47,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		instrumentAfterLocVarObject(cc.getDeclaredConstructors());
 		instrumentAfterLocVarObject(cc.getDeclaredMethods());
 		// }
+		System.out.println();
 	}
 
 	/**
@@ -70,6 +69,10 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			CodeAttribute codeAttribute = method.getMethodInfo()
 					.getCodeAttribute();
+
+			if (codeAttribute == null) {
+				continue;
+			}
 
 			// if (codeAttribute != null) {
 			CodeIterator codeIterator = codeAttribute.iterator();
@@ -97,33 +100,38 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 				if (isLocVarObject(op) && pos <= methodMaxPc) {
 
+					int startPos = getStartPos(method, pos);
+					int afterPos = codeIterator.next();
+
 					int localVarTableIndex = getLocalVarTableIndex(
 							codeIterator, localVariableList, pos, "astore.*");
 
+					// name
 					String localVarName = localVariableList
 							.get(localVarTableIndex).varName;
+
+					// lineNr
 					int localVarLineNr = lineNumberTable.toLineNumber(pos);
 
-					int startPos = localVariableList.get(localVarTableIndex).startPc; // MUST
-																						// BE
-																						// CHANGED
-																						// !!!
-					int afterPos = codeIterator.next();
-
+					// type
 					String localVarType = localVariableList
 							.get(localVarTableIndex).varType;
 
+					// slot, ID
 					int localVarSlot = localVariableList
 							.get(localVarTableIndex).index;
 					String varID = "localVariable_" + localVarSlot;
 
+					// create localVar
 					LocalVar localVar = new LocalVar(varID, localVarName,
 							localVarLineNr, localVarType, pos, startPos,
 							afterPos, cc, method, localVarTableIndex,
 							localVarSlot);
 
+					// save localVar into list
 					localVarList.add(localVar);
 
+					// change byteCode
 					adaptByteCode(localVar);
 
 					// update codeAttr, codeIter; set codeIter to last checked
@@ -145,6 +153,12 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			// calculates the time modified project uses
 			addTimeToModifiedProject(method);
 			// }
+
+			// Printer p = new Printer();
+			// System.out.println("Method: " + method.getName());
+			// System.out.println("MethodParams: " + method.getSignature());
+			// p.printMethod(method, 0);
+			// System.out.println();
 		}
 
 	}
@@ -156,55 +170,67 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	 * @return
 	 */
 	private static boolean isLocVarObject(int op) {
-		return Mnemonic.OPCODE[op].matches("a{1,2}store.*");
+		return Mnemonic.OPCODE[op].matches("astore.*");
+		// return Mnemonic.OPCODE[op].matches("a{1,2}store.*");
+
 	}
 
-	private int getStartPos(FieldAccess field, int pos) throws BadBytecode {
+	private int getStartPos(CtBehavior behavior, int pos) throws BadBytecode {
 		int res = 0;
-		CtBehavior behavior = field.where();
-		CodeIterator iter = behavior.getMethodInfo().getCodeAttribute()
-				.iterator();
-		HashMap<Integer, Integer> lineNrMap = getLineNumberMap(behavior);
 
-		Object[] keys = lineNrMap.keySet().toArray();
-		Arrays.sort(keys);
+		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
+		CodeIterator iter = codeAttr.iterator();
 
-		for (int i = 0; i < keys.length; i++) {
-			if ((int) keys[i] > pos) {
-				res = (int) keys[i - 1];
+		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+				.getAttribute(LineNumberAttribute.tag);
+		int line = lineNrAttr.toLineNumber(pos);
+		res = lineNrAttr.toStartPc(line);
 
-				// if (fieldIsWritterInfoList.size() != 0) {
-				// Variable lastVar = fieldIsWritterInfoList
-				// .get(fieldIsWritterInfoList.size() - 1);
-				//
-				// if (isSameBehavior(field, lastVar)) {
-				//
-				// iter.move(lastVar.getStorePos());
-				// iter.next();
-				// int nextPosAfterLastVar = iter.next();
-				//
-				// if (iter.hasNext() && nextPosAfterLastVar == res) {
-				// int op = iter.byteAt(res);
-				// String instr = Mnemonic.OPCODE[op];
-				// if (instr.matches("ldc.*")) {
-				//
-				// while (iter.hasNext()
-				// && !instr.matches("invokestatic.*")) {
-				// nextPosAfterLastVar = iter.next();
-				// op = iter.byteAt(nextPosAfterLastVar);
-				// instr = Mnemonic.OPCODE[op];
-				// }
-				// res = iter.next();
-				// }
-				// }
-				// }
-				// }
-				//
-				// return res;
+		if (localVarList.size() != 0) {
+			Variable lastVar = localVarList.get(localVarList.size() - 1);
+
+			if (isSameBehavior(behavior, lastVar)) {
+
+				iter.move(lastVar.getStorePos());
+				iter.next();
+				int nextPosAfterLastVar = iter.next();
+
+				if (iter.hasNext() && nextPosAfterLastVar == res) {
+					int op = iter.byteAt(res);
+					String instr = Mnemonic.OPCODE[op];
+					if (instr.matches("ldc.*")) {
+
+						while (iter.hasNext()
+								&& !instr.matches("invokestatic.*")) {
+							nextPosAfterLastVar = iter.next();
+							op = iter.byteAt(nextPosAfterLastVar);
+							instr = Mnemonic.OPCODE[op];
+						}
+						res = iter.next();
+					}
+				}
 			}
 		}
 
 		return res;
+	}
+
+	private boolean isSameBehavior(CtBehavior currentBehavior, Variable lastVar) {
+		boolean inSameBehavior = false;
+
+		CtBehavior lastBehavior = lastVar.getBehavior();
+
+		if (!(lastBehavior == null)) {
+
+			// check class, methodName, methodParams
+			inSameBehavior = currentBehavior.getName().equals(
+					lastBehavior.getName())
+					&& currentBehavior.getDeclaringClass().getName()
+							.equals(lastVar.getBelongedClass().getName())
+					&& currentBehavior.getSignature().equals(
+							lastBehavior.getSignature());
+		}
+		return inSameBehavior;
 	}
 
 	private void addTimeToModifiedProject(CtBehavior method)

@@ -33,6 +33,10 @@ public class ByteCodeAdapter {
 
 		byte[] byteCode = getInsertCodeByteArray(var);
 
+		Printer p = new Printer();
+		// System.out.println("\nBefore:");
+		// p.printMethod(behavior, var.getStartPos());
+
 		if (insertInExpectedLineNr) {
 			iter.move(var.getStorePos());
 			iter.next();
@@ -50,6 +54,11 @@ public class ByteCodeAdapter {
 		behavior.getMethodInfo().rebuildStackMapIf6(
 				behavior.getDeclaringClass().getClassPool(),
 				behavior.getDeclaringClass().getClassFile2());
+
+		// System.out.println("\n\nAfter:");
+		// p.printMethod(behavior, var.getStorePos());
+		//
+		// System.out.println();
 
 	}
 
@@ -156,7 +165,7 @@ public class ByteCodeAdapter {
 
 		// more testMethod params
 		testMethodByteCode.addOpcode(Opcode.BIPUSH);
-		testMethodByteCode.addOpcode(var.getVarLineNr());
+		testMethodByteCode.add(var.getVarLineNr());
 		testMethodByteCode.addLdc(varName);
 		testMethodByteCode.addLdc(varType);
 		testMethodByteCode.addLdc(varID);
@@ -176,33 +185,6 @@ public class ByteCodeAdapter {
 
 		return byteCode;
 
-		// LOCAL VARIABLE
-		// 27 ldc <String "Main2"> [17]
-		// 29 ldc <String "testStackMapTable"> [17]
-		// 31 aload_1 [o]
-		// 32 bipush 16
-		// 34 ldc <String "o"> [18]
-		// 36 ldc <String "localVariable"> [20]
-		// 38 ldc <String "localVariable"> [20]
-		// 40 invokestatic
-		// ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test(java.lang.String,
-		// java.lang.String, java.lang.Object, int, java.lang.String,
-		// java.lang.String, java.lang.String) : void [22]
-
-		// FIELD
-		// 54 ldc <String "Main2"> [17]
-		// 56 ldc <String "testStackMapTable"> [19]
-		// 58 aload_0 [this]
-		// 59 getfield isFieldOrLocalVariableNullExample.Main2.obj :
-		// java.lang.Object [41]
-		// 62 bipush 21
-		// 64 ldc <String "obj"> [43]
-		// 66 ldc <String "object"> [44]
-		// 68 ldc <String "field"> [46]
-		// 70 invokestatic
-		// ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test(java.lang.String,
-		// java.lang.String, java.lang.Object, int, java.lang.String,
-		// java.lang.String, java.lang.String) : void [24]
 	}
 
 	public void insertTestLineAfterFieldInstantiatedOutSideMethod(

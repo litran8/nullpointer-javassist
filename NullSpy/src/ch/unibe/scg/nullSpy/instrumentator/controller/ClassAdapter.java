@@ -1,11 +1,13 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
+import ch.unibe.scg.nullSpy.model.Variable;
 
 /**
  * Iterates through the whole class and instrument a test-code after each field
@@ -17,6 +19,9 @@ import javassist.bytecode.BadBytecode;
 public class ClassAdapter {
 
 	private static ClassAdapter instance;
+
+	private ArrayList<Variable> fieldIsWritterInfoList = new ArrayList<Variable>();
+	private ArrayList<Variable> localVarList = new ArrayList<>();
 
 	private ClassAdapter() {
 	}
@@ -33,10 +38,13 @@ public class ClassAdapter {
 			IllegalAccessException, InvocationTargetException,
 			NoSuchMethodException {
 
-		FieldAnalyzer fieldLogic = new FieldAnalyzer(cc);
+		System.out.println("\n\nCLASS: " + cc.getName());
+		System.out.println();
+		FieldAnalyzer fieldLogic = new FieldAnalyzer(cc, fieldIsWritterInfoList);
 		fieldLogic.instrumentAfterFieldAssignment();
 
-		LocalVariableAnalyzer locVarLogic = new LocalVariableAnalyzer(cc);
+		LocalVariableAnalyzer locVarLogic = new LocalVariableAnalyzer(cc,
+				localVarList);
 		locVarLogic.instrumentAfterLocVarAssignment();
 	}
 }
