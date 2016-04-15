@@ -33,7 +33,7 @@ public class ByteCodeAdapter {
 
 		byte[] byteCode = getInsertCodeByteArray(var);
 
-		Printer p = new Printer();
+		// Printer p = new Printer();
 		// System.out.println("\nBefore:");
 		// p.printMethod(behavior, var.getStartPos());
 

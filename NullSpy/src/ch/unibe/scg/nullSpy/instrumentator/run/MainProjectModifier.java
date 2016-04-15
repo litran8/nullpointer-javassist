@@ -187,7 +187,8 @@ public class MainProjectModifier {
 			ClassAdapter classAdapter = ClassAdapter.getInstance();
 			String name = cc.getName();
 			// if (!cc.isInterface()
-			// && cc.getName().equals("net.n3.nanoxml.StdXMLReader")) {
+			// && cc.getName().equals(
+			// "org.jhotdraw.draw.DefaultDrawingView")) {
 			if (!cc.isInterface()) {
 				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc);
 			}

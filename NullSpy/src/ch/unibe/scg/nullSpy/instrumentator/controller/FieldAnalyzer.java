@@ -12,6 +12,7 @@ import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
+import javassist.bytecode.ConstPool;
 import javassist.bytecode.InstructionPrinter;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
@@ -71,13 +72,12 @@ public class FieldAnalyzer extends VariableAnalyzer {
 								var = storeFieldOfAnotherClass(field);
 							}
 
-							System.out.println("Method: "
-									+ var.getBehavior().getName());
+							// System.out.println("Method: "
+							// + var.getBehavior().getName());
 
 							// insert code after assignment
 							adaptByteCode(var);
 						}
-
 					} catch (NotFoundException | BadBytecode e) {
 						e.printStackTrace();
 					}
@@ -380,10 +380,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		Object[] keys = lineNrMap.keySet().toArray();
 		Arrays.sort(keys);
 
-		// for (int i = 0; i < keys.length; i++) {
-		// if ((int) keys[i] > pos) {
-		// res = (int) keys[i - 1];
-
 		if (fieldIsWritterInfoList.size() != 0) {
 			Variable lastVar = fieldIsWritterInfoList
 					.get(fieldIsWritterInfoList.size() - 1);
@@ -412,47 +408,82 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		}
 
 		return res;
-		// }
-		// }
-		//
-		// return res;
 	}
 
 	private int getPos(FieldAccess field) throws BadBytecode {
 		CtBehavior behavior = field.where();
-		CodeAttribute attr = behavior.getMethodInfo().getCodeAttribute();
-		CodeIterator iter = attr.iterator();
+		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
+		CodeIterator codeIter = codeAttr.iterator();
+
+		ConstPool constPool = behavior.getMethodInfo2().getConstPool();
+
+		int fieldListSize = fieldIsWritterInfoList.size();
+
 		int pos = 0;
-		if (behavior.getMethodInfo().isConstructor()) {
+
+		if (fieldListSize == 0) {
+			// list is empty, read pos from original codeAttr
 			pos = field.indexOfBytecode();
-		}
-		int op = iter.byteAt(pos);
-		if (Mnemonic.OPCODE[op].matches("put.*"))
-			return pos;
+		} else if (fieldListSize != 0) {
+			// list is not empty
+			Variable lastVar = fieldIsWritterInfoList.get(fieldListSize - 1);
+			CtBehavior lastFieldBehavior = lastVar.getBehavior();
 
-		if (fieldIsWritterInfoList.size() != 0) {
-			Variable lastVar = fieldIsWritterInfoList
-					.get(fieldIsWritterInfoList.size() - 1);
-
-			if (isSameBehavior(field, lastVar)) {
-				pos = lastVar.getStorePos();
+			if (isSameBehavior(behavior, lastFieldBehavior)) {
+				// last field is in same behavior -> set pos to last field's pos
+				// because codeAttr has changed, not the original anymore
+				pos = lastVar.getAfterPos();
+			} else {
+				// last field not from same behavior -> codeAttr of the current
+				// behavior is still the original one
+				field.indexOfBytecode();
 			}
 		}
 
-		iter.move(pos);
-		iter.next();
-		pos = iter.next();
+		// set codeIter to pos
+		codeIter.move(pos);
+		int op = codeIter.byteAt(codeIter.next());
 
-		op = iter.byteAt(pos);
-		String s = Mnemonic.OPCODE[op];
+		// iterate until opcode put.*
+		while ((op != Opcode.PUTFIELD) && (op != Opcode.PUTSTATIC)) {
+			pos = codeIter.next();
+			op = codeIter.byteAt(pos);
+		}
 
-		while (!s.matches("put.*") && iter.hasNext()) {
-			pos = iter.next();
-			op = iter.byteAt(pos);
-			s = Mnemonic.OPCODE[op];
+		// get signature of the field at pos
+		// this is for skipping every primitive field
+		int index = codeIter.u16bitAt(pos + 1);
+		String signatureOfTestPos = constPool.getFieldrefType(index);
+		String signature = field.getSignature();
+
+		// if is not the same signature
+		// iterate to next field, check signature etc.
+		while (!signature.equals(signatureOfTestPos)) {
+			pos = codeIter.next();
+			op = codeIter.byteAt(pos);
+
+			while ((op != Opcode.PUTFIELD) && (op != Opcode.PUTSTATIC)) {
+				pos = codeIter.next();
+				op = codeIter.byteAt(pos);
+			}
+
+			index = codeIter.u16bitAt(pos + 1);
+			signatureOfTestPos = constPool.getFieldrefType(index);
 		}
 
 		return pos;
+
+	}
+
+	private boolean isSameBehavior(CtBehavior behavior,
+			CtBehavior lastFieldBehavior) {
+		return behavior.getName().equals(lastFieldBehavior.getName())
+				&& behavior.getSignature().equals(
+						lastFieldBehavior.getSignature())
+				&& behavior
+						.getDeclaringClass()
+						.getName()
+						.equals(lastFieldBehavior.getDeclaringClass().getName());
 	}
 
 	private boolean isSameBehavior(FieldAccess field, Variable lastVar) {
