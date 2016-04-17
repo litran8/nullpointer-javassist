@@ -10,6 +10,7 @@ import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
+import javassist.bytecode.InstructionPrinter;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
@@ -106,21 +107,45 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					int localVarTableIndex = getLocalVarTableIndex(
 							codeIterator, localVariableList, pos, "astore.*");
 
-					// name
-					String localVarName = localVariableList
-							.get(localVarTableIndex).varName;
+					int localVarSlot = localVariableList
+							.get(localVarTableIndex).index;
+
+					String instr = InstructionPrinter.instructionString(
+							codeIterator, pos, codeAttribute.getConstPool());
+
+					if (instr.contains(" ")) {
+						instr = instr.substring(instr.indexOf(" ") + 1);
+					} else {
+						instr = instr.substring(instr.indexOf("_") + 1);
+					}
+
+					int instrSlot = Integer.parseInt(instr);
+
+					String localVarName = "";
+					String localVarType = "";
+					String varID = "localVariable_";
 
 					// lineNr
 					int localVarLineNr = lineNumberTable.toLineNumber(pos);
 
-					// type
-					String localVarType = localVariableList
-							.get(localVarTableIndex).varType;
+					if (localVarSlot != instrSlot) {
+						varID += instrSlot;
+					} else {
+						localVarName = localVariableList
+								.get(localVarTableIndex).varName;
+						localVarType = localVariableList
+								.get(localVarTableIndex).varType;
+						varID += localVarSlot;
+					}
 
-					// slot, ID
-					int localVarSlot = localVariableList
-							.get(localVarTableIndex).index;
-					String varID = "localVariable_" + localVarSlot;
+					// // name
+					// String localVarName = localVariableList
+					// .get(localVarTableIndex).varName;
+					// // type
+					// String localVarType = localVariableList
+					// .get(localVarTableIndex).varType;
+					// // slot, ID
+					// String varID = "localVariable_" + localVarSlot;
 
 					// create localVar
 					LocalVar localVar = new LocalVar(varID, localVarName,
@@ -147,6 +172,12 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 							.getAttribute(LineNumberAttribute.tag);
 					localVariableList = getStableLocalVariableTableAsList(localVariableTable);
 
+					// Printer p = new Printer();
+					// System.out.println("Method: " + method.getName());
+					// System.out
+					// .println("MethodParams: " + method.getSignature());
+					// p.printMethod(method, 0);
+					// System.out.println();
 				}
 			}
 
@@ -154,11 +185,11 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			addTimeToModifiedProject(method);
 			// }
 
-			// Printer p = new Printer();
-			// System.out.println("Method: " + method.getName());
-			// System.out.println("MethodParams: " + method.getSignature());
-			// p.printMethod(method, 0);
-			// System.out.println();
+			Printer p = new Printer();
+			System.out.println("Method: " + method.getName());
+			System.out.println("MethodParams: " + method.getSignature());
+			p.printMethod(method, 0);
+			System.out.println();
 		}
 
 	}

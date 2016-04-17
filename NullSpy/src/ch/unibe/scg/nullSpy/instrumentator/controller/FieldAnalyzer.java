@@ -51,8 +51,10 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		cc.instrument(new ExprEditor() {
 			public void edit(FieldAccess field) throws CannotCompileException {
-
-				if (field.isWriter()) {
+				CtBehavior behavior = field.where();
+				CodeAttribute codeAttr = behavior.getMethodInfo()
+						.getCodeAttribute();
+				if (field.isWriter() && codeAttr != null) {
 					try {
 						Variable var = null;
 
@@ -61,7 +63,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 						// p.printMethod(field.where(), 0);
 
 						// fieldType is an object -> starts with L.*
-						if (isFieldNotPrimitive(field)) {
+						if (isFieldNotPrimitive(field)
+								&& !isInnerClassSuperCall(field)) {
 
 							if (isFieldFromCurrentCtClass(field)) {
 								// direct fields
@@ -86,31 +89,31 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		});
 
-		// Printer p = new Printer();
-		//
-		// CtBehavior classInit = cc.getClassInitializer();
-		// if (classInit != null) {
-		// System.out.println("\n" + classInit.getName());
-		// p.printMethod(classInit, 0);
-		// }
-		//
-		// for (CtBehavior b : cc.getDeclaredConstructors()) {
-		//
-		// if (b.getMethodInfo().getCodeAttribute() != null) {
-		// System.out.println("\n" + b.getName());
-		// System.out.println(b.getSignature());
-		// p.printMethod(b, 0);
-		// }
-		// }
-		//
-		// for (CtBehavior b : cc.getDeclaredMethods()) {
-		// if (b.getMethodInfo().getCodeAttribute() != null) {
-		// System.out.println("\n" + b.getName());
-		// p.printMethod(b, 0);
-		// }
-		// }
-		//
-		// System.out.println();
+		Printer p = new Printer();
+
+		CtBehavior classInit = cc.getClassInitializer();
+		if (classInit != null) {
+			System.out.println("\n" + classInit.getName());
+			p.printMethod(classInit, 0);
+		}
+
+		for (CtBehavior b : cc.getDeclaredConstructors()) {
+
+			if (b.getMethodInfo().getCodeAttribute() != null) {
+				System.out.println("\n" + b.getName());
+				System.out.println(b.getSignature());
+				p.printMethod(b, 0);
+			}
+		}
+
+		for (CtBehavior b : cc.getDeclaredMethods()) {
+			if (b.getMethodInfo().getCodeAttribute() != null) {
+				System.out.println("\n" + b.getName());
+				p.printMethod(b, 0);
+			}
+		}
+
+		System.out.println();
 	}
 
 	/**
@@ -272,87 +275,87 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		int posAfterAssignment = 0;
 
 		// if field is initiated outside a method -> method is null
-		if (behavior != null) {
-			CodeAttribute codeAttribute = behavior.getMethodInfo()
-					.getCodeAttribute();
-			CodeIterator codeIterator = codeAttribute.iterator();
+		// if (behavior != null) {
+		CodeAttribute codeAttribute = behavior.getMethodInfo()
+				.getCodeAttribute();
+		CodeIterator codeIterator = codeAttribute.iterator();
 
-			pos = getPos(field);
-			startPos = getStartPos(field, pos);
-			codeIterator.move(pos);
-			codeIterator.next();
+		pos = getPos(field);
+		startPos = getStartPos(field, pos);
+		codeIterator.move(pos);
+		codeIterator.next();
 
-			if (codeIterator.hasNext()) {
-				posAfterAssignment = codeIterator.next();
-			}
-
-			LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttribute
-					.getAttribute(LineNumberAttribute.tag);
-			fieldLineNr = lineNrAttr.toLineNumber(pos);
-
-		} else {
-
-			// field instantiated outside behavior, that means insert in every
-			// constructor
-
-			CtBehavior voidConstructor = cc.getDeclaredConstructors()[0];
-			CodeAttribute codeAttr = voidConstructor.getMethodInfo()
-					.getCodeAttribute();
-			CodeIterator codeIter = codeAttr.iterator();
-
-			if (fieldIsWritterInfoList.size() != 0) {
-
-				if (field.isStatic()) {
-					int fieldListSize = fieldIsWritterInfoList.size();
-
-					Variable lastOutsideInstatiatedStaticField = null;
-
-					// gets the last static outside field
-					for (int i = fieldListSize - 1; i >= 0; i--) {
-						lastOutsideInstatiatedStaticField = fieldIsWritterInfoList
-								.get(i);
-
-						if (lastOutsideInstatiatedStaticField.getBehavior() == null
-								&& lastOutsideInstatiatedStaticField.isStatic()
-								&& cc.getName().equals(
-										lastOutsideInstatiatedStaticField
-												.getBelongedClass().getName())) {
-							break;
-						}
-					}
-
-					if (lastOutsideInstatiatedStaticField == null) {
-						// first static outside field
-						pos = 1;
-					} else {
-						// set pos to last static outside field afterPos
-						// iterate until inovke.* -> pos = invoke.*-pc
-						codeIter.move(lastOutsideInstatiatedStaticField
-								.getAfterPos());
-						pos = codeIter.next();
-						int op = codeIter.byteAt(pos);
-
-						while (!Mnemonic.OPCODE[op].matches("invoke.*")) {
-							pos = codeIter.next();
-							op = codeIter.byteAt(pos);
-						}
-					}
-				} else {
-					pos = field.indexOfBytecode();
-				}
-
-			} else {
-
-				// first field (static or nonStatic)
-				// should be pc 1
-				pos = field.indexOfBytecode();
-			}
-
-			codeIter.move(pos);
-			codeIter.next();
-			posAfterAssignment = codeIter.next();
-
+		if (codeIterator.hasNext()) {
+			posAfterAssignment = codeIterator.next();
 		}
+
+		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttribute
+				.getAttribute(LineNumberAttribute.tag);
+		fieldLineNr = lineNrAttr.toLineNumber(pos);
+
+		// } else {
+		//
+		// // field instantiated outside behavior, that means insert in every
+		// // constructor
+		//
+		// CtBehavior voidConstructor = cc.getDeclaredConstructors()[0];
+		// CodeAttribute codeAttr = voidConstructor.getMethodInfo()
+		// .getCodeAttribute();
+		// CodeIterator codeIter = codeAttr.iterator();
+		//
+		// if (fieldIsWritterInfoList.size() != 0) {
+		//
+		// if (field.isStatic()) {
+		// int fieldListSize = fieldIsWritterInfoList.size();
+		//
+		// Variable lastOutsideInstatiatedStaticField = null;
+		//
+		// // gets the last static outside field
+		// for (int i = fieldListSize - 1; i >= 0; i--) {
+		// lastOutsideInstatiatedStaticField = fieldIsWritterInfoList
+		// .get(i);
+		//
+		// if (lastOutsideInstatiatedStaticField.getBehavior() == null
+		// && lastOutsideInstatiatedStaticField.isStatic()
+		// && cc.getName().equals(
+		// lastOutsideInstatiatedStaticField
+		// .getBelongedClass().getName())) {
+		// break;
+		// }
+		// }
+		//
+		// if (lastOutsideInstatiatedStaticField == null) {
+		// // first static outside field
+		// pos = 1;
+		// } else {
+		// // set pos to last static outside field afterPos
+		// // iterate until inovke.* -> pos = invoke.*-pc
+		// codeIter.move(lastOutsideInstatiatedStaticField
+		// .getAfterPos());
+		// pos = codeIter.next();
+		// int op = codeIter.byteAt(pos);
+		//
+		// while (!Mnemonic.OPCODE[op].matches("invoke.*")) {
+		// pos = codeIter.next();
+		// op = codeIter.byteAt(pos);
+		// }
+		// }
+		// } else {
+		// pos = field.indexOfBytecode();
+		// }
+		//
+		// } else {
+		//
+		// // first field (static or nonStatic)
+		// // should be pc 1
+		// pos = field.indexOfBytecode();
+		// }
+		//
+		// codeIter.move(pos);
+		// codeIter.next();
+		// posAfterAssignment = codeIter.next();
+		//
+		// }
 
 		String fieldName = field.getFieldName();
 		String fieldType = field.getSignature();
@@ -502,11 +505,27 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	}
 
 	private boolean isFieldFromCurrentCtClass(FieldAccess field)
-			throws NotFoundException {
-		if (field.getClassName().equals(cc.getName()))
-			return true;
-		else
+			throws NotFoundException, BadBytecode {
+		CtBehavior behavior = field.where();
+		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
+		CodeIterator codeIter = codeAttr.iterator();
+
+		int pos = getPos(field);
+		int startPos = getStartPos(field, pos);
+		int startPosOp = codeIter.byteAt(startPos);
+
+		String instrAtStartPos = Mnemonic.OPCODE[startPosOp];
+		boolean isStatic = field.isStatic();
+
+		if (field.getClassName().equals(cc.getName())) {
+			if (!isStatic && startPosOp != Opcode.ALOAD_0) {
+				return false;
+			} else {
+				return true;
+			}
+		} else {
 			return false;
+		}
 	}
 
 	private boolean isFieldNotPrimitive(FieldAccess field) {
@@ -514,6 +533,60 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			return true;
 		else
 			return false;
+	}
+
+	private boolean isInnerClassSuperCall(FieldAccess field) throws BadBytecode {
+
+		CtBehavior behavior = field.where();
+		if (behavior.getMethodInfo().isMethod())
+			return false;
+
+		String className = behavior.getDeclaringClass().getName();
+		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
+		System.out.println();
+		if (codeAttr == null)
+			return false;
+
+		CodeIterator codeIter = codeAttr.iterator();
+
+		int checkSuperCallPos = 0;
+		int checkSuperCallOp = codeIter.byteAt(0);
+
+		codeIter.move(checkSuperCallPos);
+		codeIter.next();
+
+		int pos = getPos(field);
+
+		if (checkSuperCallOp == Opcode.ALOAD_0) {
+			checkSuperCallPos = codeIter.next();
+			checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
+			if (checkSuperCallOp == Opcode.ALOAD_1) {
+				checkSuperCallPos = codeIter.next();
+				checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
+				if (checkSuperCallOp == Opcode.PUTFIELD
+						&& pos == checkSuperCallPos) {
+					checkSuperCallPos = codeIter.next();
+					checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
+					if (checkSuperCallOp == Opcode.ALOAD_0) {
+						checkSuperCallPos = codeIter.next();
+						checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
+						if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
+							return true;
+						} else {
+							return false;
+						}
+					} else {
+						return false;
+					}
+				} else {
+					return false;
+				}
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
 	}
 
 }

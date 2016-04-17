@@ -95,6 +95,8 @@ public class ExecutableJarCreator {
 			if (src.getParent().equals(this.modifiedProjectBinSrcPath))
 				packageName = "";
 
+			System.out.println(src.getName());
+
 			target.putNextEntry(new JarEntry(packageName + src.getName()));
 
 			byte[] buffer = new byte[1024];
