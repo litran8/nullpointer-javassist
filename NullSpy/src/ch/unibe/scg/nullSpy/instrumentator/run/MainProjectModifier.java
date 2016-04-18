@@ -187,8 +187,7 @@ public class MainProjectModifier {
 			ClassAdapter classAdapter = ClassAdapter.getInstance();
 			String name = cc.getName();
 			// if (!cc.isInterface()
-			// && cc.getName().equals(
-			// "org.jhotdraw.draw.DefaultDrawingView")) {
+			// && cc.getName().equals("org.jhotdraw.draw.DiamondFigure")) {
 			if (!cc.isInterface()) {
 				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc);
 			}

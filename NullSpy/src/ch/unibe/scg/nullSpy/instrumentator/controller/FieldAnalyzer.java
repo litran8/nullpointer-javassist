@@ -1,8 +1,6 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
@@ -143,10 +141,9 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		int pos = getPos(field);
 		int startPos = getStartPos(field, pos);
-		System.out.println();
 		codeIterator.move(pos);
 		codeIterator.next();
-
+		System.out.println();
 		int afterPos = 0;
 		if (codeIterator.hasNext()) {
 			afterPos = codeIterator.next();
@@ -369,19 +366,26 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	}
 
 	private int getStartPos(FieldAccess field, int pos) throws BadBytecode {
-		int res = 0;
+		int startPos = 0;
 		CtBehavior behavior = field.where();
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
-		CodeIterator iter = codeAttr.iterator();
+		CodeIterator codeIter = codeAttr.iterator();
+		ArrayList<Integer> posList = new ArrayList<>();
+
+		int i = 0;
+		while (codeIter.hasNext() && i <= pos) {
+			i = codeIter.next();
+			posList.add(i);
+		}
 
 		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 				.getAttribute(LineNumberAttribute.tag);
 		int line = lineNrAttr.toLineNumber(pos);
-		res = lineNrAttr.toStartPc(line);
-		HashMap<Integer, Integer> lineNrMap = getLineNumberMap(behavior);
+		startPos = lineNrAttr.toStartPc(line);
 
-		Object[] keys = lineNrMap.keySet().toArray();
-		Arrays.sort(keys);
+		int op = codeIter.byteAt(startPos);
+
+		int nextPosAfterLastVar = 0;
 
 		if (fieldIsWritterInfoList.size() != 0) {
 			Variable lastVar = fieldIsWritterInfoList
@@ -389,28 +393,57 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 			if (isSameBehavior(field, lastVar)) {
 
-				iter.move(lastVar.getStorePos());
-				iter.next();
-				int nextPosAfterLastVar = iter.next();
+				codeIter.move(lastVar.getAfterPos());
+				nextPosAfterLastVar = codeIter.next();
+			}
+		}
 
-				if (iter.hasNext() && nextPosAfterLastVar == res) {
-					int op = iter.byteAt(res);
+		// get right startPos if field assignment needs more than 1 line
+		if (!field.isStatic()) {
+
+			if (nextPosAfterLastVar != startPos) {
+				while (op != Opcode.GETSTATIC
+						&& !Mnemonic.OPCODE[op].matches("aload.*")
+						&& op != Opcode.ALOAD_0) {
+					startPos = posList.get(posList.indexOf(startPos) - 1);
+					op = codeIter.byteAt(startPos);
+				}
+			}
+
+		}
+
+		// fieldAssignment after fieldAssignment:
+		// startPos of later will be set to pos of inserted byte code of the
+		// first one
+		// iterate to pos after byte code and set startPos to it
+		if (fieldIsWritterInfoList.size() != 0) {
+			Variable lastVar = fieldIsWritterInfoList
+					.get(fieldIsWritterInfoList.size() - 1);
+
+			if (isSameBehavior(field, lastVar)) {
+
+				codeIter.move(lastVar.getStorePos());
+				codeIter.next();
+				nextPosAfterLastVar = codeIter.next();
+
+				if (codeIter.hasNext() && nextPosAfterLastVar == startPos) {
+					op = codeIter.byteAt(startPos);
 					String instr = Mnemonic.OPCODE[op];
 					if (instr.matches("ldc.*")) {
 
-						while (iter.hasNext()
+						while (codeIter.hasNext()
 								&& !instr.matches("invokestatic.*")) {
-							nextPosAfterLastVar = iter.next();
-							op = iter.byteAt(nextPosAfterLastVar);
+							nextPosAfterLastVar = codeIter.next();
+							op = codeIter.byteAt(nextPosAfterLastVar);
 							instr = Mnemonic.OPCODE[op];
 						}
-						res = iter.next();
+						startPos = codeIter.next();
 					}
 				}
 			}
 		}
 
-		return res;
+		return startPos;
 	}
 
 	private int getPos(FieldAccess field) throws BadBytecode {
