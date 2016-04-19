@@ -38,12 +38,14 @@ public class ClassAdapter {
 			IllegalAccessException, InvocationTargetException,
 			NoSuchMethodException {
 
-		System.out.println("\n------------- FIELD -------------\n");
 		System.out.println("\n\nCLASS: " + cc.getName());
-		System.out.println();
+		System.out.println("\n------------- FIELD -------------\n");
+
 		FieldAnalyzer fieldLogic = new FieldAnalyzer(cc, fieldIsWritterInfoList);
 		fieldLogic.instrumentAfterFieldAssignment();
+
 		System.out.println("\n------------- LOCAL VAR -------------\n");
+
 		LocalVariableAnalyzer locVarLogic = new LocalVariableAnalyzer(cc,
 				localVarList);
 		locVarLogic.instrumentAfterLocVarAssignment();

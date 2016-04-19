@@ -87,31 +87,31 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		});
 
-		Printer p = new Printer();
-
-		CtBehavior classInit = cc.getClassInitializer();
-		if (classInit != null) {
-			System.out.println("\n" + classInit.getName());
-			p.printMethod(classInit, 0);
-		}
-
-		for (CtBehavior b : cc.getDeclaredConstructors()) {
-
-			if (b.getMethodInfo().getCodeAttribute() != null) {
-				System.out.println("\n" + b.getName());
-				System.out.println(b.getSignature());
-				p.printMethod(b, 0);
-			}
-		}
-
-		for (CtBehavior b : cc.getDeclaredMethods()) {
-			if (b.getMethodInfo().getCodeAttribute() != null) {
-				System.out.println("\n" + b.getName());
-				p.printMethod(b, 0);
-			}
-		}
-
-		System.out.println();
+		// Printer p = new Printer();
+		//
+		// CtBehavior classInit = cc.getClassInitializer();
+		// if (classInit != null) {
+		// System.out.println("\n" + classInit.getName());
+		// p.printMethod(classInit, 0);
+		// }
+		//
+		// for (CtBehavior b : cc.getDeclaredConstructors()) {
+		//
+		// if (b.getMethodInfo().getCodeAttribute() != null) {
+		// System.out.println("\n" + b.getName());
+		// System.out.println(b.getSignature());
+		// p.printMethod(b, 0);
+		// }
+		// }
+		//
+		// for (CtBehavior b : cc.getDeclaredMethods()) {
+		// if (b.getMethodInfo().getCodeAttribute() != null) {
+		// System.out.println("\n" + b.getName());
+		// p.printMethod(b, 0);
+		// }
+		// }
+		//
+		// System.out.println();
 	}
 
 	/**
@@ -141,9 +141,18 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		int pos = getPos(field);
 		int startPos = getStartPos(field, pos);
+		int startPosOp = codeIterator.byteAt(startPos);
+		codeIterator.move(startPos);
+		codeIterator.next();
+
+		while (startPosOp == Opcode.NOP) {
+			startPos = codeIterator.next();
+			startPosOp = codeIterator.byteAt(startPos);
+		}
+
 		codeIterator.move(pos);
 		codeIterator.next();
-		System.out.println();
+
 		int afterPos = 0;
 		if (codeIterator.hasNext()) {
 			afterPos = codeIterator.next();
@@ -167,6 +176,11 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		String objectType_field = "";
 		String objectBelongedClassName_field = "";
 		boolean isfieldStatic_field = false;
+
+		if (cc.getName().equals("org.jhotdraw.app.action.ArrangeAction")) {
+			Printer p = new Printer();
+			p.printMethod(behavior, 0);
+		}
 
 		if (!field.isStatic()) {
 
@@ -192,6 +206,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 						codeIterator, startPos, field.where().getMethodInfo2()
 								.getConstPool());
 				int brace = instruction.indexOf("(");
+
 				instruction = instruction.substring(
 						instruction.lastIndexOf(".") + 1, brace);
 				objectName_field = instruction;
@@ -576,7 +591,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		String className = behavior.getDeclaringClass().getName();
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
-		System.out.println();
+
 		if (codeAttr == null)
 			return false;
 

@@ -44,7 +44,7 @@ public class MainProjectModifier {
 			originalProjectBinSrcPath = args[0];
 			modifiedProjectDestDirPath = args[1];
 		} else {
-			System.out.println("Amount of args is not enough or to big.");
+			System.out.println("Amount of args is not enough or too big.");
 			System.exit(0);
 		}
 
@@ -187,7 +187,8 @@ public class MainProjectModifier {
 			ClassAdapter classAdapter = ClassAdapter.getInstance();
 			String name = cc.getName();
 			// if (!cc.isInterface()
-			// && cc.getName().equals("org.jhotdraw.draw.DiamondFigure")) {
+			// && cc.getName()
+			// .equals("org.jhotdraw.app.action.CopyAction")) {
 			if (!cc.isInterface()) {
 				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc);
 			}

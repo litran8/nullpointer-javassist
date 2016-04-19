@@ -48,7 +48,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		instrumentAfterLocVarObject(cc.getDeclaredConstructors());
 		instrumentAfterLocVarObject(cc.getDeclaredMethods());
 		// }
-		System.out.println();
 	}
 
 	/**
@@ -185,11 +184,11 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			addTimeToModifiedProject(method);
 			// }
 
-			Printer p = new Printer();
-			System.out.println("Method: " + method.getName());
-			System.out.println("MethodParams: " + method.getSignature());
-			p.printMethod(method, 0);
-			System.out.println();
+			// Printer p = new Printer();
+			// System.out.println("Method: " + method.getName());
+			// System.out.println("MethodParams: " + method.getSignature());
+			// p.printMethod(method, 0);
+			// System.out.println();
 		}
 
 	}

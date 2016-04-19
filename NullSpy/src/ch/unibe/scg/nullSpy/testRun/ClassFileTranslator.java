@@ -29,7 +29,7 @@ public class ClassFileTranslator implements Translator {
 	@Override
 	public void onLoad(ClassPool pool, String className)
 			throws NotFoundException, CannotCompileException {
-		pool.insertClassPath("C:\\Users\\Lina Tran\\Desktop\\bachelor\\JHotDraw\\bin");
+		// pool.insertClassPath("C:\\Users\\Lina Tran\\Desktop\\bachelor\\JHotDraw\\bin");
 
 		if (!className
 				.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer")
