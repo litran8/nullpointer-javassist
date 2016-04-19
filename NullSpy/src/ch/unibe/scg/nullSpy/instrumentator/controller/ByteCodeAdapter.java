@@ -49,11 +49,12 @@ public class ByteCodeAdapter {
 
 		codeAttribute.computeMaxStack();
 
-		behavior.getMethodInfo().rebuildStackMap(
-				behavior.getDeclaringClass().getClassPool());
-		// behavior.getMethodInfo().rebuildStackMapIf6(
-		// behavior.getDeclaringClass().getClassPool(),
-		// behavior.getDeclaringClass().getClassFile2());
+		behavior.getMethodInfo().doPreverify = true;
+		// behavior.getMethodInfo().rebuildStackMap(
+		// behavior.getDeclaringClass().getClassPool());
+		behavior.getMethodInfo().rebuildStackMapIf6(
+				behavior.getDeclaringClass().getClassPool(),
+				behavior.getDeclaringClass().getClassFile2());
 
 		// System.out.println("\n\nAfter:");
 		// p.printMethod(behavior, var.getStorePos());
