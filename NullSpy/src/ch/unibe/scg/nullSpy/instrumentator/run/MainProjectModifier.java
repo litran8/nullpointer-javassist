@@ -188,7 +188,8 @@ public class MainProjectModifier {
 			String name = cc.getName();
 			// if (!cc.isInterface()
 			// && cc.getName()
-			// .equals("org.jhotdraw.app.action.CopyAction")) {
+			// .equals("org.jhotdraw.contrib.html.DisposableResourceManagerFactory"))
+			// {
 			if (!cc.isInterface()) {
 				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc);
 			}
