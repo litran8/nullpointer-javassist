@@ -12,16 +12,10 @@ import java.util.jar.Manifest;
 
 public class ExecutableJarCreator {
 
-	private String packageName;
-	private String modifiedProjectBinSrcPath;
-
 	public void createExecJar(String modifiedProjectBinSrcPath,
 			String jarDestPath, String mainClassName) {
 
-		this.modifiedProjectBinSrcPath = modifiedProjectBinSrcPath;
-
-		File modifiedProject = new File(this.modifiedProjectBinSrcPath);
-		File jarDest = new File(jarDestPath);
+		File modifiedProject = new File(modifiedProjectBinSrcPath);
 
 		try {
 			// create manifest for executable jar
@@ -34,7 +28,7 @@ public class ExecutableJarCreator {
 			JarOutputStream target = new JarOutputStream(new FileOutputStream(
 					jarDestPath + "\\" + mainClassName + ".jar"), manifest);
 
-			srcToJar(modifiedProject, jarDest, target);
+			srcToJar(modifiedProject, "", target);
 			target.close();
 
 		} catch (IOException e) {
@@ -54,23 +48,20 @@ public class ExecutableJarCreator {
 	 * @param target
 	 * @throws IOException
 	 */
-	public void srcToJar(File src, File dest, JarOutputStream target)
+	public void srcToJar(File src, String packagePath, JarOutputStream target)
 			throws IOException {
 
 		if (src.isDirectory()) {
 
 			String dirName = src.getName();
+			// TODO: check that model of other projects is not excluded
 			if (dirName.equals("model") || dirName.equals("testRun")
 					|| dirName.equals("tests")) {
 				return;
 			}
+
 			// to make sub-folders in jar
-			if (!src.getName().equals("bin")) {
-				if (packageName == null)
-					packageName = (src.getName() + "/");
-				else
-					packageName += (src.getName() + "/");
-			}
+			packagePath += (dirName + "/");
 
 			// list all the directory contents
 			String files[] = src.list();
@@ -79,25 +70,17 @@ public class ExecutableJarCreator {
 
 				// construct the src and dest file structure
 				File srcFile = new File(src, file);
-				File destFile = new File(dest, file);
 
 				// recursive copy
-				srcToJar(srcFile, destFile, target);
-
-				// only if package is changed; for sub-folders in jar
-				if (srcFile.isDirectory())
-					packageName = null;
+				srcToJar(srcFile, packagePath, target);
 			}
 		} else {
 			// if file, then copy it
 			InputStream in = new FileInputStream(src);
 
-			if (src.getParent().equals(this.modifiedProjectBinSrcPath))
-				packageName = "";
+			System.out.println(packagePath + src.getName());
 
-			System.out.println(src.getName());
-
-			target.putNextEntry(new JarEntry(packageName + src.getName()));
+			target.putNextEntry(new JarEntry(packagePath + src.getName()));
 
 			byte[] buffer = new byte[1024];
 
