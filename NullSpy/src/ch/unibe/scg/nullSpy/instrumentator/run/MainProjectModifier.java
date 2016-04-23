@@ -2,12 +2,10 @@ package ch.unibe.scg.nullSpy.instrumentator.run;
 
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
 
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -74,9 +72,10 @@ public class MainProjectModifier {
 
 			try {
 				// modifies project by instrument code
-				modifyProjectAndStoreToDestDir(srcDir, destDir, 0);
+				modifyProjectAndStoreToDestDir(srcDir, destDir, false);
 				// modifies project by adding runtime supporter class file
-				modifyProjectAndStoreToDestDir(runtimeSupporterFile, destDir, 1);
+				modifyProjectAndStoreToDestDir(runtimeSupporterFile, destDir,
+						true);
 			} catch (IOException e) {
 				e.printStackTrace();
 				// error, just exit
@@ -103,12 +102,12 @@ public class MainProjectModifier {
 	 * @throws FileNotFoundException
 	 */
 	public static void modifyProjectAndStoreToDestDir(File src, File dest,
-			int modifyID) throws NotFoundException, FileNotFoundException,
-			IOException {
+			boolean isOwnProject) throws NotFoundException,
+			FileNotFoundException, IOException {
 
 		// only copy package ch.unibe.scg.nullSpy.runtimeSupporter
 		String srcName = src.getName();
-		if (modifyID == 1
+		if (isOwnProject
 				&& (srcName.equals("instrumentator") || srcName.equals("model")
 						|| srcName.equals("testRun") || srcName.equals("tests") || srcName
 							.equals("isFieldOrLocalVariableNullExample")))
@@ -129,39 +128,37 @@ public class MainProjectModifier {
 				File srcFile = new File(src, file);
 				File destFile = new File(dest, file);
 				// recursive copy
-				modifyProjectAndStoreToDestDir(srcFile, destFile, modifyID);
+				modifyProjectAndStoreToDestDir(srcFile, destFile, isOwnProject);
 			}
 		} else {
 
-			if (!src.getName()
-					.substring(src.getName().indexOf(".") + 1,
-							src.getName().length()).equals("class")) {
-				modifyID = 1;
-			}
-			switch (modifyID) {
-			case 0:
-				modifyProject(src, dest);
-				break;
-			case 1:
-				addRuntimeSupporterToModifiedProject(src, dest);
-				break;
-			}
+			// if file is a class file and not a file of own project, modify and
+			// store to destination folder
+			// else just copy it to destination folder
+			boolean isClassFile = src.getAbsolutePath().endsWith(".class");
 
+			if (isClassFile && !isOwnProject) {
+				analyzeFileAndStoreToDestinationFolder(src, dest);
+			} else {
+				Files.copy(src.toPath(), dest.toPath());
+			}
 		}
 	}
 
 	/**
-	 * Modifies all class files of a project with Javassist, by instrumenting a
-	 * check after each assignments of fields and locVars.
+	 * Modify a class file of a project with Javassist, by instrumenting a check
+	 * after each assignments of fields and locVars.
 	 * 
 	 * @param src
 	 * @param dest
+	 *            modified class file is stored here
 	 * @throws NotFoundException
 	 * @throws IOException
 	 * @throws FileNotFoundException
 	 */
-	private static void modifyProject(File src, File dest)
-			throws NotFoundException, IOException, FileNotFoundException {
+	private static void analyzeFileAndStoreToDestinationFolder(File src,
+			File dest) throws NotFoundException, IOException,
+			FileNotFoundException {
 		// set up the search path of class pool
 		ClassPool pool = ClassPool.getDefault();
 		pool.insertClassPath(originalProjectBinSrcPath);
@@ -185,7 +182,6 @@ public class MainProjectModifier {
 		try {
 			// modify class
 			ClassAdapter classAdapter = ClassAdapter.getInstance();
-			String name = cc.getName();
 			// if (!cc.isInterface()
 			// && cc.getName()
 			// .equals("org.jhotdraw.contrib.html.DisposableResourceManagerFactory"))
@@ -203,31 +199,4 @@ public class MainProjectModifier {
 				.getAbsolutePath())));
 	}
 
-	/**
-	 * Adds the run-time supporter class file to the modified project bin
-	 * directory in the destination directory.
-	 * 
-	 * @param src
-	 * @param dest
-	 * @throws IOException
-	 * @throws NotFoundException
-	 */
-	private static void addRuntimeSupporterToModifiedProject(File src, File dest)
-			throws FileNotFoundException, IOException {
-		// if file, then copy it
-		// Use bytes stream to support all file types
-		InputStream in = new FileInputStream(src);
-		OutputStream out = new FileOutputStream(dest.getAbsolutePath());
-
-		byte[] buffer = new byte[1024];
-
-		int length;
-		// copy the file content in bytes
-		while ((length = in.read(buffer)) > 0) {
-			out.write(buffer, 0, length);
-		}
-
-		in.close();
-		out.close();
-	}
 }
