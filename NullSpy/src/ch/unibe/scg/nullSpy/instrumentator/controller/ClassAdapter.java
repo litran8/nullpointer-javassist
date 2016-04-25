@@ -49,5 +49,6 @@ public class ClassAdapter {
 		LocalVariableAnalyzer locVarLogic = new LocalVariableAnalyzer(cc,
 				localVarList);
 		locVarLogic.instrumentAfterLocVarAssignment();
+		System.out.println();
 	}
 }

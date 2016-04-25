@@ -44,6 +44,15 @@ public class ByteCodeAdapter {
 			iter.insert(byteCode);
 
 		} else {
+			// iter.move(var.getStorePos());
+			// iter.next();
+			// iter.insertGap(2);
+			//
+			// iter.move(var.getStorePos());
+			// iter.next();
+			//
+			// iter.insert(byteCode);
+			// iter.insertginsertExGap(var.getAfterPos(), 1);
 			iter.insertEx(var.getAfterPos(), byteCode);
 		}
 
@@ -165,8 +174,22 @@ public class ByteCodeAdapter {
 		}
 
 		// more testMethod params
-		testMethodByteCode.addOpcode(Opcode.BIPUSH);
-		testMethodByteCode.add(var.getVarLineNr());
+		// else if (n <= 127 && -128 <= n) {
+		// 429 addOpcode(16); // bipush
+		// 430 add(n);
+		// 431 } else if (n <= 32767 && -32768 <= n) {
+		// 432 addOpcode(17); // sipush
+		// 433 add(n >> 8);
+		// 434 add(n);
+		int lineNr = var.getVarLineNr();
+		if (lineNr <= 127) {
+			testMethodByteCode.addOpcode(Opcode.BIPUSH);
+			testMethodByteCode.add(lineNr);
+		} else {
+			testMethodByteCode.addOpcode(Opcode.SIPUSH);
+			testMethodByteCode.add(lineNr >> 8);
+			testMethodByteCode.add(lineNr);
+		}
 		testMethodByteCode.addLdc(varName);
 		testMethodByteCode.addLdc(varType);
 		testMethodByteCode.addLdc(varID);

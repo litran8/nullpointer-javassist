@@ -5,9 +5,12 @@ import javassist.Loader;
 import javassist.Translator;
 
 public class TestInstrumentor {
-	public static String className = "isFieldOrLocalVariableNullExample.MainAssignToNull";
+	// public static String className =
+	// "isFieldOrLocalVariableNullExample.MainAssignToNull";
 
-	// public static String className = "org.jhotdraw.samples.draw.Main";
+	// public static String className =
+	// "org.jhotdraw.samples.javadraw.JavaDrawApp";
+	public static String className = "org.jhotdraw.samples.net.NetApp";
 
 	public static void main(String[] args) throws Throwable {
 		long startTime = System.nanoTime();

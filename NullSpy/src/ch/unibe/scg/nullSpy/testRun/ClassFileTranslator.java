@@ -29,7 +29,7 @@ public class ClassFileTranslator implements Translator {
 	@Override
 	public void onLoad(ClassPool pool, String className)
 			throws NotFoundException, CannotCompileException {
-		// pool.insertClassPath("C:\\Users\\Lina Tran\\Desktop\\bachelor\\JHotDraw\\bin");
+		pool.insertClassPath("C:\\Users\\Lina Tran\\Desktop\\bachelor\\jhotdraw60b1\\bin");
 
 		if (!className
 				.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer")
@@ -49,7 +49,7 @@ public class ClassFileTranslator implements Translator {
 			cc.stopPruning(true);
 
 			try {
-				// if (cc.getName().equals("org.jhotdraw.beans.AbstractBean"))
+				// if (cc.getName().equals("org.jhotdraw.standard.QuadTree"))
 				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc);
 			} catch (Throwable e) {
 				e.printStackTrace();

@@ -586,13 +586,9 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	private boolean isInnerClassSuperCall(FieldAccess field) throws BadBytecode {
 
 		CtBehavior behavior = field.where();
-		if (behavior.getMethodInfo().isMethod())
-			return false;
-
-		String className = behavior.getDeclaringClass().getName();
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 
-		if (codeAttr == null)
+		if (behavior.getMethodInfo().isMethod() || codeAttr == null)
 			return false;
 
 		CodeIterator codeIter = codeAttr.iterator();
@@ -603,38 +599,71 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		codeIter.move(checkSuperCallPos);
 		codeIter.next();
 
-		int pos = getPos(field);
+		// int pos = getPos(field);
 
-		if (checkSuperCallOp == Opcode.ALOAD_0) {
+		boolean isThereAnInvokeSpecial = false;
+
+		while (checkSuperCallOp != Opcode.INVOKESPECIAL && codeIter.hasNext()) {
 			checkSuperCallPos = codeIter.next();
 			checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
-			if (checkSuperCallOp == Opcode.ALOAD_1) {
-				checkSuperCallPos = codeIter.next();
-				checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
-				if (checkSuperCallOp == Opcode.PUTFIELD
-						&& pos == checkSuperCallPos) {
-					checkSuperCallPos = codeIter.next();
-					checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
-					if (checkSuperCallOp == Opcode.ALOAD_0) {
-						checkSuperCallPos = codeIter.next();
-						checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
-						if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
-							return true;
-						} else {
-							return false;
-						}
-					} else {
-						return false;
-					}
-				} else {
-					return false;
-				}
-			} else {
-				return false;
+			if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
+				isThereAnInvokeSpecial = true;
+				break;
 			}
+		}
+
+		if (isThereAnInvokeSpecial) {
+			return true;
 		} else {
 			return false;
 		}
+
+		// if (checkSuperCallOp == Opcode.ALOAD_0) {
+		// checkSuperCallPos = codeIter.next();
+		// checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
+		// if (checkSuperCallOp == Opcode.ALOAD_1) {
+		// checkSuperCallPos = codeIter.next();
+		// checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
+		// if (checkSuperCallOp == Opcode.PUTFIELD
+		// && pos == checkSuperCallPos) {
+		// checkSuperCallPos = codeIter.next();
+		// checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
+		// if (checkSuperCallOp == Opcode.ALOAD_0) {
+		// boolean isThereAnInvokeSpecial = false;
+		//
+		// checkSuperCallPos = codeIter.next();
+		// checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
+		//
+		// if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
+		// isThereAnInvokeSpecial = true;
+		// }
+		// while (checkSuperCallOp != Opcode.INVOKESPECIAL) {
+		// checkSuperCallPos = codeIter.next();
+		// checkSuperCallOp = codeIter
+		// .byteAt(checkSuperCallPos);
+		// if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
+		// isThereAnInvokeSpecial = true;
+		// break;
+		// }
+		// }
+		//
+		// if (isThereAnInvokeSpecial) {
+		// return true;
+		// } else {
+		// return false;
+		// }
+		// } else {
+		// return false;
+		// }
+		// } else {
+		// return false;
+		// }
+		// } else {
+		// return false;
+		// }
+		// } else {
+		// return false;
+		// }
 	}
 
 }

@@ -22,11 +22,22 @@ public class ExecutableJarCreator {
 			Manifest manifest = new Manifest();
 			manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION,
 					"1.0");
+			// manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,
+			// mainClassName);
+			//
+			// JarOutputStream target = new JarOutputStream(new
+			// FileOutputStream(
+			// jarDestPath + "\\" + mainClassName + ".jar"), manifest);
+
+			// manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,
+			// "org.jhotdraw.samples.javadraw.JavaDrawApp");
+			// manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,
+			// "org.jhotdraw.samples.net.NetApp");
 			manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,
-					mainClassName);
+					"org.jhotdraw.samples.nothing.NothingApp");
 
 			JarOutputStream target = new JarOutputStream(new FileOutputStream(
-					jarDestPath + "\\" + mainClassName + ".jar"), manifest);
+					jarDestPath + "\\Main.jar"), manifest);
 
 			srcToJar(modifiedProject, "", target);
 			target.close();
