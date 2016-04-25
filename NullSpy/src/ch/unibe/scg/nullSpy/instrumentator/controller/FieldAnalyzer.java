@@ -562,7 +562,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		int startPos = getStartPos(field, pos);
 		int startPosOp = codeIter.byteAt(startPos);
 
-		String instrAtStartPos = Mnemonic.OPCODE[startPosOp];
 		boolean isStatic = field.isStatic();
 
 		if (field.getClassName().equals(cc.getName())) {
@@ -599,8 +598,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		codeIter.move(checkSuperCallPos);
 		codeIter.next();
 
-		// int pos = getPos(field);
-
 		boolean isThereAnInvokeSpecial = false;
 
 		while (checkSuperCallOp != Opcode.INVOKESPECIAL && codeIter.hasNext()) {
@@ -617,53 +614,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		} else {
 			return false;
 		}
-
-		// if (checkSuperCallOp == Opcode.ALOAD_0) {
-		// checkSuperCallPos = codeIter.next();
-		// checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
-		// if (checkSuperCallOp == Opcode.ALOAD_1) {
-		// checkSuperCallPos = codeIter.next();
-		// checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
-		// if (checkSuperCallOp == Opcode.PUTFIELD
-		// && pos == checkSuperCallPos) {
-		// checkSuperCallPos = codeIter.next();
-		// checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
-		// if (checkSuperCallOp == Opcode.ALOAD_0) {
-		// boolean isThereAnInvokeSpecial = false;
-		//
-		// checkSuperCallPos = codeIter.next();
-		// checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
-		//
-		// if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
-		// isThereAnInvokeSpecial = true;
-		// }
-		// while (checkSuperCallOp != Opcode.INVOKESPECIAL) {
-		// checkSuperCallPos = codeIter.next();
-		// checkSuperCallOp = codeIter
-		// .byteAt(checkSuperCallPos);
-		// if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
-		// isThereAnInvokeSpecial = true;
-		// break;
-		// }
-		// }
-		//
-		// if (isThereAnInvokeSpecial) {
-		// return true;
-		// } else {
-		// return false;
-		// }
-		// } else {
-		// return false;
-		// }
-		// } else {
-		// return false;
-		// }
-		// } else {
-		// return false;
-		// }
-		// } else {
-		// return false;
-		// }
 	}
 
 }
