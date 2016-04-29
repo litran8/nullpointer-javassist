@@ -4,9 +4,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 import javassist.CannotCompileException;
+import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
+import javassist.bytecode.CodeAttribute;
+import javassist.bytecode.LineNumberAttribute;
 import ch.unibe.scg.nullSpy.model.Variable;
 
 /**
@@ -37,6 +40,21 @@ public class ClassAdapter {
 			throws NotFoundException, CannotCompileException, BadBytecode,
 			IllegalAccessException, InvocationTargetException,
 			NoSuchMethodException {
+
+		CtBehavior[] constructors = cc.getDeclaredConstructors();
+
+		if (constructors.length != 0) {
+			CtBehavior constructor = constructors[0];
+			CodeAttribute codeAttr = constructor.getMethodInfo()
+					.getCodeAttribute();
+			if (codeAttr != null) {
+				LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+						.getAttribute(LineNumberAttribute.tag);
+				if (lineNrAttr == null)
+					return;
+			}
+
+		}
 
 		System.out.println("\n\nCLASS: " + cc.getName());
 		System.out.println("\n------------- FIELD -------------\n");

@@ -10,6 +10,7 @@ public class TestInstrumentor {
 
 	// public static String className =
 	// "org.jhotdraw.samples.javadraw.JavaDrawApp";
+
 	public static String className = "org.jhotdraw.samples.net.NetApp";
 
 	public static void main(String[] args) throws Throwable {
@@ -20,6 +21,7 @@ public class TestInstrumentor {
 		loader.addTranslator(pool, translator);
 
 		loader.run(className, args);
+
 		System.out.println("Modification + modified class time: "
 				+ ((System.nanoTime() - startTime) / 1000000) + "ms");
 

@@ -16,46 +16,34 @@ import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
 
 public class MainProjectModifier {
 
-	private static String originalProjectBinSrcPath;
-	private static String modifiedProjectDestBinDirPath;
-	private static String modifiedProjectDestDirPath;
+	private static String modifiedProjectBasePath;
 	private static String mainClassNameOfProject;
 
 	public static void main(String[] args) throws NotFoundException,
 			IOException {
 
-		if (args.length == 4) {
-			// many arguments because i have a space in the path: Lina Tran
-			originalProjectBinSrcPath = args[0] + " " + args[1]; // bin path of
-																	// the to be
-																	// modified
-			// project
-			modifiedProjectDestDirPath = args[2] + " " + args[3]; // path where
-																	// the
-																	// modified
-																	// project
-																	// should be
-																	// stored
-																	// (without
-																	// bin)
-		} else if (args.length == 2) {
-			originalProjectBinSrcPath = args[0];
-			modifiedProjectDestDirPath = args[1];
+		String originalProjectBinPath = "";
+
+		if (args.length == 2) {
+			originalProjectBinPath = args[0];
+			modifiedProjectBasePath = args[1];
 		} else {
 			System.out.println("Amount of args is not enough or too big.");
 			System.exit(0);
 		}
 
-		modifiedProjectDestBinDirPath = modifiedProjectDestDirPath + "\\bin"; // same
-																				// as
+		String modifieProjectDestPath = modifiedProjectBasePath
+				+ "\\org-modified"; // same
+		// as
 		// destDirPath,
 		// but used for
 		// automatically
 		// add a bin dir
 		// in destDir
 
-		File srcDir = new File(originalProjectBinSrcPath);
-		File destDir = new File(modifiedProjectDestBinDirPath);
+		File srcDir = new File(originalProjectBinPath);
+		File modifiedProjectDestDir = new File(modifieProjectDestPath);
+		File runTimeSupporterDestDir = new File(modifiedProjectBasePath);
 
 		// get path to get the runtimeSupportFile
 		String currentWorkingDirPath = new java.io.File(".").getCanonicalPath();
@@ -72,10 +60,11 @@ public class MainProjectModifier {
 
 			try {
 				// modifies project by instrument code
-				modifyProjectAndStoreToDestDir(srcDir, destDir, false);
+				modifyProjectAndStoreToDestDir(srcDir, modifiedProjectDestDir,
+						false);
 				// modifies project by adding runtime supporter class file
-				modifyProjectAndStoreToDestDir(runtimeSupporterFile, destDir,
-						true);
+				modifyProjectAndStoreToDestDir(runtimeSupporterFile,
+						runTimeSupporterDestDir, true);
 			} catch (IOException e) {
 				e.printStackTrace();
 				// error, just exit
@@ -86,9 +75,9 @@ public class MainProjectModifier {
 		System.out.println("Project modification done.");
 
 		// create executable jar out of modified project
-		ExecutableJarCreator jar = new ExecutableJarCreator();
-		jar.createExecJar(modifiedProjectDestBinDirPath,
-				modifiedProjectDestDirPath, mainClassNameOfProject);
+		// ExecutableJarCreator jar = new ExecutableJarCreator();
+		// jar.createExecJar(modifiedProjectDestBinDirPath,
+		// modifiedProjectDestDirPath, mainClassNameOfProject);
 	}
 
 	/**
@@ -161,12 +150,12 @@ public class MainProjectModifier {
 			FileNotFoundException {
 		// set up the search path of class pool
 		ClassPool pool = ClassPool.getDefault();
-		pool.insertClassPath(originalProjectBinSrcPath);
+		pool.insertClassPath(modifiedProjectBasePath);
 
 		// create ctclass to represent the to be modified class
 		String packageName_ClassName = src
 				.getAbsolutePath()
-				.substring(originalProjectBinSrcPath.length() + 1,
+				.substring(modifiedProjectBasePath.length() + 1,
 						src.getAbsolutePath().length()).replace(".class", "")
 				.replace("\\", ".");
 

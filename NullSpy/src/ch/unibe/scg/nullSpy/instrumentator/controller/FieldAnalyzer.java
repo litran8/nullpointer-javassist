@@ -52,6 +52,11 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				CtBehavior behavior = field.where();
 				CodeAttribute codeAttr = behavior.getMethodInfo()
 						.getCodeAttribute();
+				LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+						.getAttribute(LineNumberAttribute.tag);
+				if (lineNrAttr == null) {
+					return;
+				}
 				if (field.isWriter() && codeAttr != null) {
 					try {
 						Variable var = null;
@@ -395,6 +400,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 				.getAttribute(LineNumberAttribute.tag);
+
 		int line = lineNrAttr.toLineNumber(pos);
 		startPos = lineNrAttr.toStartPc(line);
 
