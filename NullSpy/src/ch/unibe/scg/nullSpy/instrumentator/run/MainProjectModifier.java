@@ -16,24 +16,25 @@ import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
 
 public class MainProjectModifier {
 
-	private static String modifiedProjectBasePath;
+	private static String originalProjectPath;
+	private static String originalProjectBinPath;
+	private static String modifiedProjectDestDirPath;
 	private static String mainClassNameOfProject;
 
 	public static void main(String[] args) throws NotFoundException,
 			IOException {
 
-		String originalProjectBinPath = "";
-
 		if (args.length == 2) {
 			originalProjectBinPath = args[0];
-			modifiedProjectBasePath = args[1];
+			modifiedProjectDestDirPath = args[1];
 		} else {
 			System.out.println("Amount of args is not enough or too big.");
 			System.exit(0);
 		}
 
-		String modifieProjectDestPath = modifiedProjectBasePath
-				+ "\\org-modified"; // same
+		originalProjectPath = originalProjectBinPath.substring(0,
+				originalProjectBinPath.lastIndexOf("\\"));
+		String modifieProjectDestPath = modifiedProjectDestDirPath + "\\org"; // same
 		// as
 		// destDirPath,
 		// but used for
@@ -43,7 +44,7 @@ public class MainProjectModifier {
 
 		File srcDir = new File(originalProjectBinPath);
 		File modifiedProjectDestDir = new File(modifieProjectDestPath);
-		File runTimeSupporterDestDir = new File(modifiedProjectBasePath);
+		File runTimeSupporterDestDir = new File(modifiedProjectDestDirPath);
 
 		// get path to get the runtimeSupportFile
 		String currentWorkingDirPath = new java.io.File(".").getCanonicalPath();
@@ -150,12 +151,12 @@ public class MainProjectModifier {
 			FileNotFoundException {
 		// set up the search path of class pool
 		ClassPool pool = ClassPool.getDefault();
-		pool.insertClassPath(modifiedProjectBasePath);
+		pool.insertClassPath(originalProjectPath);
 
 		// create ctclass to represent the to be modified class
 		String packageName_ClassName = src
 				.getAbsolutePath()
-				.substring(modifiedProjectBasePath.length() + 1,
+				.substring(originalProjectPath.length() + 1,
 						src.getAbsolutePath().length()).replace(".class", "")
 				.replace("\\", ".");
 
