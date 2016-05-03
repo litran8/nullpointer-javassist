@@ -75,7 +75,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					continue;
 				}
 
-				// if (codeAttribute != null) {
 				CodeIterator codeIterator = codeAttribute.iterator();
 
 				LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
@@ -149,15 +148,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 							varID += localVarSlot;
 						}
 
-						// // name
-						// String localVarName = localVariableList
-						// .get(localVarTableIndex).varName;
-						// // type
-						// String localVarType = localVariableList
-						// .get(localVarTableIndex).varType;
-						// // slot, ID
-						// String varID = "localVariable_" + localVarSlot;
-
 						// create localVar
 						LocalVar localVar = new LocalVar(varID, localVarName,
 								localVarLineNr, localVarType, pos, startPos,
@@ -198,7 +188,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 				// calculates the time modified project uses
 				addTimeToModifiedProject(method);
-				// }
 
 				// Printer p = new Printer();
 				// System.out.println("Method: " + method.getName());
@@ -278,7 +267,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			inSameBehavior = currentBehavior.getName().equals(
 					lastBehavior.getName())
 					&& currentBehavior.getDeclaringClass().getName()
-							.equals(lastVar.getBelongedClass().getName())
+							.equals(lastVar.getClassWhereVarIsUsed().getName())
 					&& currentBehavior.getSignature().equals(
 							lastBehavior.getSignature());
 		}

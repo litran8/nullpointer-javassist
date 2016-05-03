@@ -29,14 +29,18 @@ public class ClassFileTranslator implements Translator {
 	@Override
 	public void onLoad(ClassPool pool, String className)
 			throws NotFoundException, CannotCompileException {
-		pool.insertClassPath("C:\\Users\\Lina Tran\\Desktop\\bachelor\\jhotdraw60b1\\bin");
+		// pool.insertClassPath("C:\\Users\\Lina Tran\\Desktop\\bachelor\\jhotdraw60b1\\bin");
 
 		if (!className
 				.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer")
 				&& !className
 						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.Field")
 				&& !className
-						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.LocalVariable")) {
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.LocalVariable")
+				&& !className
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.Variable")
+				&& !className
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.IndirectFieldObject")) {
 
 			CtClass cc;
 			if (analyzedClasses.containsKey(className))

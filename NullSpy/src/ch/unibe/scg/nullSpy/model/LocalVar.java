@@ -10,11 +10,11 @@ public class LocalVar extends Variable {
 
 	public LocalVar(String varID, String localVarName, int localVarLineNr,
 			String localVarType, int storePos, int startPos, int afterPos,
-			CtClass belongedClass, CtBehavior behavior, int localVarTableIndex,
+			CtClass currentAnalyzedClass, CtBehavior behavior, int localVarTableIndex,
 			int localVarSlot) {
 
 		super(varID, localVarName, localVarLineNr, localVarType, false,
-				belongedClass, behavior, storePos, startPos, afterPos);
+				currentAnalyzedClass, behavior, storePos, startPos, afterPos);
 
 		this.localVarTableIndex = localVarTableIndex;
 		this.localVarSlot = localVarSlot;

@@ -7,44 +7,46 @@ package ch.unibe.scg.nullSpy.runtimeSupporter;
  * @author Lina Tran
  *
  */
-public class Field {
-	public String fieldName;
-	public String fieldType;
-	public int fieldLineNumber;
-	public String methodName;
-	public String className;
 
-	public Field(String fieldName, String fieldType, int fieldLineNumber,
-			String methodName, String className) {
-		this.fieldName = fieldName;
-		this.fieldType = fieldType;
-		this.fieldLineNumber = fieldLineNumber;
-		this.methodName = methodName;
-		this.className = className;
+public class Field extends Variable {
+
+	private String classNameInWhichVarIsInstantiated; // package.Person
+	private boolean isStatic;
+
+	// object_filed
+	private IndirectFieldObject indirectFieldObject;
+
+	public Field(String classNameInWhichVarIsUsed, String behaviorName,
+			String behaviorSignature, String varID, String varName,
+			String varType, String classNameInWhichVarIsInstantiated,
+			boolean isStatic, int varLineNr, int startPos, int storePos,
+			int afterPos) {
+
+		super(classNameInWhichVarIsUsed, behaviorName, behaviorSignature,
+				varID, varName, varType, varLineNr, startPos, storePos,
+				afterPos);
+
+		this.classNameInWhichVarIsInstantiated = classNameInWhichVarIsInstantiated;
+		this.isStatic = isStatic;
+
+		// OBJECT_field
+		// this.indirectFieldObject = indirectFieldObject;
 	}
 
-	public String getFieldType() {
-		return fieldType;
+	public boolean isStatic() {
+		return isStatic;
 	}
 
-	public int getFieldSourceLineNr() {
-		return fieldLineNumber;
+	public String getClassNameInWhichVarIsInstantiated() {
+		return classNameInWhichVarIsInstantiated;
 	}
 
-	public String getClassName() {
-		return className;
+	public IndirectFieldObject getIndirectFieldObject() {
+		return indirectFieldObject;
 	}
 
-	public String getFieldName() {
-		return fieldName;
-	}
-
-	public int getFieldLineNr() {
-		return fieldLineNumber;
-	}
-
-	public String getMethodName() {
-		return methodName;
+	public String toString() {
+		return super.toString();
 	}
 
 }

@@ -1,5 +1,6 @@
 package ch.unibe.scg.nullSpy.runtimeSupporter;
 
+
 /**
  * Stores information of a locVar which can be written for instrumentation after
  * their collection.
@@ -7,33 +8,21 @@ package ch.unibe.scg.nullSpy.runtimeSupporter;
  * @author Lina Tran
  *
  */
-public class LocalVariable {
-	public String localVariableName;
-	public int localVariableLineNumber;
-	public String methodName;
-	public String className;
+public class LocalVariable extends Variable {
+	private int varSlot;
 
-	public LocalVariable(String localVariableName, int localVariableLineNumber, String methodName,
-			String className) {
-		this.localVariableName = localVariableName;
-		this.localVariableLineNumber = localVariableLineNumber;
-		this.methodName = methodName;
-		this.className = className;
+	public LocalVariable(String classNameInWhichVarIsUsed, String behaviorName,
+			String behaviorSignature, String varID, String varName,
+			String varType, int varLineNr, int varSlot, int startPos,
+			int storePos, int afterPos) {
+		super(classNameInWhichVarIsUsed, behaviorName, behaviorSignature,
+				varID, varName, varType, varLineNr, startPos, storePos,
+				afterPos);
+
+		this.varSlot = varSlot;
 	}
 
-	public String getClassName() {
-		return className;
-	}
-
-	public String getFieldName() {
-		return localVariableName;
-	}
-
-	public int getFieldLineNr() {
-		return localVariableLineNumber;
-	}
-
-	public String getMethodName() {
-		return methodName;
+	public int getVarSlot() {
+		return this.varSlot;
 	}
 }

@@ -12,30 +12,28 @@ import javassist.CtClass;
 
 public class Field extends Variable {
 
-	private String fieldBelongedClassName; // package.Person
+	private String nameOfClassFieldIsInstantiatedIn; // package.Person
 
 	// object_filed
-
 	private IndirectFieldObject indirectFieldObject;
 
 	public Field(String varID, String fieldName, String fieldType,
-			String fieldBelongedClassName, int fieldSourceLineNr, int storePos,
-			int startPos, int afterPos, CtClass belongedClass,
-			CtBehavior behavior, boolean isStatic,
-			IndirectFieldObject indirectFieldObject) {
+			String nameOfClassFieldIsInstantiatedIn, int fieldSourceLineNr,
+			int storePos, int startPos, int afterPos,
+			CtClass classWhereVarIsUsed, CtBehavior behavior,
+			boolean isStatic, IndirectFieldObject indirectFieldObject) {
 
 		super(varID, fieldName, fieldSourceLineNr, fieldType, isStatic,
-				belongedClass, behavior, storePos, startPos, afterPos);
+				classWhereVarIsUsed, behavior, storePos, startPos, afterPos);
 
-		this.fieldBelongedClassName = fieldBelongedClassName;
+		this.nameOfClassFieldIsInstantiatedIn = nameOfClassFieldIsInstantiatedIn;
 
 		// OBJECT_field
-
 		this.indirectFieldObject = indirectFieldObject;
 	}
 
-	public String getFieldBelongedClassName() {
-		return fieldBelongedClassName;
+	public String getNameOfClassInWhichFieldIsInstantiated() {
+		return nameOfClassFieldIsInstantiatedIn;
 	}
 
 	public IndirectFieldObject getIndirectFieldObject() {

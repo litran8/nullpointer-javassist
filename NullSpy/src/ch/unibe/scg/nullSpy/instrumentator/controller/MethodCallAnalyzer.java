@@ -13,22 +13,32 @@ import javassist.bytecode.ConstPool;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
+import ch.unibe.scg.nullSpy.model.Variable;
 
 public class MethodCallAnalyzer extends Analyzer {
 
-	// private HashMap<String, Integer> methodCallOnLocVarObject = new
-	// HashMap<>();
 	private CtClass cc;
+	private ArrayList<Variable> fieldInfoList;
+	private ArrayList<Variable> localVarInfoList;
 
-	public MethodCallAnalyzer(CtClass cc) {
+	public MethodCallAnalyzer(CtClass cc, ArrayList<Variable> fieldInfoList,
+			ArrayList<Variable> localVarInfoList) {
 		super(cc);
 		this.cc = super.cc;
+		this.fieldInfoList = fieldInfoList;
+		this.localVarInfoList = localVarInfoList;
 	}
 
 	public void checkMethod() throws BadBytecode, CannotCompileException {
 		for (CtMethod method : cc.getDeclaredMethods()) {
+
 			CodeAttribute codeAttribute = method.getMethodInfo()
 					.getCodeAttribute();
+
+			if (codeAttribute == null) {
+				continue;
+			}
+
 			CodeIterator codeIterator = codeAttribute.iterator();
 			LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
 					.getAttribute(LocalVariableAttribute.tag);

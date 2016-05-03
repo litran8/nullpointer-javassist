@@ -10,55 +10,62 @@ public class NullDisplayer {
 	// private static HashMap<LocVar, Object> locVarMap = new HashMap<LocVar,
 	// Object>();
 
-	private static List<Field> fieldList = new ArrayList<>();
-	private static List<LocalVariable> localVariableList = new ArrayList<>();
+	private static List<Variable> fieldList = new ArrayList<>();
+	private static List<Variable> localVariableList = new ArrayList<>();
 
-	public static void test(String className, String methodName,
-			Object variableValue, int lineNumber, String variableName,
-			String variableType, String fieldOrLocalVariableID) {
-		if (variableValue == null) {
+	// public static void test(String classNameInWhichVarIsUsed,
+	// String behaviorName, String behaviorSignature, String varID,
+	// String varName, String varType,
+	// String classNameInWhichVarIsInstantiated, Object varValue,
+	// int isStatic, IndirectFieldObject indirectFieldObject,
+	// int varLineNr, int startPos, int storePos, int afterPos) {
+	// if (varValue == null) {
+	//
+	// Field field = new Field(classNameInWhichVarIsUsed, behaviorName,
+	// behaviorSignature, varID, varName, varType,
+	// classNameInWhichVarIsInstantiated, (isStatic == 1 ? true
+	// : false), indirectFieldObject, varLineNr, startPos,
+	// storePos, afterPos);
+	// fieldList.add(field);
+	//
+	// System.out.print("Field ");
+	// printNullLink(classNameInWhichVarIsUsed, varLineNr, varName);
+	// }
+	// }
 
-			if (fieldOrLocalVariableID.equals("field")) {
-				Field field = new Field(variableName, variableType, lineNumber,
-						methodName, className);
-				// isAlreadyNull(field, fieldOrLocVarID);
-				fieldList.add(field);
-				// fieldMap.put(new Field(varName, lineNr, methodName,
-				// className),
-				// varValue);
-				System.out.print("Field ");
-			} else {
-				localVariableList.add(new LocalVariable(variableName,
-						lineNumber, methodName, className));
-				// locVarMap.put(
-				// new LocVar(varName, lineNr, methodName, className),
-				// varValue);
-				System.out.print("Local variable ");
-			}
+	public static void test(String classNameInWhichVarIsUsed,
+			String behaviorName, String behaviorSignature, String varID,
+			String varName, String varType,
+			String classNameInWhichVarIsInstantiated, int isStatic,
+			Object varValue, int varLineNr, int startPos, int storePos,
+			int afterPos) {
+		if (varValue == null) {
 
-			printNullLink(className, lineNumber, variableName);
+			Field field = new Field(classNameInWhichVarIsUsed, behaviorName,
+					behaviorSignature, varID, varName, varType,
+					classNameInWhichVarIsInstantiated, (isStatic == 1 ? true
+							: false), varLineNr, startPos, storePos, afterPos);
+			fieldList.add(field);
+
+			System.out.print("Field ");
+			printNullLink(classNameInWhichVarIsUsed, varLineNr, varName);
 		}
-		// else {
-		// if (fieldOrLocalVariableID.equals("field")) {
-		// for (int i = fieldList.size() - 1; i >= 0; i--) {
-		// Field f = fieldList.get(i);
-		// if (f.getFieldName().equals(variableName)
-		// && f.getFieldType().equals(variableType)
-		// && f.getClassName().equals(className)) {
-		// fieldList.remove(i);
-		// }
-		// }
-		// } else {
-		// for (int i = localVariableList.size() - 1; i >= 0; i--) {
-		// LocalVariable lv = localVariableList.get(i);
-		// if (lv.getMethodName().equals(methodName)
-		// && lv.getClassName().equals(className)
-		// && lv.getFieldName().equals(variableName)) {
-		// localVariableList.remove(i);
-		// }
-		// }
-		// }
-		// }
+	}
+
+	public static void testLocalVar(String classNameInWhichVarIsUsed,
+			String behaviorName, String behaviorSignature, String varID,
+			String varName, String varType, Object varValue, int varSlot,
+			int varLineNr, int startPos, int storePos, int afterPos) {
+		if (varValue == null) {
+			LocalVariable localVar = new LocalVariable(
+					classNameInWhichVarIsUsed, behaviorName, behaviorSignature,
+					varID, varName, varType, varLineNr, varSlot, startPos,
+					storePos, afterPos);
+			localVariableList.add(localVar);
+
+			System.out.print("Local variable ");
+			printNullLink(classNameInWhichVarIsUsed, varLineNr, varName);
+		}
 	}
 
 	private static void printNullLink(String className, int lineNr,
@@ -73,100 +80,24 @@ public class NullDisplayer {
 		return nullLink;
 	}
 
-	public static void isAlreadyNull(String className, String methodName,
-			String varName, String fieldOrLocVarID) {
-
-		if (fieldOrLocVarID.equals("field")) {
-			for (Field f : fieldList) {
-				if (f.getFieldName().equals(varName)) {
-					printNullLink(f.getClassName(), f.getFieldLineNr(),
-							f.getFieldName());
-				}
-			}
-		} else {
-			for (LocalVariable lv : localVariableList) {
-				if (lv.getFieldName().equals(varName)) {
-					printNullLink(lv.getClassName(), lv.getFieldLineNr(),
-							lv.getFieldName());
-				}
-			}
-		}
-	}
-
-	/**
-	 * Stores information of a field which can be written for instrumentation
-	 * after their collection.
-	 * 
-	 * @author Lina Tran
-	 *
-	 */
-	// private static class Field {
-	// public String fieldName;
-	// public int fieldSourceLineNr;
-	// public String methodName;
-	// public String className;
+	// public static void isAlreadyNull(String className, String methodName,
+	// String varName, String fieldOrLocVarID) {
 	//
-	// public Field(String fieldName, int fieldSourceLineNr,
-	// String methodName, String className) {
-	// this.fieldName = fieldName;
-	// this.fieldSourceLineNr = fieldSourceLineNr;
-	// this.methodName = methodName;
-	// this.className = className;
+	// if (fieldOrLocVarID.equals("field")) {
+	// for (Field f : fieldList) {
+	// if (f.getFieldName().equals(varName)) {
+	// printNullLink(f.getClassName(), f.getFieldLineNr(),
+	// f.getFieldName());
 	// }
-	//
-	// public String getClassName() {
-	// return className;
 	// }
-	//
-	// public String getFieldName() {
-	// return fieldName;
+	// } else {
+	// for (LocalVariable lv : localVariableList) {
+	// if (lv.getFieldName().equals(varName)) {
+	// printNullLink(lv.getClassName(), lv.getFieldLineNr(),
+	// lv.getFieldName());
 	// }
-	//
-	// public int getFieldLineNr() {
-	// return fieldSourceLineNr;
 	// }
-	//
-	// public String getMethodName() {
-	// return methodName;
 	// }
-	//
 	// }
 
-	/**
-	 * Stores information of a locVar which can be written for instrumentation
-	 * after their collection.
-	 * 
-	 * @author Lina Tran
-	 *
-	 */
-	// private static class LocVar {
-	// public String fieldName;
-	// public int fieldSourceLineNr;
-	// public String methodName;
-	// public String className;
-	//
-	// public LocVar(String fieldName, int fieldSourceLineNr,
-	// String methodName, String className) {
-	// this.fieldName = fieldName;
-	// this.fieldSourceLineNr = fieldSourceLineNr;
-	// this.methodName = methodName;
-	// this.className = className;
-	// }
-	//
-	// public String getClassName() {
-	// return className;
-	// }
-	//
-	// public String getFieldName() {
-	// return fieldName;
-	// }
-	//
-	// public int getFieldLineNr() {
-	// return fieldSourceLineNr;
-	// }
-	//
-	// public String getMethodName() {
-	// return methodName;
-	// }
-	// }
 }

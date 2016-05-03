@@ -16,7 +16,6 @@ import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
 
 public class MainProjectModifier {
 
-	private static String originalProjectPath;
 	private static String originalProjectBinPath;
 	private static String modifiedProjectDestDirPath;
 	private static String mainClassNameOfProject;
@@ -32,18 +31,18 @@ public class MainProjectModifier {
 			System.exit(0);
 		}
 
-		originalProjectPath = originalProjectBinPath.substring(0,
-				originalProjectBinPath.lastIndexOf("\\"));
-		String modifieProjectDestPath = modifiedProjectDestDirPath + "\\org"; // same
+		// String modifiedProjectDestPath = modifiedProjectDestDirPath +
+		// "\\org"; // same
 		// as
 		// destDirPath,
 		// but used for
 		// automatically
 		// add a bin dir
 		// in destDir
+		String modifiedProjectDestPath = modifiedProjectDestDirPath;
 
 		File srcDir = new File(originalProjectBinPath);
-		File modifiedProjectDestDir = new File(modifieProjectDestPath);
+		File modifiedProjectDestDir = new File(modifiedProjectDestPath);
 		File runTimeSupporterDestDir = new File(modifiedProjectDestDirPath);
 
 		// get path to get the runtimeSupportFile
@@ -151,12 +150,12 @@ public class MainProjectModifier {
 			FileNotFoundException {
 		// set up the search path of class pool
 		ClassPool pool = ClassPool.getDefault();
-		pool.insertClassPath(originalProjectPath);
+		pool.insertClassPath(originalProjectBinPath);
 
 		// create ctclass to represent the to be modified class
 		String packageName_ClassName = src
 				.getAbsolutePath()
-				.substring(originalProjectPath.length() + 1,
+				.substring(originalProjectBinPath.length() + 1,
 						src.getAbsolutePath().length()).replace(".class", "")
 				.replace("\\", ".");
 

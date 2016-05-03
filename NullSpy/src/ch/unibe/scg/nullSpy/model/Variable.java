@@ -13,7 +13,7 @@ public class Variable {
 
 	private boolean isStatic;
 
-	protected CtClass belongedClass;
+	protected CtClass classWhereVarIsUsed;
 	protected CtBehavior behavior;
 
 	protected int startPos;
@@ -21,8 +21,9 @@ public class Variable {
 	protected int afterPos;
 
 	public Variable(String varID, String varName, int varLineNr,
-			String varType, boolean isStatic, CtClass belongedClass,
-			CtBehavior behavior, int storePos, int startPos, int afterPos) {
+			String varType, boolean isStatic,
+			CtClass classWhereVarIsUsed, CtBehavior behavior,
+			int storePos, int startPos, int afterPos) {
 
 		this.varID = varID;
 		this.varName = varName;
@@ -32,11 +33,11 @@ public class Variable {
 			varType = varType.substring(1);
 		}
 
-		this.varType = varType.substring(0);
+		this.varType = varType;
 
 		this.isStatic = isStatic;
 
-		this.belongedClass = belongedClass;
+		this.classWhereVarIsUsed = classWhereVarIsUsed;
 		this.behavior = behavior;
 
 		this.storePos = storePos;
@@ -64,8 +65,8 @@ public class Variable {
 		return this.isStatic;
 	}
 
-	public CtClass getBelongedClass() {
-		return this.belongedClass;
+	public CtClass getClassWhereVarIsUsed() {
+		return this.classWhereVarIsUsed;
 	}
 
 	public CtBehavior getBehavior() {

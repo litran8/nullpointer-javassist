@@ -43,6 +43,7 @@ public class ClassAdapter {
 
 		CtBehavior[] constructors = cc.getDeclaredConstructors();
 
+		// escape libs (they don't have lineNrAttr)
 		if (constructors.length != 0) {
 			CtBehavior constructor = constructors[0];
 			CodeAttribute codeAttr = constructor.getMethodInfo()
@@ -59,14 +60,18 @@ public class ClassAdapter {
 		System.out.println("\n\nCLASS: " + cc.getName());
 		System.out.println("\n------------- FIELD -------------\n");
 
-		FieldAnalyzer fieldLogic = new FieldAnalyzer(cc, fieldIsWritterInfoList);
-		fieldLogic.instrumentAfterFieldAssignment();
+		FieldAnalyzer fieldAnalyzer = new FieldAnalyzer(cc,
+				fieldIsWritterInfoList);
+		fieldAnalyzer.instrumentAfterFieldAssignment();
 
 		System.out.println("\n------------- LOCAL VAR -------------\n");
 
-		LocalVariableAnalyzer locVarLogic = new LocalVariableAnalyzer(cc,
+		LocalVariableAnalyzer localVarAnalyzer = new LocalVariableAnalyzer(cc,
 				localVarList);
-		locVarLogic.instrumentAfterLocVarAssignment();
+		localVarAnalyzer.instrumentAfterLocVarAssignment();
+
+		MethodCallAnalyzer methodCallAnalyzer = new MethodCallAnalyzer(cc,
+				fieldIsWritterInfoList, localVarList);
 		System.out.println();
 	}
 }
