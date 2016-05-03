@@ -179,13 +179,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		String objectName_field = "";
 		String objectType_field = "";
-		String objectBelongedClassName_field = "";
+		String indirectClassNameInWhichObjectIsInstantiated = "";
 		boolean isfieldStatic_field = false;
-
-		if (cc.getName().equals("org.jhotdraw.app.action.ArrangeAction")) {
-			Printer p = new Printer();
-			p.printMethod(behavior, 0);
-		}
 
 		if (!field.isStatic()) {
 
@@ -218,7 +213,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 				CtField ctField_field = cc.getField(objectName_field);
 
-				objectBelongedClassName_field = ctField_field
+				indirectClassNameInWhichObjectIsInstantiated = ctField_field
 						.getDeclaringClass().getName();
 				objectType_field = ctField_field.getSignature();
 				isfieldStatic_field = op == Opcode.GETSTATIC;
@@ -243,22 +238,22 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 			CtField ctField_field = cc.getField(innerClassFieldName);
 			objectName_field = ctField_field.getName();
-			objectBelongedClassName_field = ctField_field.getDeclaringClass()
-					.getName();
+			indirectClassNameInWhichObjectIsInstantiated = ctField_field
+					.getDeclaringClass().getName();
 			objectType_field = ctField_field.getSignature();
 			isfieldStatic_field = op == Opcode.GETSTATIC;
 		}
 
 		indirectFieldObject = new IndirectFieldObject(objectName_field,
-				objectType_field, objectBelongedClassName_field,
+				objectType_field, indirectClassNameInWhichObjectIsInstantiated,
 				isfieldStatic_field, opCode_field);
 
 		String fieldType = field.getSignature();
 		String classNameFieldIsInstantiatedIn = field.getClassName();
 
 		Field var = new Field("field", fieldName, fieldType,
-				classNameFieldIsInstantiatedIn, fieldLineNr, pos, startPos, afterPos,
-				cc, behavior, field.isStatic(), indirectFieldObject);
+				classNameFieldIsInstantiatedIn, fieldLineNr, pos, startPos,
+				afterPos, cc, behavior, field.isStatic(), indirectFieldObject);
 
 		fieldIsWritterInfoList.add(var);
 

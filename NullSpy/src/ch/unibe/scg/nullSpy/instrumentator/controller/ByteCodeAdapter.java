@@ -107,8 +107,15 @@ public class ByteCodeAdapter {
 
 			if (!field.isStatic()) {
 
-				// not static
+				IndirectFieldObject indirectFieldObject_field = field
+						.getIndirectFieldObject();
+
 				if (field.getIndirectFieldObject() == null) {
+
+					testMethodByteCode.addLdc("");
+					testMethodByteCode.addLdc("");
+					testMethodByteCode.addLdc("");
+					testMethodByteCode.addLdc("");
 
 					// direct field non-static: this.f
 					// aload_0, getfield
@@ -116,14 +123,23 @@ public class ByteCodeAdapter {
 						testMethodByteCode.addAload(0);
 					}
 
-				} else if (field.getIndirectFieldObject().getOpCode_field()
-						.matches("a{1,2}load.*")) {
+				} else if (indirectFieldObject_field.getIndirectVarOpCode().matches(
+						"a{1,2}load.*")) {
+
+					// infos about indirectVar.field
+					testMethodByteCode.addLdc(indirectFieldObject_field
+							.getIndirectVarName());
+					testMethodByteCode.addLdc(indirectFieldObject_field
+							.getIndirectVarType());
+					testMethodByteCode.addLdc("");
+					testMethodByteCode.addLdc(indirectFieldObject_field
+							.getIndirectVarOpCode());
 
 					// indirect field non-static: localVar.f
 					// aload_X, getfield
-					String localVarOpCode = field.getIndirectFieldObject()
-							.getOpCode_field();
-					int localVarSlot = field.getIndirectFieldObject()
+					String localVarOpCode = indirectFieldObject_field
+							.getIndirectVarOpCode();
+					int localVarSlot = indirectFieldObject_field
 							.getLocalVarSlot(localVarOpCode);
 					testMethodByteCode.addAload(localVarSlot);
 
@@ -132,29 +148,61 @@ public class ByteCodeAdapter {
 					// indirect field non-static:
 					// staticObject.f: getstatic, getfield
 					// this.nonStaticObject.f: aload_0, getfield, getfield
-					IndirectFieldObject OBJECT_field = field
-							.getIndirectFieldObject();
 
 					// non-static_field.field: aload_0
-					if (behavior.getModifiers() != AccessFlag.STATIC
-							&& !OBJECT_field.isObjectStatic_field()) {
-						testMethodByteCode.addAload(0);
-					}
+					// if (behavior.getModifiers() != AccessFlag.STATIC
+					// && !indirectFieldObject_field
+					// .isObjectStatic_field()) {
+					// testMethodByteCode.addAload(0);
+					// }
 
-					if (OBJECT_field.isObjectStatic_field()) {
+					if (indirectFieldObject_field.isIndirectVarStatic()) {
+
+						testMethodByteCode.addLdc(indirectFieldObject_field
+								.getIndirectVarName());
+						testMethodByteCode.addLdc(indirectFieldObject_field
+								.getIndirectVarType());
+						testMethodByteCode.addLdc(indirectFieldObject_field
+								.getIndirectClassNameInWhichObjectIsInstantiated());
+						testMethodByteCode.addLdc("");
+
 						// staticObject_field
 						testMethodByteCode
-								.addGetstatic(OBJECT_field
-										.getObjectBelongedClassName_field(),
-										OBJECT_field.getObjectName_field(),
-										OBJECT_field.getObjectType_field());
+								.addGetstatic(indirectFieldObject_field
+										.getIndirectClassNameInWhichObjectIsInstantiated(),
+										indirectFieldObject_field
+												.getIndirectVarName(),
+										indirectFieldObject_field
+												.getIndirectVarType());
 					} else {
+
+						testMethodByteCode.addLdc(indirectFieldObject_field
+								.getIndirectVarName());
+						testMethodByteCode.addLdc("");
+						testMethodByteCode.addLdc(indirectFieldObject_field
+								.getIndirectClassNameInWhichObjectIsInstantiated());
+						testMethodByteCode.addLdc("");
+
+						// // int 1 -> static, 0 -> nonStatic
+						// testMethodByteCode.addOpcode(Opcode.BIPUSH);
+						// if (indirectFieldObject_field.isObjectStatic_field())
+						// {
+						// testMethodByteCode.add(1);
+						// } else {
+						// testMethodByteCode.add(0);
+						// }
+
 						// nonStaticObject_field
+						if (behavior.getModifiers() != AccessFlag.STATIC) {
+							testMethodByteCode.addAload(0);
+						}
 						testMethodByteCode
-								.addGetfield(OBJECT_field
-										.getObjectBelongedClassName_field(),
-										OBJECT_field.getObjectName_field(),
-										OBJECT_field.getObjectType_field());
+								.addGetfield(indirectFieldObject_field
+										.getIndirectClassNameInWhichObjectIsInstantiated(),
+										indirectFieldObject_field
+												.getIndirectVarName(),
+										indirectFieldObject_field
+												.getIndirectVarType());
 					}
 				}
 
@@ -165,9 +213,13 @@ public class ByteCodeAdapter {
 						.addGetfield(nameOfClassInWhichFieldIsInstantiated,
 								varName, varType);
 
-				// TODO: how to add Object...
-
 			} else {
+
+				// infos about indirectVar.field
+				testMethodByteCode.addLdc("");
+				testMethodByteCode.addLdc("");
+				testMethodByteCode.addLdc("");
+				testMethodByteCode.addLdc("");
 
 				// static field
 				// getstatic
@@ -249,12 +301,11 @@ public class ByteCodeAdapter {
 
 		// testMethod
 		if (var.getVarID().equals("field")) {
-			testMethodByteCode
-					.addInvokestatic(nullDisplayer, "test", CtClass.voidType,
-							new CtClass[] { str, str, str, str, str, str, str,
-									CtClass.intType, object, CtClass.intType,
-									CtClass.intType, CtClass.intType,
-									CtClass.intType });
+			testMethodByteCode.addInvokestatic(nullDisplayer, "test",
+					CtClass.voidType, new CtClass[] { str, str, str, str, str,
+							str, str, CtClass.intType, str, str, str, str,
+							object, CtClass.intType, CtClass.intType,
+							CtClass.intType, CtClass.intType });
 		} else {
 			testMethodByteCode
 					.addInvokestatic(nullDisplayer, "testLocalVar",

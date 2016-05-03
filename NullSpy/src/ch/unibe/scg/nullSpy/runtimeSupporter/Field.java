@@ -20,7 +20,7 @@ public class Field extends Variable {
 			String behaviorSignature, String varID, String varName,
 			String varType, String classNameInWhichVarIsInstantiated,
 			boolean isStatic, int varLineNr, int startPos, int storePos,
-			int afterPos) {
+			int afterPos, IndirectFieldObject indirectFieldObject) {
 
 		super(classNameInWhichVarIsUsed, behaviorName, behaviorSignature,
 				varID, varName, varType, varLineNr, startPos, storePos,
@@ -30,7 +30,7 @@ public class Field extends Variable {
 		this.isStatic = isStatic;
 
 		// OBJECT_field
-		// this.indirectFieldObject = indirectFieldObject;
+		this.indirectFieldObject = indirectFieldObject;
 	}
 
 	public boolean isStatic() {
