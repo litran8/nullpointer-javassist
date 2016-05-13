@@ -19,7 +19,6 @@ public class NullDisplayer {
 			int startPos, int storePos, int afterPos) {
 
 		if (varValue == null) {
-			NullDisplayer nullDisplayer = new NullDisplayer();
 			boolean isVarStatic = (isStatic == 1 ? true : false);
 			boolean isIndirectVarStatic = false;
 			IndirectFieldObject indirectFieldObject = null;
@@ -27,13 +26,12 @@ public class NullDisplayer {
 			String linkVarName = varName;
 
 			// this.f
-			FieldKey fieldKey = nullDisplayer.new FieldKey(varName,
+			FieldKey fieldKey = new FieldKey(varName,
 					classNameInWhichVarIsInstantiated);
 
 			if (isVarStatic) {
 				// class.f
-				fieldKey = nullDisplayer.new FieldKey(varName, varType,
-						isVarStatic);
+				fieldKey = new FieldKey(varName, varType, isVarStatic);
 				linkVarName = classNameInWhichVarIsInstantiated + "." + varName;
 
 			} else if (!isVarStatic && !indirectVarName.equals("")) {
@@ -47,7 +45,7 @@ public class NullDisplayer {
 				if (!indirectClassNameInWhichVarIsInstantiated.equals("")
 						&& indirectVarType.equals("")) {
 					// indirectNonStaticVar.f
-					fieldKey = nullDisplayer.new FieldKey(varName,
+					fieldKey = new FieldKey(varName,
 							classNameInWhichVarIsInstantiated, indirectVarName,
 							indirectClassNameInWhichVarIsInstantiated);
 
@@ -55,7 +53,7 @@ public class NullDisplayer {
 						.equals("") && !indirectVarType.equals("")) {
 					// indirestStaticVar.f
 					isIndirectVarStatic = true;
-					fieldKey = nullDisplayer.new FieldKey(varName,
+					fieldKey = new FieldKey(varName,
 							classNameInWhichVarIsInstantiated, indirectVarName,
 							indirectVarType, isIndirectVarStatic);
 					linkVarName = indirectClassNameInWhichVarIsInstantiated
@@ -63,10 +61,10 @@ public class NullDisplayer {
 
 				} else {
 					// localVar.f
-					fieldKey = nullDisplayer.new FieldKey(varName,
-							indirectClassNameInWhichVarIsInstantiated,
-							indirectVarName, classNameInWhichVarIsUsed,
-							behaviorName, behaviorSignature);
+					fieldKey = new FieldKey(varName,
+							classNameInWhichVarIsInstantiated, indirectVarName,
+							classNameInWhichVarIsUsed, behaviorName,
+							behaviorSignature);
 				}
 			}
 
@@ -97,11 +95,8 @@ public class NullDisplayer {
 
 			// localVariableList.add(localVar);
 
-			NullDisplayer nullDisplayer = new NullDisplayer();
-			localVarMap.put(
-					nullDisplayer.new LocalVarKey(varName,
-							classNameInWhichVarIsUsed, behaviorName,
-							behaviorSignature), localVar);
+			localVarMap.put(new LocalVarKey(varName, classNameInWhichVarIsUsed,
+					behaviorName, behaviorSignature), localVar);
 
 			System.out.print("LocalVar ");
 			printNullLink(classNameInWhichVarIsUsed, varLineNr, varName);
@@ -119,178 +114,5 @@ public class NullDisplayer {
 		nullLink = "(" + className + ".java:" + lineNumber + ")";
 		return nullLink;
 	}
-
-	private class FieldKey {
-
-		public int keySize;
-
-		public String varName;
-		public String varType;
-		public String classNameInWhichVarIsInstantiated;
-		public boolean isVarStatic;
-
-		public String indirectVarName;
-
-		public String behaviorDeclaredInClassName;
-		public String behaviorName;
-		public String behaviorSignature;
-
-		public String indirectClassNameInWhichVarIsInstantiated;
-
-		public String indirectVarType;
-		public boolean isIndirectVarStatic;
-
-		public FieldKey(String varName, String classNameInWhichVarIsInstantiated) {
-			this.keySize = 2;
-			this.varName = varName;
-			this.classNameInWhichVarIsInstantiated = classNameInWhichVarIsInstantiated;
-		}
-
-		public FieldKey(String varName, String varType, boolean isVarStatic) {
-			this.keySize = 3;
-			this.varName = varName;
-			this.varType = varType;
-			this.isVarStatic = isVarStatic;
-		}
-
-		public FieldKey(String varName,
-				String classNameInWhichVarIsInstantiated,
-				String indirectVarName, String behaviorDeclaredInClassName,
-				String behaviorName, String behaviorSignature) {
-			this.keySize = 6;
-			this.varName = varName;
-			this.classNameInWhichVarIsInstantiated = classNameInWhichVarIsInstantiated;
-			this.indirectVarName = indirectVarName;
-			this.behaviorDeclaredInClassName = behaviorDeclaredInClassName;
-			this.behaviorName = behaviorName;
-			this.behaviorSignature = behaviorSignature;
-		}
-
-		public FieldKey(String varName,
-				String classNameInWhichVarIsInstantiated,
-				String indirectVarName,
-				String indirectClassNameInWhichVarIsInstantiated) {
-			this.keySize = 4;
-			this.varName = varName;
-			this.classNameInWhichVarIsInstantiated = classNameInWhichVarIsInstantiated;
-			this.indirectVarName = indirectVarName;
-			this.indirectClassNameInWhichVarIsInstantiated = indirectClassNameInWhichVarIsInstantiated;
-		}
-
-		public FieldKey(String varName,
-				String classNameInWhichVarIsInstantiated,
-				String indirectVarName, String indirectVarType,
-				boolean isIndirectVarStatic) {
-			this.keySize = 5;
-			this.varName = varName;
-			this.classNameInWhichVarIsInstantiated = classNameInWhichVarIsInstantiated;
-			this.indirectVarName = indirectVarName;
-			this.indirectVarType = indirectVarType;
-			this.isIndirectVarStatic = isIndirectVarStatic;
-		}
-
-		public int getKeySize() {
-			return keySize;
-		}
-
-		public String getVarName() {
-			return varName;
-		}
-
-		public String getVarType() {
-			return varType;
-		}
-
-		public String getClassNameInWhichVarIsInstantiated() {
-			return classNameInWhichVarIsInstantiated;
-		}
-
-		public boolean isVarStatic() {
-			return isVarStatic;
-		}
-
-		public String getIndirectVarName() {
-			return indirectVarName;
-		}
-
-		public String getBehaviorDeclaredInClassName() {
-			return behaviorDeclaredInClassName;
-		}
-
-		public String getBehaviorName() {
-			return behaviorName;
-		}
-
-		public String getBehaviorSignature() {
-			return behaviorSignature;
-		}
-
-		public String getIndirectClassNameInWhichVarIsInstantiated() {
-			return indirectClassNameInWhichVarIsInstantiated;
-		}
-
-		public String getIndirectVarType() {
-			return indirectVarType;
-		}
-
-		public boolean isIndirectVarStatic() {
-			return isIndirectVarStatic;
-		}
-
-	}
-
-	private class LocalVarKey {
-
-		public String varName;
-
-		public String classNameInWhichVarIsUsed;
-		public String behaviorName;
-		public String behaviorSignature;
-
-		public LocalVarKey(String varName, String classNameInWhichVarIsUsed,
-				String behaviorName, String behaviorSignature) {
-			this.varName = varName;
-			this.classNameInWhichVarIsUsed = classNameInWhichVarIsUsed;
-			this.behaviorName = behaviorName;
-			this.behaviorSignature = behaviorSignature;
-		}
-
-		public String getVarName() {
-			return varName;
-		}
-
-		public String getClassNameInWhichVarIsUsed() {
-			return classNameInWhichVarIsUsed;
-		}
-
-		public String getBehaviorName() {
-			return behaviorName;
-		}
-
-		public String getBehaviorSignature() {
-			return behaviorSignature;
-		}
-
-	}
-
-	// public static void isAlreadyNull(String className, String methodName,
-	// String varName, String fieldOrLocVarID) {
-	//
-	// if (fieldOrLocVarID.equals("field")) {
-	// for (Field f : fieldList) {
-	// if (f.getFieldName().equals(varName)) {
-	// printNullLink(f.getClassName(), f.getFieldLineNr(),
-	// f.getFieldName());
-	// }
-	// }
-	// } else {
-	// for (LocalVariable lv : localVariableList) {
-	// if (lv.getFieldName().equals(varName)) {
-	// printNullLink(lv.getClassName(), lv.getFieldLineNr(),
-	// lv.getFieldName());
-	// }
-	// }
-	// }
-	// }
 
 }

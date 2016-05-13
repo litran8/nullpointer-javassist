@@ -1,53 +1,129 @@
 package isFieldOrLocalVariableNullExample;
 
 public class TestMethodCall {
-	private static String str1 = null;
-	private static String str2 = null;
+
+	// private TestMethodCall classItself = new TestMethodCall();
+	private static TestMethodCall classItselfStatic = new TestMethodCall();
+
+	private Object objectNonStatic = new Object();
+	private static Object objectStatic = new Object();
+
+	private TestMethodCallPerson personNonStatic = new TestMethodCallPerson();
+	private static TestMethodCallPerson personStatic = new TestMethodCallPerson();
 
 	public static void main(String[] args) {
-		TestMethodCall o = (TestMethodCall) TestMethodCall.setToNullMethod();
+		TestMethodCallPerson personLocalVar = new TestMethodCallPerson();
+		personLocalVar
+				.methodCallSetFieldOfIndirectVarToNullWithoutReturnWithoutParams();
+		System.out.println("finish");
 	}
 
-	public static Object setToNullMethod() {
-		TestMethodCall obj = new TestMethodCall();
-		try {
-			String str = "string 1";
-			obj.setStr1(str);
-			int i = 2;
-			String s = obj.getStr1().substring(0, i).toString();
+	public void testMehodOnNonStaticVars() {
 
-			setToNull();
-			int r = 5;
-			bla(r);
-			obj = setToNull();
+		Object paramLocalVar = new Object();
+		TestMethodCallPerson personLocalVar = new TestMethodCallPerson();
+		personLocalVar
+				.methodCallSetFieldOfIndirectVarToNullWithoutReturnWithoutParams();
+		// 16 aload_2 [personLocalVar]
+		// 17 invokevirtual
+		// isFieldOrLocalVariableNullExample.TestMethodCallPerson.methodCallSetFieldOfIndirectVarToNullWithoutReturnWithoutParams()
+		// : void [40]
 
-			// s = obj.getStr1().substring(0, i);
-			// s = s.substring(0, 1);
-		} catch (Throwable t) {
-			// System.out.println("Java ERROR: " + t);
-			// t.printStackTrace();
-		}
-		return obj;
+		// personLocalVar
+		// .methodCallSetFieldOfIndirectVarToNullWithoutReturnWithParams(personLocalVar);
+		// // 20 aload_2 [personLocalVar]
+		// // 21 aload_2 [personLocalVar]
+		// // 22 invokevirtual
+		// //
+		// isFieldOrLocalVariableNullExample.TestMethodCallPerson.methodCallSetFieldOfIndirectVarToNullWithoutReturnWithParams(java.lang.Object)
+		// // : void [43]
+		// // 25 aload_2 [personLocalVar]
+		//
+		// personLocalVar
+		// .methodCallSetFieldOfIndirectVarToNullWithoutReturnWithParams(this.objectNonStatic);
+		// // 25 aload_2 [personLocalVar]
+		// // 26 aload_0 [this]
+		// // 27 getfield
+		// // isFieldOrLocalVariableNullExample.TestMethodCall.objectNonStatic :
+		// // java.lang.Object [34]
+		// // 30 invokevirtual
+		// //
+		// isFieldOrLocalVariableNullExample.TestMethodCallPerson.methodCallSetFieldOfIndirectVarToNullWithoutReturnWithParams(java.lang.Object)
+		// // : void [43]
+		//
+		// personLocalVar
+		// .methodCallSetFieldOfIndirectVarToNullWithoutReturnWithParams(TestMethodCall.objectStatic);
+		// // 33 aload_2 [personLocalVar]
+		// // 34 getstatic
+		// // isFieldOrLocalVariableNullExample.TestMethodCall.objectStatic :
+		// // java.lang.Object [23]
+		// // 37 invokevirtual
+		// //
+		// isFieldOrLocalVariableNullExample.TestMethodCallPerson.methodCallSetFieldOfIndirectVarToNullWithoutReturnWithParams(java.lang.Object)
+		// // : void [43]
+		//
+		// personLocalVar
+		// .methodCallSetFieldOfIndirectVarToNullWithoutReturnWithParams(personLocalVar.car);
+		//
+		// // 40 aload_2 [personLocalVar]
+		// // 41 aload_2 [personLocalVar]
+		// // 42 getfield
+		// // isFieldOrLocalVariableNullExample.TestMethodCallPerson.car :
+		// // java.lang.Object [47]
+		// // 45 invokevirtual
+		// //
+		// isFieldOrLocalVariableNullExample.TestMethodCallPerson.methodCallSetFieldOfIndirectVarToNullWithoutReturnWithParams(java.lang.Object)
+		// // : void [43]
+		//
+		// personLocalVar
+		// .methodCallSetFieldOfIndirectVarToNullWithoutReturnWithParams(TestMethodCallPerson.head);
+		// // 48 aload_2 [personLocalVar]
+		// // 49 getstatic
+		// // isFieldOrLocalVariableNullExample.TestMethodCallPerson.head :
+		// // java.lang.Object [50]
+		// // 52 invokevirtual
+		// //
+		// isFieldOrLocalVariableNullExample.TestMethodCallPerson.methodCallSetFieldOfIndirectVarToNullWithoutReturnWithParams(java.lang.Object)
+		// // : void [43]
+		//
+		// TestMethodCall classItselfLocalVar = new TestMethodCall();
+
 	}
 
-	private static void bla(int r) {
-		int i = 5;
+	// nonStatic
 
-	}
-
-	private void setStr2(String string) {
-		str2 = string;
-	}
-
-	private void setStr1(String string) {
-		str1 = string;
-	}
-
-	private String getStr1() {
-		return str1;
-	}
-
-	private static TestMethodCall setToNull() {
+	public Object methodCallSetToNullWithReturnWithoutParams() {
 		return null;
 	}
+
+	public Object methodCallSetToNullWithReturnWithParams(Object obj) {
+		return null;
+	}
+
+	public void methodCallSetFieldToNullWithoutReturnWithoutParams() {
+		this.objectNonStatic = null;
+	}
+
+	public void methodCallSetFieldToNullWithoutReturnWithParams(Object obj) {
+		this.objectNonStatic = null;
+	}
+
+	// static
+
+	public static Object methodCallStaticWithReturnWithoutParams() {
+		return null;
+	}
+
+	public static Object methodCallStaticWithReturnWithParams(Object obj) {
+		return null;
+	}
+
+	public static void methodCallStaticWithoutReturnWithoutParams() {
+		TestMethodCall.objectStatic = null;
+	}
+
+	public static void methodCallStaticWithoutReturnWithParams(Object obj) {
+		TestMethodCall.objectStatic = null;
+	}
+
 }

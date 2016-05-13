@@ -1,8 +1,10 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javassist.CannotCompileException;
+import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.CtField;
@@ -16,6 +18,7 @@ import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
 import ch.unibe.scg.nullSpy.model.LocalVar;
+import ch.unibe.scg.nullSpy.model.LocalVarKey;
 import ch.unibe.scg.nullSpy.model.Variable;
 
 /**
@@ -27,10 +30,13 @@ import ch.unibe.scg.nullSpy.model.Variable;
 public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 	private ArrayList<Variable> localVarList;
+	private HashMap<LocalVarKey, LocalVar> localVarMap;
 
-	public LocalVariableAnalyzer(CtClass cc, ArrayList<Variable> localVarList) {
+	public LocalVariableAnalyzer(CtClass cc, ArrayList<Variable> localVarList,
+			HashMap<LocalVarKey, LocalVar> localVarMap) {
 		super(cc);
 		this.localVarList = localVarList;
+		this.localVarMap = localVarMap;
 	}
 
 	/**
@@ -66,140 +72,136 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			throws BadBytecode, CannotCompileException, NotFoundException {
 
 		for (CtBehavior method : behaviorList) {
-			try {
-				// if (method.getName().equals("initManager")) {
-				CodeAttribute codeAttribute = method.getMethodInfo()
-						.getCodeAttribute();
+			// if (method.getName().equals("initManager")) {
+			CodeAttribute codeAttribute = method.getMethodInfo()
+					.getCodeAttribute();
 
-				if (codeAttribute == null) {
-					continue;
-				}
-
-				CodeIterator codeIterator = codeAttribute.iterator();
-
-				LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
-						.getAttribute(LocalVariableAttribute.tag);
-				int localVarTableLength = localVariableTable.tableLength();
-
-				if (localVarTableLength == 0) {
-					continue;
-				}
-
-				ArrayList<LocalVariableTableEntry> localVariableList = getStableLocalVariableTableAsList(localVariableTable);
-
-				LineNumberAttribute lineNumberTable = (LineNumberAttribute) codeAttribute
-						.getAttribute(LineNumberAttribute.tag);
-
-				codeIterator.begin();
-
-				ArrayList<Integer> instrPositions = new ArrayList<Integer>();
-
-				int methodMaxPc = lineNumberTable.startPc(lineNumberTable
-						.tableLength() - 1);
-
-				while (codeIterator.hasNext()) {
-
-					int pos = codeIterator.next();
-					instrPositions.add(pos);
-
-					int op = codeIterator.byteAt(pos);
-
-					if (isLocVarObject(op) && pos <= methodMaxPc) {
-
-						int startPos = getStartPos(method, pos);
-						int afterPos = codeIterator.next();
-
-						int localVarTableIndex = getLocalVarTableIndex(
-								codeIterator, localVariableList, pos,
-								"astore.*");
-
-						// Printer p = new Printer();
-						// p.printMethod(method, 0);
-
-						int localVarSlot = localVariableList
-								.get(localVarTableIndex).index;
-
-						String instr = InstructionPrinter
-								.instructionString(codeIterator, pos,
-										codeAttribute.getConstPool());
-
-						if (instr.contains(" ")) {
-							instr = instr.substring(instr.indexOf(" ") + 1);
-						} else {
-							instr = instr.substring(instr.indexOf("_") + 1);
-						}
-
-						int instrSlot = Integer.parseInt(instr);
-
-						String localVarName = "";
-						String localVarType = "";
-						String varID = "localVariable_";
-
-						// lineNr
-						int localVarLineNr = lineNumberTable.toLineNumber(pos);
-
-						if (localVarSlot != instrSlot) {
-							varID += instrSlot;
-						} else {
-							localVarName = localVariableList
-									.get(localVarTableIndex).varName;
-							localVarType = localVariableList
-									.get(localVarTableIndex).varType;
-							varID += localVarSlot;
-						}
-
-						// create localVar
-						LocalVar localVar = new LocalVar(varID, localVarName,
-								localVarLineNr, localVarType, pos, startPos,
-								afterPos, cc, method, localVarTableIndex,
-								localVarSlot);
-
-						// save localVar into list
-						localVarList.add(localVar);
-
-						// change byteCode
-						adaptByteCode(localVar);
-
-						// update codeAttr, codeIter; set codeIter to last
-						// checked
-						// pos and iterate further
-						codeAttribute = method.getMethodInfo()
-								.getCodeAttribute();
-						codeIterator = codeAttribute.iterator();
-						codeIterator.move(afterPos);
-
-						// update statement for if() and othe stuffs
-						methodMaxPc = lineNumberTable.startPc(lineNumberTable
-								.tableLength() - 1);
-						lineNumberTable = (LineNumberAttribute) codeAttribute
-								.getAttribute(LineNumberAttribute.tag);
-						localVariableList = getStableLocalVariableTableAsList(localVariableTable);
-
-						// Printer p = new Printer();
-						// System.out.println("Method: " +
-						// method.getName());
-						// System.out
-						// .println("MethodParams: " +
-						// method.getSignature());
-						// p.printMethod(method, 0);
-						// System.out.println();
-					}
-				}
-
-				// calculates the time modified project uses
-				addTimeToModifiedProject(method);
-
-				// Printer p = new Printer();
-				// System.out.println("Method: " + method.getName());
-				// System.out.println("MethodParams: " +
-				// method.getSignature());
-				// p.printMethod(method, 0);
-				// System.out.println();
-
-				// }
-			} catch (Throwable t) {
-				System.out.println();
+			if (codeAttribute == null) {
+				continue;
 			}
+
+			LocalVariableAttribute localVarTable = (LocalVariableAttribute) codeAttribute
+					.getAttribute(LocalVariableAttribute.tag);
+
+			int localVarTableLength = localVarTable.tableLength();
+			if (localVarTableLength == 0) {
+				continue;
+			}
+
+			ArrayList<LocalVariableTableEntry> localVariableList = getStableLocalVariableTableAsList(localVarTable);
+
+			LineNumberAttribute lineNumberTable = (LineNumberAttribute) codeAttribute
+					.getAttribute(LineNumberAttribute.tag);
+
+			CodeIterator codeIterator = codeAttribute.iterator();
+			codeIterator.begin();
+
+			ArrayList<Integer> instrPositions = new ArrayList<Integer>();
+
+			int methodMaxPc = lineNumberTable.startPc(lineNumberTable
+					.tableLength() - 1);
+
+			while (codeIterator.hasNext()) {
+
+				int pos = codeIterator.next();
+				instrPositions.add(pos);
+
+				int op = codeIterator.byteAt(pos);
+
+				if (isLocVarObject(op) && pos <= methodMaxPc) {
+
+					int startPos = getStartPos(method, pos);
+					int afterPos = codeIterator.next();
+
+					int localVarTableIndex = getLocalVarTableIndex(
+							codeIterator, localVariableList, pos, "astore.*");
+
+					// Printer p = new Printer();
+					// p.printMethod(method, 0);
+
+					int localVarSlot = localVariableList
+							.get(localVarTableIndex).index;
+
+					String instr = InstructionPrinter.instructionString(
+							codeIterator, pos, codeAttribute.getConstPool());
+
+					if (instr.contains(" ")) {
+						instr = instr.substring(instr.indexOf(" ") + 1);
+					} else {
+						instr = instr.substring(instr.indexOf("_") + 1);
+					}
+
+					int instrSlot = Integer.parseInt(instr);
+
+					String localVarName = "";
+					String localVarType = "";
+					String varID = "localVariable_";
+
+					// lineNr
+					int localVarLineNr = lineNumberTable.toLineNumber(pos);
+
+					if (localVarSlot != instrSlot) {
+						varID += instrSlot;
+					} else {
+						localVarName = localVariableList
+								.get(localVarTableIndex).varName;
+						localVarType = localVariableList
+								.get(localVarTableIndex).varType;
+						varID += localVarSlot;
+					}
+
+					// create localVar
+					LocalVar localVar = new LocalVar(varID, localVarName,
+							localVarLineNr, localVarType, pos, startPos,
+							afterPos, cc, method, localVarTableIndex,
+							localVarSlot);
+
+					// save localVar into list
+					localVarList.add(localVar);
+
+					// hashMap
+					localVarMap.put(new LocalVarKey(localVarName, cc.getName(),
+							method.getName(), method.getSignature()), localVar);
+
+					// change byteCode
+					adaptByteCode(localVar);
+
+					// update codeAttr, codeIter; set codeIter to last
+					// checked
+					// pos and iterate further
+					codeAttribute = method.getMethodInfo().getCodeAttribute();
+					codeIterator = codeAttribute.iterator();
+					codeIterator.move(afterPos);
+
+					// update statement for if() and othe stuffs
+					methodMaxPc = lineNumberTable.startPc(lineNumberTable
+							.tableLength() - 1);
+					lineNumberTable = (LineNumberAttribute) codeAttribute
+							.getAttribute(LineNumberAttribute.tag);
+					localVariableList = getStableLocalVariableTableAsList(localVarTable);
+
+					// Printer p = new Printer();
+					// System.out.println("Method: " +
+					// method.getName());
+					// System.out
+					// .println("MethodParams: " +
+					// method.getSignature());
+					// p.printMethod(method, 0);
+					// System.out.println();
+				}
+			}
+
+			// calculates the time modified project uses
+			addTimeToModifiedProject(method);
+
+			// Printer p = new Printer();
+			// System.out.println("Method: " + method.getName());
+			// System.out.println("MethodParams: " +
+			// method.getSignature());
+			// p.printMethod(method, 0);
+			// System.out.println();
+
+			// }
 		}
 
 	}
@@ -275,12 +277,17 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	}
 
 	private void addTimeToModifiedProject(CtBehavior method)
-			throws CannotCompileException {
+			throws CannotCompileException, NotFoundException {
 		if (method.getName().equals("main")) {
 			CtField f = CtField.make("public static long startTime;", cc);
 			cc.addField(f);
 			method.insertBefore("startTime = System.nanoTime();");
 			method.insertAfter("System.out.println(\"\\nModified class time: \" +((System.nanoTime() - startTime)/1000000) + \" ms\");");
+			CtClass etype = ClassPool.getDefault().get(
+					"java.lang.NullPointerException");
+			method.addCatch(
+					"{System.out.println(\"Hallo\");StackTraceElement[] elements = $e.getStackTrace();System.out.println(elements[1]);System.out.println($e); throw $e;}",
+					etype);
 
 			// CtClass etype = ClassPool.getDefault().get(
 			// "java.io.IOException");

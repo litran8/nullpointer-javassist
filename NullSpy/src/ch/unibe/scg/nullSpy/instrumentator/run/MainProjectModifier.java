@@ -164,8 +164,11 @@ public class MainProjectModifier {
 
 		// get the main-className for manifest of executable jar
 		for (CtMethod m : cc.getDeclaredMethods()) {
-			if (m.getName().equals("main"))
+			if (m.getName().equals("main")) {
 				mainClassNameOfProject = m.getDeclaringClass().getName();
+
+			}
+
 		}
 
 		try {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import javassist.CannotCompileException;
+import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.bytecode.BadBytecode;
@@ -12,7 +13,9 @@ import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
+import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
+import javassist.bytecode.Opcode;
 import ch.unibe.scg.nullSpy.model.Variable;
 
 public class MethodCallAnalyzer extends Analyzer {
@@ -29,29 +32,114 @@ public class MethodCallAnalyzer extends Analyzer {
 		this.localVarInfoList = localVarInfoList;
 	}
 
-	public void checkMethod() throws BadBytecode, CannotCompileException {
-		for (CtMethod method : cc.getDeclaredMethods()) {
+	public void checkInvokes() throws BadBytecode, CannotCompileException {
 
-			CodeAttribute codeAttribute = method.getMethodInfo()
+		checkInvokesInBehavior(new CtBehavior[] { cc.getClassInitializer() });
+		checkInvokesInBehavior(cc.getDeclaredConstructors());
+		checkInvokesInBehavior(cc.getDeclaredMethods());
+
+	}
+
+	private void checkInvokesInBehavior(CtBehavior[] declaredMethods)
+			throws BadBytecode, CannotCompileException {
+
+		for (CtBehavior behavior : declaredMethods) {
+
+			if (behavior == null) {
+				return;
+			}
+
+			// behavior.instrument(new ExprEditor() {
+			// public void edit(MethodCall m) throws CannotCompileException {
+			// // if (m.getClassName().equals("Point")
+			// // && m.getMethodName().equals("move"))
+			// // m.replace("{ $1 = 0; $_ = $proceed($$); }");
+			// }
+			// });
+			// new MethodCall(pos, iterator, clazz, minfo);
+
+			MethodInfo mInfo = behavior.getMethodInfo();
+			CodeAttribute codeAttr = behavior.getMethodInfo()
 					.getCodeAttribute();
 
-			if (codeAttribute == null) {
+			if (codeAttr == null) {
 				continue;
 			}
 
-			CodeIterator codeIterator = codeAttribute.iterator();
-			LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
+			LocalVariableAttribute localVarTable = (LocalVariableAttribute) codeAttr
 					.getAttribute(LocalVariableAttribute.tag);
 
-			ArrayList<LocalVariableTableEntry> localVariableTableAsList = getStableLocalVariableTableAsList(localVariableTable);
-
-			LineNumberAttribute lineNumberTable = (LineNumberAttribute) codeAttribute
+			LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttr
 					.getAttribute(LineNumberAttribute.tag);
-			HashMap<Integer, Integer> lineNumberMap = getLineNumberMap(method);
 
-			checkMethodCall(method, codeIterator, localVariableTableAsList,
-					lineNumberMap, lineNumberTable);
+			CodeIterator codeIter = codeAttr.iterator();
+			codeIter.begin();
+
+			while (codeIter.hasNext()) {
+				int pos = codeIter.next();
+				int op = codeIter.byteAt(pos);
+
+				Printer p = new Printer();
+				p.printMethod(behavior, pos);
+
+				if (isInvokeByteCode(op)) {
+
+					int lineNr = lineNrTable.toLineNumber(pos);
+					int startPos = lineNrTable.toStartPc(lineNr);
+
+					// System.out.println();
+
+				}
+			}
+
 		}
+
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((cc == null) ? 0 : cc.hashCode());
+		result = prime * result
+				+ ((fieldInfoList == null) ? 0 : fieldInfoList.hashCode());
+		result = prime
+				* result
+				+ ((localVarInfoList == null) ? 0 : localVarInfoList.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		MethodCallAnalyzer other = (MethodCallAnalyzer) obj;
+		if (cc == null) {
+			if (other.cc != null)
+				return false;
+		} else if (!cc.equals(other.cc))
+			return false;
+		if (fieldInfoList == null) {
+			if (other.fieldInfoList != null)
+				return false;
+		} else if (!fieldInfoList.equals(other.fieldInfoList))
+			return false;
+		if (localVarInfoList == null) {
+			if (other.localVarInfoList != null)
+				return false;
+		} else if (!localVarInfoList.equals(other.localVarInfoList))
+			return false;
+		return true;
+	}
+
+	private boolean isInvokeByteCode(int op) {
+		// TODO Auto-generated method stub
+		return op == Opcode.INVOKESTATIC || op == Opcode.INVOKEINTERFACE
+				|| op == Opcode.INVOKEVIRTUAL;
 	}
 
 	private void checkMethodCall(CtMethod method, CodeIterator codeIterator,

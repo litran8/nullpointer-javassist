@@ -1,6 +1,7 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
@@ -19,6 +20,7 @@ import javassist.bytecode.Opcode;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import ch.unibe.scg.nullSpy.model.Field;
+import ch.unibe.scg.nullSpy.model.FieldKey;
 import ch.unibe.scg.nullSpy.model.IndirectFieldObject;
 import ch.unibe.scg.nullSpy.model.Variable;
 
@@ -28,10 +30,14 @@ import ch.unibe.scg.nullSpy.model.Variable;
 public class FieldAnalyzer extends VariableAnalyzer {
 
 	private ArrayList<Variable> fieldIsWritterInfoList;
+	private HashMap<FieldKey, Field> fieldMap;
 
-	public FieldAnalyzer(CtClass cc, ArrayList<Variable> fieldIsWritterInfoList) {
+	public FieldAnalyzer(CtClass cc,
+			ArrayList<Variable> fieldIsWritterInfoList,
+			HashMap<FieldKey, Field> fieldMap) {
 		super(cc);
 		this.fieldIsWritterInfoList = fieldIsWritterInfoList;
+		this.fieldMap = fieldMap;
 	}
 
 	/**
@@ -257,6 +263,43 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		fieldIsWritterInfoList.add(var);
 
+		// hashMap
+		FieldKey fieldKey = new FieldKey(fieldName,
+				classNameFieldIsInstantiatedIn);
+
+		if (field.isStatic()) {
+			// class.f
+			fieldKey = new FieldKey(fieldName, fieldType, field.isStatic());
+
+		} else if (!field.isStatic() && !objectName_field.equals("")) {
+			// indirectVar.f
+
+			if (!indirectClassNameInWhichObjectIsInstantiated.equals("")
+					&& objectType_field.equals("")) {
+				// indirectNonStaticVar.f
+				fieldKey = new FieldKey(fieldName,
+						classNameFieldIsInstantiatedIn, objectName_field,
+						indirectClassNameInWhichObjectIsInstantiated);
+
+			} else if (!indirectClassNameInWhichObjectIsInstantiated.equals("")
+					&& !objectType_field.equals("")) {
+				// indirestStaticVar.f
+				isfieldStatic_field = true;
+				fieldKey = new FieldKey(fieldName,
+						classNameFieldIsInstantiatedIn, objectName_field,
+						objectType_field, isfieldStatic_field);
+
+			} else {
+				// localVar.f
+				fieldKey = new FieldKey(fieldName,
+						classNameFieldIsInstantiatedIn, objectName_field,
+						behavior.getDeclaringClass().getName(),
+						behavior.getName(), behavior.getSignature());
+			}
+		}
+
+		fieldMap.put(fieldKey, var);
+
 		return var;
 	}
 
@@ -311,6 +354,19 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				classNameFieldIsInstantiatedIn, fieldLineNr, pos, startPos,
 				posAfterAssignment, cc, behavior, field.isStatic(), null);
 		fieldIsWritterInfoList.add(var);
+
+		// hashMap
+		FieldKey fieldKey;
+		if (field.isStatic()) {
+			// class.f
+			fieldKey = new FieldKey(fieldName, fieldType, field.isStatic());
+		} else {
+			// this.f
+			fieldKey = new FieldKey(fieldName, classNameFieldIsInstantiatedIn);
+		}
+
+		fieldMap.put(fieldKey, var);
+
 		return var;
 	}
 

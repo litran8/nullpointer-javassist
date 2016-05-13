@@ -18,4 +18,5 @@ public class Person {
 	public static void print() {
 		System.out.println("Hi");
 	}
+
 }

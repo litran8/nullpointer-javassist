@@ -40,7 +40,11 @@ public class ClassFileTranslator implements Translator {
 				&& !className
 						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.Variable")
 				&& !className
-						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.IndirectFieldObject")) {
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.IndirectFieldObject")
+				&& !className
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.FieldKey")
+				&& !className
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.LocalVarKey")) {
 
 			CtClass cc;
 			if (analyzedClasses.containsKey(className))

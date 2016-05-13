@@ -2,6 +2,7 @@ package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
@@ -10,6 +11,10 @@ import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.LineNumberAttribute;
+import ch.unibe.scg.nullSpy.model.Field;
+import ch.unibe.scg.nullSpy.model.FieldKey;
+import ch.unibe.scg.nullSpy.model.LocalVar;
+import ch.unibe.scg.nullSpy.model.LocalVarKey;
 import ch.unibe.scg.nullSpy.model.Variable;
 
 /**
@@ -24,7 +29,9 @@ public class ClassAdapter {
 	private static ClassAdapter instance;
 
 	private ArrayList<Variable> fieldIsWritterInfoList = new ArrayList<Variable>();
+	private HashMap<FieldKey, Field> fieldMap = new HashMap<>();
 	private ArrayList<Variable> localVarList = new ArrayList<>();
+	private HashMap<LocalVarKey, LocalVar> localVarMap = new HashMap<>();
 
 	private ClassAdapter() {
 	}
@@ -61,17 +68,26 @@ public class ClassAdapter {
 		System.out.println("\n------------- FIELD -------------\n");
 
 		FieldAnalyzer fieldAnalyzer = new FieldAnalyzer(cc,
-				fieldIsWritterInfoList);
+				fieldIsWritterInfoList, fieldMap);
 		fieldAnalyzer.instrumentAfterFieldAssignment();
 
 		System.out.println("\n------------- LOCAL VAR -------------\n");
 
 		LocalVariableAnalyzer localVarAnalyzer = new LocalVariableAnalyzer(cc,
-				localVarList);
+				localVarList, localVarMap);
 		localVarAnalyzer.instrumentAfterLocVarAssignment();
 
-		MethodCallAnalyzer methodCallAnalyzer = new MethodCallAnalyzer(cc,
-				fieldIsWritterInfoList, localVarList);
+		// CtBehavior mainBehavior = cc.getDeclaredMethod("main");
+		//
+		// if (mainBehavior != null) {
+		// CtClass etype = ClassPool.getDefault().get(
+		// "java.lang.NullPointerException");
+		// mainBehavior.addCatch("{System.out.println($e); throw $e;}", etype);
+		// }
+
+		// MethodCallAnalyzer methodCallAnalyzer = new MethodCallAnalyzer(cc,
+		// fieldIsWritterInfoList, localVarList);
+		// methodCallAnalyzer.checkInvokes();
 		System.out.println();
 	}
 }
