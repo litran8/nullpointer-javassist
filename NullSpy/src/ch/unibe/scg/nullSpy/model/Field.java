@@ -12,32 +12,32 @@ import javassist.CtClass;
 
 public class Field extends Variable {
 
-	private String nameOfClassFieldIsInstantiatedIn; // package.Person
+	private String classNameInWhichFieldIsInstantiated; // package.Person
 
 	// object_filed
-	private IndirectFieldObject indirectFieldObject;
+	private IndirectVar indirectVar;
 
 	public Field(String varID, String fieldName, String fieldType,
-			String nameOfClassFieldIsInstantiatedIn, int fieldSourceLineNr,
+			String classNameInWhichFieldIsInstantiated, int fieldLineNr,
 			int storePos, int startPos, int afterPos,
-			CtClass classWhereVarIsUsed, CtBehavior behavior,
-			boolean isStatic, IndirectFieldObject indirectFieldObject) {
+			CtClass classWhereFieldIsUsed, CtBehavior behavior,
+			boolean isStatic, IndirectVar indirectVar) {
 
-		super(varID, fieldName, fieldSourceLineNr, fieldType, isStatic,
-				classWhereVarIsUsed, behavior, storePos, startPos, afterPos);
+		super(varID, fieldName, fieldLineNr, fieldType, isStatic,
+				classWhereFieldIsUsed, behavior, storePos, startPos, afterPos);
 
-		this.nameOfClassFieldIsInstantiatedIn = nameOfClassFieldIsInstantiatedIn;
+		this.classNameInWhichFieldIsInstantiated = classNameInWhichFieldIsInstantiated;
 
 		// OBJECT_field
-		this.indirectFieldObject = indirectFieldObject;
+		this.indirectVar = indirectVar;
 	}
 
-	public String getNameOfClassInWhichFieldIsInstantiated() {
-		return nameOfClassFieldIsInstantiatedIn;
+	public String getClassNameInWhichFieldIsInstantiated() {
+		return classNameInWhichFieldIsInstantiated;
 	}
 
-	public IndirectFieldObject getIndirectFieldObject() {
-		return indirectFieldObject;
+	public IndirectVar getIndirectVar() {
+		return indirectVar;
 	}
 
 	public String toString() {

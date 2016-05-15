@@ -1,6 +1,5 @@
 package isFieldOrLocalVariableNullExample;
 
-import ch.unibe.scg.nullSpy.runtimeSupporter.IndirectFieldObject;
 
 public class Main2 {
 	private Object obj = null;
@@ -31,8 +30,8 @@ public class Main2 {
 		Person p = new Person();
 		p.a = null;
 		pers.a = null;
-		IndirectFieldObject indirectFieldObj = new IndirectFieldObject("a",
-				"b", "c", false, "putfield");
+		// IndirectFieldObject indirectFieldObj = new IndirectFieldObject("a",
+		// "b", "c", false, "putfield");
 		obj = null;
 		// ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test("Main2",
 		// "testStackMapTable", "signature...", "field", "obj",

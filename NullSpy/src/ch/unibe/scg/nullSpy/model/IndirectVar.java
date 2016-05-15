@@ -6,30 +6,23 @@ package ch.unibe.scg.nullSpy.model;
  * @author Lina Tran
  *
  */
-public class IndirectFieldObject {
+public class IndirectVar {
 
 	private String indirectVarName;
 	private String indirectVarType;
-	private String indirectClassNameInWhichObjectIsInstantiated; // Person p; p.a : p
+	private String classNameInWhichIndirectVarIsInstantiated; // Person p; p.a :
+																// p
 
 	private boolean isIndirectVarStatic;
 	private String indirectVarOpCode;
 
-	public IndirectFieldObject(String indirectVarName,
-			String indirectVarType, String indirectClassNameInWhichObjectIsInstantiated,
+	public IndirectVar(String indirectVarName, String indirectVarType,
+			String classNameInWhichIndirectVarIsInstantiated,
 			boolean isIndirectVarStatic, String indirectVarOpCode) {
 
 		this.indirectVarName = indirectVarName;
-		if (indirectVarType.startsWith("[")) {
-			indirectVarType = indirectVarType.substring(1);
-		}
-
-		// if (!objectType_field.equals("")) {
-		// objectType_field = objectType_field.substring(0,
-		// objectType_field.length() - 1);
-		// }
 		this.indirectVarType = indirectVarType;
-		this.indirectClassNameInWhichObjectIsInstantiated = indirectClassNameInWhichObjectIsInstantiated;
+		this.classNameInWhichIndirectVarIsInstantiated = classNameInWhichIndirectVarIsInstantiated;
 
 		this.isIndirectVarStatic = isIndirectVarStatic;
 
@@ -44,8 +37,8 @@ public class IndirectFieldObject {
 		return indirectVarType;
 	}
 
-	public String getIndirectClassNameInWhichObjectIsInstantiated() {
-		return indirectClassNameInWhichObjectIsInstantiated;
+	public String getClassNameInWhichIndirectVarIsInstantiated() {
+		return classNameInWhichIndirectVarIsInstantiated;
 	}
 
 	public boolean isIndirectVarStatic() {

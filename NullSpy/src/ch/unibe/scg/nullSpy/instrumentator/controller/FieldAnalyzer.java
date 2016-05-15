@@ -21,7 +21,7 @@ import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import ch.unibe.scg.nullSpy.model.Field;
 import ch.unibe.scg.nullSpy.model.FieldKey;
-import ch.unibe.scg.nullSpy.model.IndirectFieldObject;
+import ch.unibe.scg.nullSpy.model.IndirectVar;
 import ch.unibe.scg.nullSpy.model.Variable;
 
 /**
@@ -178,15 +178,15 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		// object_FIELD
 		int op = codeIterator.byteAt(startPos);
-		String opCode_field = Mnemonic.OPCODE[op];
+		String indirectVarOpCode = Mnemonic.OPCODE[op];
 
 		// OBJECT_field
-		IndirectFieldObject indirectFieldObject;
+		IndirectVar indirectFieldObject = null;
 
-		String objectName_field = "";
-		String objectType_field = "";
-		String indirectClassNameInWhichObjectIsInstantiated = "";
-		boolean isfieldStatic_field = false;
+		String indirectVarName = "";
+		String indirectVarType = "";
+		String classNameInWhichIndirectVarIsInstantiated = "";
+		boolean isIndirectVarStatic = false;
 
 		if (!field.isStatic()) {
 
@@ -198,12 +198,12 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				localVarTableIndex = getLocalVarTableIndex(codeIterator,
 						localVariableTableList, startPos, "aload.*");
 				int locVarSlot = getLocVarArraySlot(codeIterator, startPos);
-				opCode_field = "aload_" + locVarSlot;
+				indirectVarOpCode = "aload_" + locVarSlot;
 
 				// localVarName.field
-				objectName_field = localVariableTableList
+				indirectVarName = localVariableTableList
 						.get(localVarTableIndex).varName;
-				objectType_field = localVariableTableList
+				indirectVarType = localVariableTableList
 						.get(localVarTableIndex).varType;
 
 			} else {
@@ -215,44 +215,51 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 				instruction = instruction.substring(
 						instruction.lastIndexOf(".") + 1, brace);
-				objectName_field = instruction;
+				indirectVarName = instruction;
 
-				CtField ctField_field = cc.getField(objectName_field);
+				CtField ctField_field = cc.getField(indirectVarName);
 
-				indirectClassNameInWhichObjectIsInstantiated = ctField_field
+				classNameInWhichIndirectVarIsInstantiated = ctField_field
 						.getDeclaringClass().getName();
-				objectType_field = ctField_field.getSignature();
-				isfieldStatic_field = op == Opcode.GETSTATIC;
+				indirectVarType = ctField_field.getSignature();
+				isIndirectVarStatic = op == Opcode.GETSTATIC;
 				// testMethodByteCode.addGetfield(belongedClassNameOfVariable,
 				// variableName, variableType);
 			}
 
 		}
 
-		if (isAnotherClassAnInnerClass && objectName_field.equals("this")) {
+		if (isAnotherClassAnInnerClass && indirectVarName.equals("this")) {
 			// innerClass: this.innerClassField.field
 			codeIterator.move(startPos);
 			codeIterator.next();
 			int innerClassGetFieldPos = codeIterator.next();
 			op = codeIterator.byteAt(innerClassGetFieldPos);
-			opCode_field = Mnemonic.OPCODE[op];
+			indirectVarOpCode = Mnemonic.OPCODE[op];
 			int index = codeIterator.u16bitAt(innerClassGetFieldPos + 1);
 
 			// innerClassField_field
 			innerClassFieldName = behavior.getMethodInfo2().getConstPool()
 					.getFieldrefName(index);
 
-			CtField ctField_field = cc.getField(innerClassFieldName);
-			objectName_field = ctField_field.getName();
-			indirectClassNameInWhichObjectIsInstantiated = ctField_field
+			CtField indirectVar = cc.getField(innerClassFieldName);
+			indirectVarName = indirectVar.getName();
+			classNameInWhichIndirectVarIsInstantiated = indirectVar
 					.getDeclaringClass().getName();
-			objectType_field = ctField_field.getSignature();
-			isfieldStatic_field = op == Opcode.GETSTATIC;
+			indirectVarType = indirectVar.getSignature();
+			isIndirectVarStatic = op == Opcode.GETSTATIC;
 		}
 
-		indirectFieldObject = new IndirectFieldObject(objectName_field,
-				objectType_field, indirectClassNameInWhichObjectIsInstantiated,
-				isfieldStatic_field, opCode_field);
+		if (indirectVarName.startsWith("[")) {
+			indirectVarName = indirectVarName.substring(1);
+		}
+
+		if (!field.isStatic()) {
+			indirectFieldObject = new IndirectVar(indirectVarName,
+					indirectVarType,
+					classNameInWhichIndirectVarIsInstantiated,
+					isIndirectVarStatic, indirectVarOpCode);
+		}
 
 		String fieldType = field.getSignature();
 		String classNameFieldIsInstantiatedIn = field.getClassName();
@@ -271,28 +278,28 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			// class.f
 			fieldKey = new FieldKey(fieldName, fieldType, field.isStatic());
 
-		} else if (!field.isStatic() && !objectName_field.equals("")) {
+		} else if (!field.isStatic() && !indirectVarName.equals("")) {
 			// indirectVar.f
 
-			if (!indirectClassNameInWhichObjectIsInstantiated.equals("")
-					&& objectType_field.equals("")) {
+			if (!classNameInWhichIndirectVarIsInstantiated.equals("")
+					&& indirectVarType.equals("")) {
 				// indirectNonStaticVar.f
 				fieldKey = new FieldKey(fieldName,
-						classNameFieldIsInstantiatedIn, objectName_field,
-						indirectClassNameInWhichObjectIsInstantiated);
+						classNameFieldIsInstantiatedIn, indirectVarName,
+						classNameInWhichIndirectVarIsInstantiated);
 
-			} else if (!indirectClassNameInWhichObjectIsInstantiated.equals("")
-					&& !objectType_field.equals("")) {
+			} else if (!classNameInWhichIndirectVarIsInstantiated.equals("")
+					&& !indirectVarType.equals("")) {
 				// indirestStaticVar.f
-				isfieldStatic_field = true;
+				isIndirectVarStatic = true;
 				fieldKey = new FieldKey(fieldName,
-						classNameFieldIsInstantiatedIn, objectName_field,
-						objectType_field, isfieldStatic_field);
+						classNameFieldIsInstantiatedIn, indirectVarName,
+						indirectVarType, isIndirectVarStatic);
 
 			} else {
 				// localVar.f
 				fieldKey = new FieldKey(fieldName,
-						classNameFieldIsInstantiatedIn, objectName_field,
+						classNameFieldIsInstantiatedIn, indirectVarName,
 						behavior.getDeclaringClass().getName(),
 						behavior.getName(), behavior.getSignature());
 			}

@@ -8,52 +8,49 @@ package ch.unibe.scg.nullSpy.runtimeSupporter;
  */
 public class IndirectFieldObject {
 
-	private String objectName_field;
-	private String objectType_field;
-	private String objectBelongedClassName_field; // Person p; p.a : p
+	private Object indirectVar;
 
-	private boolean isObjectStatic_field;
-	private String opCode_field;
+	private String indirectVarName;
+	private String indirectVarType;
+	private String classNameInWhichIndirectVarIsInstantiated; // Person p; p.a :
+																// p
 
-	public IndirectFieldObject(String objectName_field,
-			String objectType_field, String objectBelongedClassName_field,
-			boolean isObjectStatic_field, String opCode_field) {
+	private boolean isIndirectVarStatic;
+	private String indirectVarOpCode;
 
-		this.objectName_field = objectName_field;
-		if (objectType_field.startsWith("[")) {
-			objectType_field = objectType_field.substring(1);
-		}
+	public IndirectFieldObject(Object indirectVar, String indirectVarName,
+			String indirectVarType,
+			String classNameInWhichIndirectVarIsInstantiated,
+			boolean isIndirectVarStatic, String indirectVarOpCode) {
 
-		// if (!objectType_field.equals("")) {
-		// objectType_field = objectType_field.substring(0,
-		// objectType_field.length() - 1);
-		// }
-		this.objectType_field = objectType_field;
-		this.objectBelongedClassName_field = objectBelongedClassName_field;
+		this.indirectVar = indirectVar;
+		this.indirectVarName = indirectVarName;
+		this.indirectVarType = indirectVarType;
+		this.classNameInWhichIndirectVarIsInstantiated = classNameInWhichIndirectVarIsInstantiated;
 
-		this.isObjectStatic_field = isObjectStatic_field;
+		this.isIndirectVarStatic = isIndirectVarStatic;
 
-		this.opCode_field = opCode_field;
+		this.indirectVarOpCode = indirectVarOpCode;
 	}
 
-	public String getObjectName_field() {
-		return objectName_field;
+	public String getIndirectVarName() {
+		return indirectVarName;
 	}
 
-	public String getObjectType_field() {
-		return objectType_field;
+	public String getIndirectVarType() {
+		return indirectVarType;
 	}
 
-	public String getObjectBelongedClassName_field() {
-		return objectBelongedClassName_field;
+	public String getClassNameInWhichIndirectVarIsInstantiated() {
+		return classNameInWhichIndirectVarIsInstantiated;
 	}
 
-	public boolean isObjectStatic_field() {
-		return isObjectStatic_field;
+	public boolean isIndirectVarStatic() {
+		return isIndirectVarStatic;
 	}
 
-	public String getOpCode_field() {
-		return opCode_field;
+	public String getIndirectVarOpCode() {
+		return indirectVarOpCode;
 	}
 
 	public int getLocalVarSlot(String localVarOpCode) {

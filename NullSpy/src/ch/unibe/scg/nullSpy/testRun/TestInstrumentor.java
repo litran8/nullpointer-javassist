@@ -5,10 +5,10 @@ import javassist.Loader;
 import javassist.Translator;
 
 public class TestInstrumentor {
-	// public static String className =
-	// "isFieldOrLocalVariableNullExample.MainAssignToNull";
+	public static String className = "isFieldOrLocalVariableNullExample.MainAssignToNull";
 
-	public static String className = "isFieldOrLocalVariableNullExample.FooTest";
+	// public static String className =
+	// "isFieldOrLocalVariableNullExample.FooTest";
 
 	// public static String className =
 	// "org.jhotdraw.samples.javadraw.JavaDrawApp";

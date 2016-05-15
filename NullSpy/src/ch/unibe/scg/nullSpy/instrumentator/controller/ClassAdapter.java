@@ -65,6 +65,9 @@ public class ClassAdapter {
 		}
 
 		System.out.println("\n\nCLASS: " + cc.getName());
+
+		// System.out.println("\n------------- INVOKES -------------\n");
+
 		System.out.println("\n------------- FIELD -------------\n");
 
 		FieldAnalyzer fieldAnalyzer = new FieldAnalyzer(cc,
