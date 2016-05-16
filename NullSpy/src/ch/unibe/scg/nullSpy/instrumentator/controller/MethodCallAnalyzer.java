@@ -80,7 +80,7 @@ public class MethodCallAnalyzer extends Analyzer {
 				int op = codeIter.byteAt(pos);
 
 				Printer p = new Printer();
-				p.printMethod(behavior, pos);
+				p.printInstruction(behavior, pos);
 
 				if (isInvokeByteCode(op)) {
 
@@ -137,7 +137,6 @@ public class MethodCallAnalyzer extends Analyzer {
 	}
 
 	private boolean isInvokeByteCode(int op) {
-		// TODO Auto-generated method stub
 		return op == Opcode.INVOKESTATIC || op == Opcode.INVOKEINTERFACE
 				|| op == Opcode.INVOKEVIRTUAL;
 	}

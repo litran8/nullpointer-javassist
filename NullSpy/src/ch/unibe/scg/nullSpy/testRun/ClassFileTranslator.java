@@ -22,7 +22,6 @@ public class ClassFileTranslator implements Translator {
 	@Override
 	public void start(ClassPool pool) throws NotFoundException,
 			CannotCompileException {
-		// TODO Auto-generated method stub
 
 	}
 

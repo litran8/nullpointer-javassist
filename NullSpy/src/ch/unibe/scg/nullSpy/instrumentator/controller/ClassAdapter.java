@@ -28,6 +28,7 @@ public class ClassAdapter {
 
 	private static ClassAdapter instance;
 
+	private HashMap<String, HashMap<Integer, Variable>> methodInvokationVarMap;
 	private ArrayList<Variable> fieldIsWritterInfoList = new ArrayList<Variable>();
 	private HashMap<FieldKey, Field> fieldMap = new HashMap<>();
 	private ArrayList<Variable> localVarList = new ArrayList<>();
@@ -66,31 +67,25 @@ public class ClassAdapter {
 
 		System.out.println("\n\nCLASS: " + cc.getName());
 
-		// System.out.println("\n------------- INVOKES -------------\n");
+		System.out.println("\n------------- INVOKES -------------\n");
 
-		System.out.println("\n------------- FIELD -------------\n");
+		MethodInvokationAnalyzer methodInvokationAnalyzer = new MethodInvokationAnalyzer(
+				cc, methodInvokationVarMap);
+		methodInvokationAnalyzer.getMethodInvokationVar();
 
-		FieldAnalyzer fieldAnalyzer = new FieldAnalyzer(cc,
-				fieldIsWritterInfoList, fieldMap);
-		fieldAnalyzer.instrumentAfterFieldAssignment();
-
-		System.out.println("\n------------- LOCAL VAR -------------\n");
-
-		LocalVariableAnalyzer localVarAnalyzer = new LocalVariableAnalyzer(cc,
-				localVarList, localVarMap);
-		localVarAnalyzer.instrumentAfterLocVarAssignment();
-
-		// CtBehavior mainBehavior = cc.getDeclaredMethod("main");
+		// System.out.println("\n------------- FIELD -------------\n");
 		//
-		// if (mainBehavior != null) {
-		// CtClass etype = ClassPool.getDefault().get(
-		// "java.lang.NullPointerException");
-		// mainBehavior.addCatch("{System.out.println($e); throw $e;}", etype);
-		// }
+		// FieldAnalyzer fieldAnalyzer = new FieldAnalyzer(cc,
+		// fieldIsWritterInfoList, fieldMap);
+		// fieldAnalyzer.instrumentAfterFieldAssignment();
+		//
+		// System.out.println("\n------------- LOCAL VAR -------------\n");
+		//
+		// LocalVariableAnalyzer localVarAnalyzer = new
+		// LocalVariableAnalyzer(cc,
+		// localVarList, localVarMap);
+		// localVarAnalyzer.instrumentAfterLocVarAssignment();
 
-		// MethodCallAnalyzer methodCallAnalyzer = new MethodCallAnalyzer(cc,
-		// fieldIsWritterInfoList, localVarList);
-		// methodCallAnalyzer.checkInvokes();
 		System.out.println();
 	}
 }
