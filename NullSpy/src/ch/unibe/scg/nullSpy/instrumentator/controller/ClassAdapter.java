@@ -11,11 +11,11 @@ import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.LineNumberAttribute;
-import ch.unibe.scg.nullSpy.model.Field;
-import ch.unibe.scg.nullSpy.model.FieldKey;
-import ch.unibe.scg.nullSpy.model.LocalVar;
-import ch.unibe.scg.nullSpy.model.LocalVarKey;
-import ch.unibe.scg.nullSpy.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentator.model.Field;
+import ch.unibe.scg.nullSpy.instrumentator.model.FieldKey;
+import ch.unibe.scg.nullSpy.instrumentator.model.LocalVar;
+import ch.unibe.scg.nullSpy.instrumentator.model.LocalVarKey;
+import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 /**
  * Iterates through the whole class and instrument a test-code after each field

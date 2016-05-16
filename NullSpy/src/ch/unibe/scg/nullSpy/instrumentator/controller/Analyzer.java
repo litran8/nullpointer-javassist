@@ -15,8 +15,8 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.analysis.ControlFlow.Block;
-import ch.unibe.scg.nullSpy.model.PcLine;
-import ch.unibe.scg.nullSpy.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentator.model.PcLine;
+import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 public abstract class Analyzer {
 	protected CtClass cc;

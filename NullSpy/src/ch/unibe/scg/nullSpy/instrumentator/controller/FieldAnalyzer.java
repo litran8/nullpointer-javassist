@@ -19,10 +19,10 @@ import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
-import ch.unibe.scg.nullSpy.model.Field;
-import ch.unibe.scg.nullSpy.model.FieldKey;
-import ch.unibe.scg.nullSpy.model.IndirectVar;
-import ch.unibe.scg.nullSpy.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentator.model.Field;
+import ch.unibe.scg.nullSpy.instrumentator.model.FieldKey;
+import ch.unibe.scg.nullSpy.instrumentator.model.IndirectVar;
+import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 /**
  * Instruments test-code after fields.

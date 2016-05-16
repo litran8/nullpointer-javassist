@@ -17,9 +17,9 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
-import ch.unibe.scg.nullSpy.model.LocalVar;
-import ch.unibe.scg.nullSpy.model.LocalVarKey;
-import ch.unibe.scg.nullSpy.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentator.model.LocalVar;
+import ch.unibe.scg.nullSpy.instrumentator.model.LocalVarKey;
+import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 /**
  * Instruments test-code after locVars.

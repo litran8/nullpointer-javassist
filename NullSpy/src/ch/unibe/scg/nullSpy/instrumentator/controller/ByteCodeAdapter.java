@@ -12,9 +12,9 @@ import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.Opcode;
-import ch.unibe.scg.nullSpy.model.Field;
-import ch.unibe.scg.nullSpy.model.IndirectVar;
-import ch.unibe.scg.nullSpy.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentator.model.Field;
+import ch.unibe.scg.nullSpy.instrumentator.model.IndirectVar;
+import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 public class ByteCodeAdapter {
 

@@ -1,3 +1,4 @@
+package ch.unibe.scg.nullSpy.instrumentator.model;
 //package ch.unibe.scg.nullSpy.model;
 //
 //import java.util.ArrayList;

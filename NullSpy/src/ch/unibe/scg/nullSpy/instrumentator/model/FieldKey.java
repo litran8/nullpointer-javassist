@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.model;
+package ch.unibe.scg.nullSpy.instrumentator.model;
 
 public class FieldKey {
 
