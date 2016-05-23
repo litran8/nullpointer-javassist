@@ -3,12 +3,15 @@ package ch.unibe.scg.nullSpy.testRun;
 import javassist.ClassPool;
 import javassist.Loader;
 import javassist.Translator;
+import ch.unibe.scg.nullSpy.instrumentator.controller.CsvFileCreator;
 
 public class TestInstrumentor {
 	// public static String className =
 	// "isFieldOrLocalVariableNullExample.MainAssignToNull";
 
-	public static String className = "isFieldOrLocalVariableNullExample.testMethodCall.FooTest";
+	private static String className = "isFieldOrLocalVariableNullExample.testMethodCall.FooTest";
+	private static String path = "C:\\Users\\Lina Tran\\Desktop\\blub.csv";
+	private static CsvFileCreator csv;
 
 	// public static String className =
 	// "org.jhotdraw.samples.javadraw.JavaDrawApp";
@@ -16,7 +19,6 @@ public class TestInstrumentor {
 	// public static String className = "org.jhotdraw.samples.net.NetApp";
 
 	public static void main(String[] args) throws Throwable {
-
 		long startTime = System.nanoTime();
 		Translator translator = new ClassFileTranslator();
 		ClassPool pool = ClassPool.getDefault();
@@ -24,7 +26,7 @@ public class TestInstrumentor {
 		loader.addTranslator(pool, translator);
 
 		loader.run(className, args);
-
+		ClassFileTranslator.csvCreator.closeCsvFile();
 		System.out.println("Modification + modified class time: "
 				+ ((System.nanoTime() - startTime) / 1000000) + "ms");
 

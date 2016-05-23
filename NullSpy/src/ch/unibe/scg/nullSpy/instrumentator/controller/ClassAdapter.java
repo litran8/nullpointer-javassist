@@ -45,10 +45,10 @@ public class ClassAdapter {
 		return instance;
 	}
 
-	public void instrumentCodeAfterFieldLocVarAssignment(CtClass cc)
-			throws NotFoundException, CannotCompileException, BadBytecode,
-			IllegalAccessException, InvocationTargetException,
-			NoSuchMethodException, IOException {
+	public void instrumentCodeAfterFieldLocVarAssignment(CtClass cc,
+			CsvFileCreator csvCreator) throws NotFoundException,
+			CannotCompileException, BadBytecode, IllegalAccessException,
+			InvocationTargetException, NoSuchMethodException, IOException {
 
 		CtBehavior[] constructors = cc.getDeclaredConstructors();
 
@@ -71,7 +71,7 @@ public class ClassAdapter {
 		System.out.println("\n------------- INVOKES -------------\n");
 
 		MethodInvokationAnalyzer methodInvokationAnalyzer = new MethodInvokationAnalyzer(
-				cc, methodInvokationVarMap);
+				cc, methodInvokationVarMap, csvCreator);
 		methodInvokationAnalyzer.getMethodInvokationVar();
 
 		// System.out.println("\n------------- FIELD -------------\n");

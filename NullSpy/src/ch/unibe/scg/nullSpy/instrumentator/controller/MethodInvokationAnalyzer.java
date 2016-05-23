@@ -26,10 +26,12 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	private ConstPool constPool;
 
 	public MethodInvokationAnalyzer(CtClass cc,
-			HashMap<String, HashMap<Integer, Variable>> methodInvokationVarMap) {
+			HashMap<String, HashMap<Integer, Variable>> methodInvokationVarMap,
+			CsvFileCreator csvCreator) {
 		super(cc);
 		this.methodInvokationVarMap = methodInvokationVarMap;
 		this.methodInvokationVarDataMap = new HashMap<>();
+		this.csvCreator = csvCreator;
 	}
 
 	public void getMethodInvokationVar() throws CannotCompileException,
@@ -95,6 +97,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					varData.add("MethodName" + testNr);
 					varData.add("MethodSignature" + testNr);
 					// TODO: Add to csv
+					csvCreator.addCsvLine(varData);
 					testNr += 1;
 					// store
 					codeIter.move(startPos);

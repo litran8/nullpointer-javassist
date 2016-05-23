@@ -40,7 +40,7 @@ public class CsvFileCreator {
 	}
 
 	public void addCsvLine(ArrayList<String> varData) throws IOException {
-		assert (varData.size() == 8);
+		assert (varData.size() == dataSize);
 		int lastElementIndex = varData.size() - 1;
 
 		for (int i = 0; i < varData.size(); i++) {
@@ -54,7 +54,7 @@ public class CsvFileCreator {
 		}
 	}
 
-	public static void closeCsvFile() throws IOException {
+	public void closeCsvFile() throws IOException {
 		writer.flush();
 		writer.close();
 	}

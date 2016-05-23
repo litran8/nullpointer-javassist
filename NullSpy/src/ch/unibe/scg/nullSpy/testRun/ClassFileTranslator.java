@@ -17,6 +17,8 @@ import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 public class ClassFileTranslator implements Translator {
 
 	public static final List<Variable> BYTECODE_INSTRUMENTATION_LIST = new ArrayList<>();
+	private String csvFilePath = "C:\\Users\\Lina Tran\\Desktop\\blub_2.csv";
+	public static CsvFileCreator csvCreator;
 
 	// private ClassAdapter classAdapter = ClassAdapter.getInstance();
 	private HashMap<String, CtClass> analyzedClasses = new HashMap<String, CtClass>();
@@ -32,8 +34,6 @@ public class ClassFileTranslator implements Translator {
 			throws NotFoundException, CannotCompileException {
 		// pool.insertClassPath("C:\\Users\\Lina Tran\\Desktop\\bachelor\\jhotdraw60b1\\bin");
 
-		String csvFilePath = "C:\\Users\\Lina Tran\\Desktop\\bachelor\\NullSpy\\org\\VarMethodCallOnList.csv";
-		CsvFileCreator csvCreator = null;
 		try {
 			csvCreator = new CsvFileCreator(csvFilePath);
 		} catch (IOException e1) {
@@ -68,7 +68,8 @@ public class ClassFileTranslator implements Translator {
 
 			try {
 				// if (cc.getName().equals("org.jhotdraw.standard.QuadTree"))
-				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc);
+				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc,
+						csvCreator);
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}
