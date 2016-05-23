@@ -16,6 +16,7 @@ public class TestInstrumentor {
 	// public static String className = "org.jhotdraw.samples.net.NetApp";
 
 	public static void main(String[] args) throws Throwable {
+
 		long startTime = System.nanoTime();
 		Translator translator = new ClassFileTranslator();
 		ClassPool pool = ClassPool.getDefault();

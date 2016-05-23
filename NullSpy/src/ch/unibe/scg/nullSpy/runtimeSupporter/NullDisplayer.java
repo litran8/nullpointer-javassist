@@ -1,13 +1,60 @@
 package ch.unibe.scg.nullSpy.runtimeSupporter;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.HashMap;
+
+import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 public class NullDisplayer {
 
 	// private static List<Variable> fieldList = new ArrayList<>();
 	// private static List<Variable> localVariableList = new ArrayList<>();
+	private HashMap<String, HashMap<Integer, Variable>> methodInvokationVarMap = new HashMap<>();;
 	private static HashMap<LocalVarKey, LocalVariable> localVarMap = new HashMap<>();
 	private static HashMap<FieldKey, Field> fieldMap = new HashMap<>();
+
+	public static void checkMethodInvokationVar(String className, int lineNr) {
+		checkMethodInvocationOnVarList(className, lineNr);
+	}
+
+	private static void checkMethodInvocationOnVarList(String className,
+			int lineNr) {
+		String csvFile = "C:\\Users\\Lina Tran\\Desktop\\bachelor\\NullSpy\\VarMethodCalledOnList.csv";
+		BufferedReader br = null;
+		String line = "";
+		String cvsSplitBy = ",";
+
+		try {
+			br = new BufferedReader(new FileReader(csvFile));
+			String[] varData = line.split(cvsSplitBy);
+			while ((line = br.readLine()) != null) {
+
+				StringBuffer sb = new StringBuffer();
+				sb.append("VarLineNr: " + varData[0]);
+				sb.append(",");
+				sb.append("VarName: " + varData[1]);
+				sb.append(",");
+				sb.append("VarFullName: " + varData[2]);
+				sb.append(",");
+				sb.append("VarType: " + varData[3]);
+				sb.append(",");
+				sb.append("ClassNameInWhichVarIsUsed: " + varData[4]);
+				sb.append(",");
+				sb.append("ClassNameInWhichVarIsInstantiated: " + varData[5]);
+				sb.append(",");
+				sb.append("MethodNameInWhichVarIsUsed: " + varData[6]);
+				sb.append(",");
+				sb.append("MethodSignatureInWhichVarIsUsed: " + varData[7]);
+				sb.append("\n");
+
+				System.out.println(sb);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
 
 	public static void testIndirectField(String classNameInWhichVarIsUsed,
 			String behaviorName, String behaviorSignature, String varID,

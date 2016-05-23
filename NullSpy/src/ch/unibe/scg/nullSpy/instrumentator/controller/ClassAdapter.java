@@ -1,5 +1,6 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,7 +48,7 @@ public class ClassAdapter {
 	public void instrumentCodeAfterFieldLocVarAssignment(CtClass cc)
 			throws NotFoundException, CannotCompileException, BadBytecode,
 			IllegalAccessException, InvocationTargetException,
-			NoSuchMethodException {
+			NoSuchMethodException, IOException {
 
 		CtBehavior[] constructors = cc.getDeclaredConstructors();
 

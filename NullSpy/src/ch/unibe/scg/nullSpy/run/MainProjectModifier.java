@@ -59,7 +59,7 @@ public class MainProjectModifier {
 		} else {
 
 			try {
-				// modifies project by instrument code
+				// modifies project by instrumenting code
 				modifyProjectAndStoreToDestDir(srcDir, modifiedProjectDestDir,
 						false);
 				// modifies project by adding runtime supporter class file
@@ -166,9 +166,7 @@ public class MainProjectModifier {
 		for (CtMethod m : cc.getDeclaredMethods()) {
 			if (m.getName().equals("main")) {
 				mainClassNameOfProject = m.getDeclaringClass().getName();
-
 			}
-
 		}
 
 		try {

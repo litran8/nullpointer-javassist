@@ -286,8 +286,11 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			CtClass etype = ClassPool.getDefault().get(
 					"java.lang.NullPointerException");
 			method.addCatch(
-					"{System.out.println(\"Hallo\");StackTraceElement[] elements = $e.getStackTrace();System.out.println(elements[1]);System.out.println($e); throw $e;}",
-					etype);
+					"{System.out.println(\"Hallo\");"
+							+ "StackTraceElement[] elements = $e.getStackTrace();"
+							+ "System.out.println(elements[1]);"
+							+ "ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.checkMethodInvokationVar(\"className\",8);"
+							+ "System.out.println($e); throw $e;}", etype);
 
 			// CtClass etype = ClassPool.getDefault().get(
 			// "java.io.IOException");

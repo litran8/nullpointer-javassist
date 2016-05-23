@@ -1,5 +1,6 @@
 package ch.unibe.scg.nullSpy.testRun;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,13 +11,14 @@ import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.Translator;
 import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
+import ch.unibe.scg.nullSpy.instrumentator.controller.CsvFileCreator;
 import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 public class ClassFileTranslator implements Translator {
 
 	public static final List<Variable> BYTECODE_INSTRUMENTATION_LIST = new ArrayList<>();
 
-	private ClassAdapter classAdapter = ClassAdapter.getInstance();
+	// private ClassAdapter classAdapter = ClassAdapter.getInstance();
 	private HashMap<String, CtClass> analyzedClasses = new HashMap<String, CtClass>();
 
 	@Override
@@ -30,6 +32,15 @@ public class ClassFileTranslator implements Translator {
 			throws NotFoundException, CannotCompileException {
 		// pool.insertClassPath("C:\\Users\\Lina Tran\\Desktop\\bachelor\\jhotdraw60b1\\bin");
 
+		String csvFilePath = "C:\\Users\\Lina Tran\\Desktop\\bachelor\\NullSpy\\org\\VarMethodCallOnList.csv";
+		CsvFileCreator csvCreator = null;
+		try {
+			csvCreator = new CsvFileCreator(csvFilePath);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		ClassAdapter classAdapter = ClassAdapter.getInstance();
 		if (!className
 				.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer")
 				&& !className

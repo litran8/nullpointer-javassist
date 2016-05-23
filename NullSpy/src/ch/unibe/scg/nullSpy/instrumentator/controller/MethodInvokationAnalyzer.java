@@ -1,5 +1,6 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -21,6 +22,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 	private HashMap<String, HashMap<Integer, Variable>> methodInvokationVarMap;
 	private HashMap<Integer, Variable> methodInvokationVarDataMap;
+	private CsvFileCreator csvCreator;
 	private ConstPool constPool;
 
 	public MethodInvokationAnalyzer(CtClass cc,
@@ -31,14 +33,14 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	}
 
 	public void getMethodInvokationVar() throws CannotCompileException,
-			BadBytecode {
+			BadBytecode, IOException {
 		getMethodInvokationVarData(cc.getDeclaredConstructors());
 		getMethodInvokationVarData(cc.getDeclaredBehaviors());
 
 	}
 
 	private void getMethodInvokationVarData(CtBehavior[] behaviorList)
-			throws CannotCompileException, BadBytecode {
+			throws CannotCompileException, BadBytecode, IOException {
 
 		MethodInfo methodInfo;
 		CodeAttribute codeAttr;
@@ -65,6 +67,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 			codeIter = codeAttr.iterator();
 			codeIter.begin();
+			int testNr = 0;
 
 			while (codeIter.hasNext()) {
 				int pos = codeIter.next();
@@ -82,7 +85,18 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 					int lineNr = lineNrAttr.toLineNumber(pos);
 					int startPos = lineNrAttr.toStartPc(lineNr);
-
+					ArrayList<String> varData = new ArrayList<>();
+					varData.add("" + testNr);
+					varData.add("Keira" + testNr);
+					varData.add("Tran.Keira" + testNr);
+					varData.add("Human" + testNr);
+					varData.add("ClassUsing" + testNr);
+					varData.add("ClassInstantiated" + testNr);
+					varData.add("MethodName" + testNr);
+					varData.add("MethodSignature" + testNr);
+					// TODO: Add to csv
+					testNr += 1;
+					// store
 					codeIter.move(startPos);
 					ArrayList<Integer> instrList = new ArrayList<>();
 					int pos2 = codeIter.next();
@@ -93,6 +107,10 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 						instrList.add(pos2);
 						pos2 = codeIter.next();
 					}
+
+					String instr = p.getInstruction(behavior, pos);
+
+					String targetVarClassName = getClassName(codeIter, pos);
 
 					// TODO: find out reference on which method is called
 
