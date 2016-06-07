@@ -76,53 +76,137 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				int op = codeIter.byteAt(pos);
 
 				if (isInvoke(op)) {
-					int nameAndType = getNameAndType(codeIter, pos);
-
-					String methodInvokationName = getMethodName(nameAndType);
-					boolean isSuper = isSuper(behavior, pos);
-
-					// init or super call can't cause NPE, so ignore them
-					if (methodInvokationName.equals("<init>") || isSuper)
-						continue;
 
 					int lineNr = lineNrAttr.toLineNumber(pos);
 					int startPos = lineNrAttr.toStartPc(lineNr);
-					ArrayList<String> varData = new ArrayList<>();
-					varData.add("" + testNr);
-					varData.add("Keira" + testNr);
-					varData.add("Tran.Keira" + testNr);
-					varData.add("Human" + testNr);
-					varData.add("ClassUsing" + testNr);
-					varData.add("ClassInstantiated" + testNr);
-					varData.add("MethodName" + testNr);
-					varData.add("MethodSignature" + testNr);
-					// TODO: Add to csv
-					csvCreator.addCsvLine(varData);
-					testNr += 1;
-					// store
-					codeIter.move(startPos);
-					ArrayList<Integer> instrList = new ArrayList<>();
-					int pos2 = codeIter.next();
-					instrList.add(pos2);
-					pos2 = codeIter.next();
 
-					while (pos2 <= pos) {
-						instrList.add(pos2);
-						pos2 = codeIter.next();
-					}
+					// store bytecode until invokation
+					ArrayList<Integer> invokationBytecodeInterval = getInvocationInterval(
+							codeAttr, startPos);
 
-					String instr = p.getInstruction(behavior, pos);
+					codeIter.move(pos);
+					codeIter.next();
 
-					String targetVarClassName = getClassName(codeIter, pos);
+					// String instr = p.getInstruction(behavior, pos);
+					// String targetVarClassName = getClassName(codeIter, pos);
 
-					// TODO: find out reference on which method is called
-
-					String methodInvokationSignature = getSignature(nameAndType);
-					int paramAmount = getParameterAmount(methodInvokationSignature);
-					System.out.println();
+					// TODO: find out method receiver
+					storeMethodReceiverCombination(behavior,
+							invokationBytecodeInterval);
+					//
+					// ArrayList<String> varData = new ArrayList<>();
+					// varData.add("" + testNr);
+					// varData.add("Keira" + testNr);
+					// varData.add("Tran.Keira" + testNr);
+					// varData.add("Human" + testNr);
+					// varData.add("ClassUsing" + testNr);
+					// varData.add("ClassInstantiated" + testNr);
+					// varData.add("MethodName" + testNr);
+					// varData.add("MethodSignature" + testNr);
+					// // TODO: Add to csv
+					// csvCreator.addCsvLine(varData);
+					// testNr += 1;
+					//
+					// System.out.println();
 				}
 			}
 		}
+	}
+
+	private ArrayList<Integer> getInvocationInterval(CodeAttribute codeAttr,
+			int startPos) throws BadBytecode {
+		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+				.getAttribute(LineNumberAttribute.tag);
+		CodeIterator codeIter = codeAttr.iterator();
+		ArrayList<Integer> invocationBytecodeInterval = new ArrayList<>();
+
+		codeIter.move(startPos);
+		int pos2 = codeIter.next();
+		invocationBytecodeInterval.add(pos2);
+
+		pos2 = codeIter.next();
+
+		int lineNr2 = lineNrAttr.toLineNumber(pos2);
+		int startPos2 = lineNrAttr.toStartPc(lineNr2);
+
+		while (startPos2 == startPos) {
+			invocationBytecodeInterval.add(pos2);
+			pos2 = codeIter.next();
+			lineNr2 = lineNrAttr.toLineNumber(pos2);
+			startPos2 = lineNrAttr.toStartPc(lineNr2);
+		}
+
+		int endPos = getIntervalEndPos(invocationBytecodeInterval);
+		int op = codeIter.byteAt(endPos);
+
+		while (!isInvoke(op)) {
+			invocationBytecodeInterval.remove(endPos);
+			endPos = getIntervalEndPos(invocationBytecodeInterval);
+		}
+
+		return invocationBytecodeInterval;
+
+	}
+
+	private void storeMethodReceiverCombination(CtBehavior behavior,
+			ArrayList<Integer> invocationBytecodeInterval) throws BadBytecode {
+
+		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
+		CodeIterator codeIter = codeAttr.iterator();
+
+		int endPos = getIntervalEndPos(invocationBytecodeInterval);
+		int startPos = getIntervalStartPos(invocationBytecodeInterval);
+
+		codeIter.move(startPos);
+		int pos = startPos;
+
+		// HashMap<Integer, Integer> invocationPcIntervalMap = new HashMap<>();
+		ArrayList<Integer> invocationPcList = new ArrayList<>();
+
+		while (codeIter.hasNext() && pos <= endPos) {
+			pos = codeIter.next();
+			int op = codeIter.byteAt(pos);
+
+			if (isInvoke(op)) {
+				int startPos2 = startPos;
+
+				if (pos == endPos) {
+					startPos2 = startPos;
+				} else if (invocationPcList.size() != 0) {
+					int lastAddedInvocationPos = invocationPcList
+							.get(invocationPcList.size() - 1);
+					int index = invocationBytecodeInterval
+							.indexOf(lastAddedInvocationPos);
+					startPos2 = invocationBytecodeInterval.get(index + 1);
+					// invocationPcIntervalMap.put(pos, startPos2);
+				}
+
+				invocationPcList.add(pos);
+
+				int nameAndType = getNameAndType(codeIter, pos);
+				String methodInvokationName = getMethodName(nameAndType);
+				boolean isSuper = isSuper(behavior, pos);
+
+				// init or super call can't cause NPE, so ignore them
+				if (methodInvokationName.equals("<init>") || isSuper)
+					continue;
+				else {
+					String methodInvokationSignature = getSignature(nameAndType);
+					int paramAmount = getParameterAmount(methodInvokationSignature);
+				}
+			}
+		}
+	}
+
+	private int getIntervalStartPos(
+			ArrayList<Integer> invocationBytecodeInterval) {
+		return invocationBytecodeInterval.get(0);
+	}
+
+	private Integer getIntervalEndPos(
+			ArrayList<Integer> invocationBytecodeInterval) {
+		return invocationBytecodeInterval
+				.get(invocationBytecodeInterval.size() - 1);
 	}
 
 	private int getParameterAmount(String methodInvokationSignature) {
@@ -154,7 +238,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 	private boolean isInvoke(int op) {
 		return op == Opcode.INVOKEINTERFACE || op == Opcode.INVOKESPECIAL
-				|| op == Opcode.INVOKEVIRTUAL;
+				|| op == Opcode.INVOKEVIRTUAL || op == Opcode.INVOKESTATIC;
 	}
 
 	private int getNameAndType(CodeIterator codeIter, int pos) {
@@ -249,4 +333,5 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 * public CtClass getReturnType() throws NotFoundException { return
 	 * Descriptor.getReturnType(getMethodDesc(), thisClass.getClassPool()); }
 	 */
+
 }
