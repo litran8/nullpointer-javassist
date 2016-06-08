@@ -15,6 +15,7 @@ import javassist.bytecode.Descriptor;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.MethodInfo;
+import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
 import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
@@ -140,8 +141,10 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		int op = codeIter.byteAt(endPos);
 
 		while (!isInvoke(op)) {
-			invocationBytecodeInterval.remove(endPos);
+			int i = invocationBytecodeInterval.indexOf(endPos);
+			invocationBytecodeInterval.remove(i);
 			endPos = getIntervalEndPos(invocationBytecodeInterval);
+			op = codeIter.byteAt(endPos);
 		}
 
 		return invocationBytecodeInterval;
@@ -162,8 +165,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 		// HashMap<Integer, Integer> invocationPcIntervalMap = new HashMap<>();
 		ArrayList<Integer> invocationPcList = new ArrayList<>();
+		ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList = new ArrayList<>();
 
-		while (codeIter.hasNext() && pos <= endPos) {
+		while (codeIter.hasNext() && pos < endPos) {
 			pos = codeIter.next();
 			int op = codeIter.byteAt(pos);
 
@@ -192,10 +196,89 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					continue;
 				else {
 					String methodInvokationSignature = getSignature(nameAndType);
-					int paramAmount = getParameterAmount(methodInvokationSignature);
+					int paramCount = getParameterAmount(methodInvokationSignature);
+
+					filterPossibleReceiver(possibleReceiverIntervalList,
+							codeIter, startPos2, pos);
+
+					int possibleReceiverListSize = possibleReceiverIntervalList
+							.size();
+
+					int nestedReceiverIndex = possibleReceiverListSize
+							- paramCount - 1;
+
+					PossibleReceiverInterval possibleReceiverInterval = possibleReceiverIntervalList
+							.get(nestedReceiverIndex);
+					int nestedReceiverStartPc = possibleReceiverInterval.startPc;
+					int nestedReceiverStartOp = codeIter
+							.byteAt(nestedReceiverStartPc);
+
+					String nestedReceiverStartOpcode = ""
+							+ nestedReceiverStartPc + " "
+							+ Mnemonic.OPCODE[nestedReceiverStartOp];
+
+					System.out.println(nestedReceiverStartOpcode);
+
+					if (pos != endPos) {
+						PossibleReceiverInterval replace = new PossibleReceiverInterval(
+								nestedReceiverStartPc, pos);
+
+						if (paramCount != 0) {
+							for (int i = possibleReceiverListSize - 1; i > nestedReceiverIndex; i--) {
+								possibleReceiverIntervalList.remove(i);
+							}
+						}
+						possibleReceiverIntervalList.set(nestedReceiverIndex,
+								replace);
+						startPos = codeIter.next();
+					}
+
+					codeIter.move(pos);
+					codeIter.next();
+					System.out.println();
 				}
 			}
 		}
+	}
+
+	private void filterPossibleReceiver(
+			ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList,
+			CodeIterator codeIter, int startPos, int endPos) throws BadBytecode {
+		codeIter.move(startPos);
+		int pos = codeIter.next();
+		int pos2 = pos;
+		int op = codeIter.byteAt(pos);
+		int op2 = op;
+
+		pos = codeIter.next();
+		op = codeIter.byteAt(pos);
+
+		if (op2 == Opcode.ACONST_NULL) {
+
+		} else if (op2 == Opcode.NEW || op2 == Opcode.NEWARRAY) { // new...invokespecial
+
+			while (op != Opcode.INVOKESPECIAL) {
+				pos2 = pos;
+				pos = codeIter.next();
+				op = codeIter.byteAt(pos);
+			}
+		} else {
+			while (op == Opcode.GETFIELD) {
+				pos2 = pos;
+				pos = codeIter.next();
+				op = codeIter.byteAt(op);
+			}
+		}
+
+		possibleReceiverIntervalList.add(new PossibleReceiverInterval(startPos,
+				pos2));
+
+		if (pos != endPos)
+			filterPossibleReceiver(possibleReceiverIntervalList, codeIter, pos,
+					endPos);
+		else
+			return;
+
 	}
 
 	private int getIntervalStartPos(
@@ -314,8 +397,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	public boolean isSuper(CtBehavior behavior, int pos) {
 		CodeIterator codeIter = behavior.getMethodInfo().getCodeAttribute()
 				.iterator();
+		String s = getClassName(codeIter, pos);
 		return codeIter.byteAt(pos) == Opcode.INVOKESPECIAL
-				&& behavior.getDeclaringClass().getName()
+				&& !behavior.getDeclaringClass().getName()
 						.equals(getClassName(codeIter, pos));
 	}
 
@@ -333,5 +417,19 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 * public CtClass getReturnType() throws NotFoundException { return
 	 * Descriptor.getReturnType(getMethodDesc(), thisClass.getClassPool()); }
 	 */
+
+	private class PossibleReceiverInterval {
+		public int startPc;
+		public int entPc;
+
+		public PossibleReceiverInterval(int startPc, int endPc) {
+			this.startPc = startPc;
+			this.entPc = endPc;
+		}
+
+		public String toString() {
+			return "StartPc: " + this.startPc + ", EndPc: " + this.entPc;
+		}
+	}
 
 }
