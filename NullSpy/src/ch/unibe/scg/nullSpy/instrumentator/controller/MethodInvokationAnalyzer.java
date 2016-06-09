@@ -35,14 +35,14 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		this.csvCreator = csvCreator;
 	}
 
-	public void getMethodInvokationVar() throws CannotCompileException,
-			BadBytecode, IOException {
-		getMethodInvokationVarData(cc.getDeclaredConstructors());
-		getMethodInvokationVarData(cc.getDeclaredBehaviors());
+	public void getMethodReceiver() throws CannotCompileException, BadBytecode,
+			IOException {
+		getMethodReceiverData(cc.getDeclaredConstructors());
+		getMethodReceiverData(cc.getDeclaredBehaviors());
 
 	}
 
-	private void getMethodInvokationVarData(CtBehavior[] behaviorList)
+	private void getMethodReceiverData(CtBehavior[] behaviorList)
 			throws CannotCompileException, BadBytecode, IOException {
 
 		MethodInfo methodInfo;
@@ -94,7 +94,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					// String targetVarClassName = getClassName(codeIter, pos);
 
 					// TODO: find out method receiver
-					storeMethodReceiverCombination(behavior, codeIter,
+					storePossibleMethodReceiverInterval(behavior, codeIter,
 							invokationBytecodeInterval);
 					//
 					// ArrayList<String> varData = new ArrayList<>();
@@ -134,6 +134,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 		while (startPos2 == startPos) {
 			invocationBytecodeInterval.add(pos2);
+			if (!codeIter.hasNext())
+				break;
 			pos2 = codeIter.next();
 			lineNr2 = lineNrAttr.toLineNumber(pos2);
 			startPos2 = lineNrAttr.toStartPc(lineNr2);
@@ -153,7 +155,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 	}
 
-	private void storeMethodReceiverCombination(CtBehavior behavior,
+	private void storePossibleMethodReceiverInterval(CtBehavior behavior,
 			CodeIterator codeIter, ArrayList<Integer> invocationBytecodeInterval)
 			throws BadBytecode {
 
@@ -215,6 +217,16 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				int possibleReceiverStartPc = possibleReceiverInterval.startPc;
 				int possibleReceiverStartOp = codeIter
 						.byteAt(possibleReceiverStartPc);
+
+				if (op == Opcode.INVOKESTATIC
+						&& possibleReceiverStartOp != Opcode.GETSTATIC) {
+					possibleReceiverIndex = +1;
+					possibleReceiverInterval = possibleReceiverIntervalList
+							.get(possibleReceiverIndex);
+					possibleReceiverStartPc = possibleReceiverInterval.startPc;
+					possibleReceiverStartOp = codeIter
+							.byteAt(possibleReceiverStartPc);
+				}
 
 				String possibleReceiverStartOpcode = ""
 						+ possibleReceiverStartPc + " "

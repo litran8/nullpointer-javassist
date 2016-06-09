@@ -72,7 +72,7 @@ public class ClassAdapter {
 
 		MethodInvokationAnalyzer methodInvokationAnalyzer = new MethodInvokationAnalyzer(
 				cc, methodInvokationVarMap, csvCreator);
-		methodInvokationAnalyzer.getMethodInvokationVar();
+		methodInvokationAnalyzer.getMethodReceiver();
 
 		// System.out.println("\n------------- FIELD -------------\n");
 		//
