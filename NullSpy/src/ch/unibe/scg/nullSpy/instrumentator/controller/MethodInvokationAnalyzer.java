@@ -92,7 +92,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					// String targetVarClassName = getClassName(codeIter, pos);
 
 					// TODO: find out method receiver
-					storeMethodReceiverCombination(behavior,
+					storeMethodReceiverCombination(behavior, codeIter,
 							invokationBytecodeInterval);
 					//
 					// ArrayList<String> varData = new ArrayList<>();
@@ -152,10 +152,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	}
 
 	private void storeMethodReceiverCombination(CtBehavior behavior,
-			ArrayList<Integer> invocationBytecodeInterval) throws BadBytecode {
-
-		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
-		CodeIterator codeIter = codeAttr.iterator();
+			CodeIterator codeIter, ArrayList<Integer> invocationBytecodeInterval)
+			throws BadBytecode {
 
 		int endPos = getIntervalEndPos(invocationBytecodeInterval);
 		int startPos = getIntervalStartPos(invocationBytecodeInterval);
@@ -167,7 +165,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		ArrayList<Integer> invocationPcList = new ArrayList<>();
 		ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList = new ArrayList<>();
 
-		while (codeIter.hasNext() && pos < endPos) {
+		while (codeIter.hasNext()) {
 			pos = codeIter.next();
 			int op = codeIter.byteAt(pos);
 
@@ -192,82 +190,106 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				boolean isSuper = isSuper(behavior, pos);
 
 				// init or super call can't cause NPE, so ignore them
-				if (methodInvokationName.equals("<init>") || isSuper)
-					continue;
-				else {
-					String methodInvokationSignature = getSignature(nameAndType);
-					int paramCount = getParameterAmount(methodInvokationSignature);
+				// if (methodInvokationName.equals("<init>") || isSuper)
+				// continue;
+				// else {
+				String methodInvokationSignature = getSignature(nameAndType);
+				int paramCount = getParameterAmount(methodInvokationSignature);
 
-					filterPossibleReceiver(possibleReceiverIntervalList,
-							codeIter, startPos2, pos);
+				filterPossibleReceiver(possibleReceiverIntervalList, codeIter,
+						startPos2, pos);
 
-					int possibleReceiverListSize = possibleReceiverIntervalList
-							.size();
+				int possibleReceiverListSize = possibleReceiverIntervalList
+						.size();
 
-					int nestedReceiverIndex = possibleReceiverListSize
-							- paramCount - 1;
+				int possibleReceiverIndex = possibleReceiverListSize
+						- paramCount - 1;
 
-					PossibleReceiverInterval possibleReceiverInterval = possibleReceiverIntervalList
-							.get(nestedReceiverIndex);
-					int nestedReceiverStartPc = possibleReceiverInterval.startPc;
-					int nestedReceiverStartOp = codeIter
-							.byteAt(nestedReceiverStartPc);
+				PossibleReceiverInterval possibleReceiverInterval = possibleReceiverIntervalList
+						.get(possibleReceiverIndex);
+				int possibleReceiverStartPc = possibleReceiverInterval.startPc;
+				int possibleReceiverStartOp = codeIter
+						.byteAt(possibleReceiverStartPc);
 
-					String nestedReceiverStartOpcode = ""
-							+ nestedReceiverStartPc + " "
-							+ Mnemonic.OPCODE[nestedReceiverStartOp];
+				String possibleReceiverStartOpcode = ""
+						+ possibleReceiverStartPc + " "
+						+ Mnemonic.OPCODE[possibleReceiverStartOp];
 
-					System.out.println(nestedReceiverStartOpcode);
+				CodeAttribute codeAttr = behavior.getMethodInfo()
+						.getCodeAttribute();
+				LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+						.getAttribute(LineNumberAttribute.tag);
+				int lineNr = lineNrAttr.toLineNumber(pos);
+				System.out.println("" + lineNr + ": "
+						+ possibleReceiverStartOpcode);
 
-					if (pos != endPos) {
-						PossibleReceiverInterval replace = new PossibleReceiverInterval(
-								nestedReceiverStartPc, pos);
+				codeIter.move(pos);
+				codeIter.next();
 
-						if (paramCount != 0) {
-							for (int i = possibleReceiverListSize - 1; i > nestedReceiverIndex; i--) {
-								possibleReceiverIntervalList.remove(i);
-							}
+				if (pos != endPos) {
+					PossibleReceiverInterval replace = new PossibleReceiverInterval(
+							possibleReceiverStartPc, pos);
+
+					if (paramCount != 0) {
+						for (int i = possibleReceiverListSize - 1; i > possibleReceiverIndex; i--) {
+							possibleReceiverIntervalList.remove(i);
 						}
-						possibleReceiverIntervalList.set(nestedReceiverIndex,
-								replace);
-						startPos = codeIter.next();
 					}
-
-					codeIter.move(pos);
-					codeIter.next();
+					possibleReceiverIntervalList.set(possibleReceiverIndex,
+							replace);
+					startPos = codeIter.next();
+				} else {
 					System.out.println();
+					return;
 				}
+
 			}
+			// }
 		}
 	}
 
 	private void filterPossibleReceiver(
 			ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList,
 			CodeIterator codeIter, int startPos, int endPos) throws BadBytecode {
+
 		codeIter.move(startPos);
+
 		int pos = codeIter.next();
 		int pos2 = pos;
+
 		int op = codeIter.byteAt(pos);
-		int op2 = op;
 
-		pos = codeIter.next();
-		op = codeIter.byteAt(pos);
-
-		if (op2 == Opcode.ACONST_NULL) {
-
-		} else if (op2 == Opcode.NEW || op2 == Opcode.NEWARRAY) { // new...invokespecial
+		if (op == Opcode.NEW || op == Opcode.NEWARRAY) { // new...invokespecial
+			pos = codeIter.next();
+			op = codeIter.byteAt(pos);
 
 			while (op != Opcode.INVOKESPECIAL) {
-				pos2 = pos;
+				pos2 = pos; // marks the end of possible receiver interval, also
+							// nested one
+				pos = codeIter.next();
+				op = codeIter.byteAt(pos);
+			}
+		} else if (op == Opcode.AALOAD || op == Opcode.ALOAD
+				|| op == Opcode.ALOAD_0 || op == Opcode.ALOAD_1
+				|| op == Opcode.ALOAD_2 || op == Opcode.ALOAD_3
+				|| op == Opcode.GETSTATIC) { // only getstatic because getfield
+												// can't be at the beginning
+
+			pos = codeIter.next();
+			op = codeIter.byteAt(pos);
+
+			while (op == Opcode.GETFIELD) {
+				pos2 = pos; // marks the end of possible receiver interval, also
+							// nested one
 				pos = codeIter.next();
 				op = codeIter.byteAt(pos);
 			}
 		} else {
-			while (op == Opcode.GETFIELD) {
-				pos2 = pos;
-				pos = codeIter.next();
-				op = codeIter.byteAt(op);
-			}
+			if (!codeIter.hasNext())
+				return;
+
+			pos = codeIter.next();
+
 		}
 
 		possibleReceiverIntervalList.add(new PossibleReceiverInterval(startPos,
