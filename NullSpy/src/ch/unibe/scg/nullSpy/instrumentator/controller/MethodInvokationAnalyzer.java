@@ -52,8 +52,10 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		LocalVariableAttribute localVarAttr;
 
 		Printer p = new Printer();
+		System.out.println(cc.getName());
 
 		for (CtBehavior behavior : behaviorList) {
+			System.out.println(behavior.getName());
 
 			methodInfo = behavior.getMethodInfo2();
 			constPool = methodInfo.getConstPool();
@@ -158,6 +160,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		int endPos = getIntervalEndPos(invocationBytecodeInterval);
 		int startPos = getIntervalStartPos(invocationBytecodeInterval);
 
+		if (startPos == endPos)
+			return;
+
 		codeIter.move(startPos);
 		int pos = startPos;
 
@@ -238,6 +243,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					possibleReceiverIntervalList.set(possibleReceiverIndex,
 							replace);
 					startPos = codeIter.next();
+					codeIter.move(startPos);
 				} else {
 					System.out.println();
 					return;
@@ -259,16 +265,24 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 		int op = codeIter.byteAt(pos);
 
-		if (op == Opcode.NEW || op == Opcode.NEWARRAY) { // new...invokespecial
+		if (isInvoke(op)) {
+			return;
+		} else if (op == Opcode.NEW || op == Opcode.NEWARRAY) { // new...invokespecial
 			pos = codeIter.next();
 			op = codeIter.byteAt(pos);
+			pos2 = pos;
+			// while (op != Opcode.DUP) {
+			// pos2 = pos; // marks the end of possible receiver interval, also
+			// // nested one
+			// pos = codeIter.next();
+			// op = codeIter.byteAt(pos);
+			// }
 
-			while (op != Opcode.INVOKESPECIAL) {
-				pos2 = pos; // marks the end of possible receiver interval, also
-							// nested one
-				pos = codeIter.next();
-				op = codeIter.byteAt(pos);
-			}
+			pos = codeIter.next();
+
+			// filterPossibleReceiver(possibleReceiverIntervalList, codeIter,
+			// afterDupPos, pos);
+
 		} else if (op == Opcode.AALOAD || op == Opcode.ALOAD
 				|| op == Opcode.ALOAD_0 || op == Opcode.ALOAD_1
 				|| op == Opcode.ALOAD_2 || op == Opcode.ALOAD_3
