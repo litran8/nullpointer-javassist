@@ -212,6 +212,11 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				int possibleReceiverIndex = possibleReceiverListSize
 						- paramCount - 1;
 
+				if (op == Opcode.INVOKESTATIC) {
+					possibleReceiverIndex = possibleReceiverListSize
+							- paramCount;
+				}
+
 				PossibleReceiverInterval possibleReceiverInterval = possibleReceiverIntervalList
 						.get(possibleReceiverIndex);
 				int possibleReceiverStartPc = possibleReceiverInterval.startPc;
@@ -220,7 +225,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 				if (op == Opcode.INVOKESTATIC
 						&& possibleReceiverStartOp != Opcode.GETSTATIC) {
-					possibleReceiverIndex = +1;
+					possibleReceiverIndex = possibleReceiverListSize
+							- paramCount;
 					possibleReceiverInterval = possibleReceiverIntervalList
 							.get(possibleReceiverIndex);
 					possibleReceiverStartPc = possibleReceiverInterval.startPc;
