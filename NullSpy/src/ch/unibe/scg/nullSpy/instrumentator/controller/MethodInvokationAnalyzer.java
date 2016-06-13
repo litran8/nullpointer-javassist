@@ -81,6 +81,12 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				if (isInvoke(op)) {
 
 					int lineNr = lineNrAttr.toLineNumber(pos);
+					// FIXME: multipleLineTest
+					isMultipleLine();
+					for (int i = 0; i < lineNrAttr.tableLength(); i++) {
+						System.out.println(lineNrAttr.lineNumber(i));
+					}
+
 					int startPos = lineNrAttr.toStartPc(lineNr);
 
 					// store bytecode until invokation
@@ -93,9 +99,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					// String instr = p.getInstruction(behavior, pos);
 					// String targetVarClassName = getClassName(codeIter, pos);
 
-					// TODO: find out method receiver
-					storePossibleMethodReceiverInterval(behavior, codeIter,
+					storePossibleMethodReceiverInterval(behavior,
 							invokationBytecodeInterval);
+					System.out.println();
 					//
 					// ArrayList<String> varData = new ArrayList<>();
 					// varData.add("" + testNr);
@@ -114,6 +120,11 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				}
 			}
 		}
+	}
+
+	private void isMultipleLine() {
+		// TODO Auto-generated method stub
+
 	}
 
 	private ArrayList<Integer> getInvocationInterval(CodeAttribute codeAttr,
@@ -156,8 +167,10 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	}
 
 	private void storePossibleMethodReceiverInterval(CtBehavior behavior,
-			CodeIterator codeIter, ArrayList<Integer> invocationBytecodeInterval)
-			throws BadBytecode {
+			ArrayList<Integer> invocationBytecodeInterval) throws BadBytecode {
+
+		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
+		CodeIterator codeIter = codeAttr.iterator();
 
 		int endPos = getIntervalEndPos(invocationBytecodeInterval);
 		int startPos = getIntervalStartPos(invocationBytecodeInterval);
@@ -234,17 +247,18 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 							.byteAt(possibleReceiverStartPc);
 				}
 
+				// print possile receiver just for testing
 				String possibleReceiverStartOpcode = ""
 						+ possibleReceiverStartPc + " "
 						+ Mnemonic.OPCODE[possibleReceiverStartOp];
-
-				CodeAttribute codeAttr = behavior.getMethodInfo()
-						.getCodeAttribute();
 				LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 						.getAttribute(LineNumberAttribute.tag);
 				int lineNr = lineNrAttr.toLineNumber(pos);
 				System.out.println("" + lineNr + ": "
 						+ possibleReceiverStartOpcode);
+				// end testing
+
+				storeMethodreceiverData(behavior, possibleReceiverStartPc);
 
 				codeIter.move(pos);
 				codeIter.next();
@@ -272,6 +286,60 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		}
 	}
 
+	private void storeMethodreceiverData(CtBehavior behavior,
+			int possibleReceiverStartPc) throws BadBytecode {
+		MethodInfo methodInfo = behavior.getMethodInfo2();
+		ConstPool constPool = methodInfo.getConstPool();
+		CodeAttribute codeAttr = methodInfo.getCodeAttribute();
+		CodeIterator codeIter = codeAttr.iterator();
+
+		ArrayList<String> varData = new ArrayList<>();
+
+		codeIter.move(possibleReceiverStartPc);
+		int pos = codeIter.next();
+		int op = codeIter.byteAt(pos);
+
+		if (op == Opcode.AALOAD || op == Opcode.ALOAD || op == Opcode.ALOAD_0
+				|| op == Opcode.ALOAD_1 || op == Opcode.ALOAD_2
+				|| op == Opcode.ALOAD_3 || op == Opcode.GETSTATIC) {
+			switch (op) {
+			case Opcode.GETSTATIC:
+				int index = codeIter.u16bitAt(pos + 1);
+				System.out.println(constPool.getFieldrefName(index));
+				break;
+			default:
+				LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
+						.getAttribute(LocalVariableAttribute.tag);
+				int slot = 0;
+				String opString = Mnemonic.OPCODE[op];
+				if (opString.matches("aload_.*")) {
+					slot = Integer.parseInt(opString.substring(opString
+							.indexOf("_") + 1));
+				} else {
+					slot = codeIter.u16bitAt(pos) - 6400;
+				}
+				for (int i = 0; i < localVarAttr.tableLength(); i++) {
+					if (localVarAttr.index(i) == slot) {
+						int startPc = localVarAttr.startPc(i);
+						int length = localVarAttr.codeLength(i);
+						int endPc = startPc + length;
+						if (pos >= startPc && pos <= endPc) {
+							System.out.println(localVarAttr.variableName(i));
+							if (codeIter.hasNext()) {
+								pos = codeIter.next();
+								op = codeIter.byteAt(pos);
+								if (op == Opcode.GETFIELD) {
+									storeMethodreceiverData(behavior, pos);
+								}
+							}
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	private void filterPossibleReceiver(
 			ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList,
 			CodeIterator codeIter, int startPos, int endPos) throws BadBytecode {
@@ -289,17 +357,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 			pos = codeIter.next();
 			op = codeIter.byteAt(pos);
 			pos2 = pos;
-			// while (op != Opcode.DUP) {
-			// pos2 = pos; // marks the end of possible receiver interval, also
-			// // nested one
-			// pos = codeIter.next();
-			// op = codeIter.byteAt(pos);
-			// }
 
 			pos = codeIter.next();
-
-			// filterPossibleReceiver(possibleReceiverIntervalList, codeIter,
-			// afterDupPos, pos);
 
 		} else if (op == Opcode.AALOAD || op == Opcode.ALOAD
 				|| op == Opcode.ALOAD_0 || op == Opcode.ALOAD_1

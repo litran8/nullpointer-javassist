@@ -73,57 +73,57 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 		for (CtBehavior method : behaviorList) {
 			// if (method.getName().equals("initManager")) {
-			CodeAttribute codeAttribute = method.getMethodInfo()
+			CodeAttribute codeAttr = method.getMethodInfo()
 					.getCodeAttribute();
 
-			if (codeAttribute == null) {
+			if (codeAttr == null) {
 				continue;
 			}
 
-			LocalVariableAttribute localVarTable = (LocalVariableAttribute) codeAttribute
+			LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
 					.getAttribute(LocalVariableAttribute.tag);
 
-			int localVarTableLength = localVarTable.tableLength();
-			if (localVarTableLength == 0) {
+			int localVarAttrLength = localVarAttr.tableLength();
+			if (localVarAttrLength == 0) {
 				continue;
 			}
 
-			ArrayList<LocalVariableTableEntry> localVariableList = getStableLocalVariableTableAsList(localVarTable);
+			ArrayList<LocalVarAttrEntry> localVarAttrAsList = getLocalVarAttrAsList(localVarAttr);
 
-			LineNumberAttribute lineNumberTable = (LineNumberAttribute) codeAttribute
+			LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 					.getAttribute(LineNumberAttribute.tag);
 
-			CodeIterator codeIterator = codeAttribute.iterator();
-			codeIterator.begin();
+			CodeIterator codeIter = codeAttr.iterator();
+			codeIter.begin();
 
 			ArrayList<Integer> instrPositions = new ArrayList<Integer>();
 
-			int methodMaxPc = lineNumberTable.startPc(lineNumberTable
+			int methodMaxPc = lineNrAttr.startPc(lineNrAttr
 					.tableLength() - 1);
 
-			while (codeIterator.hasNext()) {
+			while (codeIter.hasNext()) {
 
-				int pos = codeIterator.next();
+				int pos = codeIter.next();
 				instrPositions.add(pos);
 
-				int op = codeIterator.byteAt(pos);
+				int op = codeIter.byteAt(pos);
 
 				if (isLocVarObject(op) && pos <= methodMaxPc) {
 
 					int startPos = getStartPos(method, pos);
-					int afterPos = codeIterator.next();
+					int afterPos = codeIter.next();
 
-					int localVarTableIndex = getLocalVarTableIndex(
-							codeIterator, localVariableList, pos, "astore.*");
+					int localVarAttrIndex = getLocalVarAttrIndex(
+							codeIter, localVarAttrAsList, pos, "astore.*");
 
 					// Printer p = new Printer();
 					// p.printMethod(method, 0);
 
-					int localVarSlot = localVariableList
-							.get(localVarTableIndex).index;
+					int localVarSlot = localVarAttrAsList
+							.get(localVarAttrIndex).index;
 
 					String instr = InstructionPrinter.instructionString(
-							codeIterator, pos, codeAttribute.getConstPool());
+							codeIter, pos, codeAttr.getConstPool());
 
 					if (instr.contains(" ")) {
 						instr = instr.substring(instr.indexOf(" ") + 1);
@@ -138,22 +138,22 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					String varID = "localVariable_";
 
 					// lineNr
-					int localVarLineNr = lineNumberTable.toLineNumber(pos);
+					int localVarLineNr = lineNrAttr.toLineNumber(pos);
 
 					if (localVarSlot != instrSlot) {
 						varID += instrSlot;
 					} else {
-						localVarName = localVariableList
-								.get(localVarTableIndex).varName;
-						localVarType = localVariableList
-								.get(localVarTableIndex).varType;
+						localVarName = localVarAttrAsList
+								.get(localVarAttrIndex).varName;
+						localVarType = localVarAttrAsList
+								.get(localVarAttrIndex).varType;
 						varID += localVarSlot;
 					}
 
 					// create localVar
 					LocalVar localVar = new LocalVar(varID, localVarName,
 							localVarLineNr, localVarType, pos, startPos,
-							afterPos, cc, method, localVarTableIndex,
+							afterPos, cc, method, localVarAttrIndex,
 							localVarSlot);
 
 					// save localVar into list
@@ -169,16 +169,16 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					// update codeAttr, codeIter; set codeIter to last
 					// checked
 					// pos and iterate further
-					codeAttribute = method.getMethodInfo().getCodeAttribute();
-					codeIterator = codeAttribute.iterator();
-					codeIterator.move(afterPos);
+					codeAttr = method.getMethodInfo().getCodeAttribute();
+					codeIter = codeAttr.iterator();
+					codeIter.move(afterPos);
 
 					// update statement for if() and othe stuffs
-					methodMaxPc = lineNumberTable.startPc(lineNumberTable
+					methodMaxPc = lineNrAttr.startPc(lineNrAttr
 							.tableLength() - 1);
-					lineNumberTable = (LineNumberAttribute) codeAttribute
+					lineNrAttr = (LineNumberAttribute) codeAttr
 							.getAttribute(LineNumberAttribute.tag);
-					localVariableList = getStableLocalVariableTableAsList(localVarTable);
+					localVarAttrAsList = getLocalVarAttrAsList(localVarAttr);
 
 					// Printer p = new Printer();
 					// System.out.println("Method: " +

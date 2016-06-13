@@ -97,10 +97,10 @@ public abstract class Analyzer {
 		return 0;
 	}
 
-	protected ArrayList<LocalVariableTableEntry> getStableLocalVariableTableAsList(
+	protected ArrayList<LocalVarAttrEntry> getLocalVarAttrAsList(
 			LocalVariableAttribute locVarTable) {
 
-		ArrayList<LocalVariableTableEntry> localVariableList = new ArrayList<>();
+		ArrayList<LocalVarAttrEntry> localVariableList = new ArrayList<>();
 
 		for (int i = 0; i < locVarTable.tableLength(); i++) {
 			if (isNotPrimitive(locVarTable.descriptor(i))) {
@@ -109,7 +109,7 @@ public abstract class Analyzer {
 				int index = locVarTable.index(i);
 				String varType = locVarTable.descriptor(i);
 				String varName = locVarTable.variableName(i);
-				localVariableList.add(new LocalVariableTableEntry(startPc,
+				localVariableList.add(new LocalVarAttrEntry(startPc,
 						length, index, varName, varType));
 			}
 		}
@@ -132,20 +132,20 @@ public abstract class Analyzer {
 	 * Gets the index of locVar in the locVarTable (Byte code)
 	 * 
 	 * @param codeIterator
-	 * @param localVarTable
+	 * @param localVarAttrAsList
 	 * @param pos
 	 * @return index of locVar in locVarTable
 	 */
-	protected int getLocalVarTableIndex(CodeIterator codeIterator,
-			ArrayList<LocalVariableTableEntry> localVarTable, int pos,
+	protected int getLocalVarAttrIndex(CodeIterator codeIterator,
+			ArrayList<LocalVarAttrEntry> localVarAttrAsList, int pos,
 			String checkFor) {
 		int res = 0;
 		String opString = Mnemonic.OPCODE[codeIterator.byteAt(pos)];
 
-		for (int j = 0; j < localVarTable.size(); j++) {
+		for (int j = 0; j < localVarAttrAsList.size(); j++) {
 			if (opString.matches(checkFor)) {
 				// int i = getLocVarArraySlot(codeIterator, pos);
-				LocalVariableTableEntry entry = localVarTable.get(j);
+				LocalVarAttrEntry entry = localVarAttrAsList.get(j);
 				// int k = entry.index;
 				// int slot = getLocVarArraySlot(codeIterator, pos);
 				if (entry.getIndex() == getLocVarArraySlot(codeIterator, pos)) {
@@ -193,14 +193,14 @@ public abstract class Analyzer {
 		}
 	}
 
-	protected class LocalVariableTableEntry {
+	protected class LocalVarAttrEntry {
 		int startPc;
 		int length;
 		int index;
 		String varName;
 		String varType;
 
-		public LocalVariableTableEntry(int startPc, int length, int index,
+		public LocalVarAttrEntry(int startPc, int length, int index,
 				String varName, String varType) {
 			this.startPc = startPc;
 			this.length = length;

@@ -148,7 +148,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		LocalVariableAttribute localVariableTable = (LocalVariableAttribute) codeAttribute
 				.getAttribute(LocalVariableAttribute.tag);
-		ArrayList<LocalVariableTableEntry> localVariableTableList = getStableLocalVariableTableAsList(localVariableTable);
+		ArrayList<LocalVarAttrEntry> localVariableTableList = getLocalVarAttrAsList(localVariableTable);
 
 		int pos = getPos(field);
 		int startPos = getStartPos(field, pos);
@@ -195,7 +195,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				// store locVar e.g. p.a -> get p
 				int localVarTableIndex = 0;
 
-				localVarTableIndex = getLocalVarTableIndex(codeIterator,
+				localVarTableIndex = getLocalVarAttrIndex(codeIterator,
 						localVariableTableList, startPos, "aload.*");
 				int locVarSlot = getLocVarArraySlot(codeIterator, startPos);
 				indirectVarOpCode = "aload_" + locVarSlot;

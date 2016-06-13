@@ -142,7 +142,7 @@ public class MethodCallAnalyzer extends Analyzer {
 	}
 
 	private void checkMethodCall(CtMethod method, CodeIterator codeIterator,
-			ArrayList<LocalVariableTableEntry> localVariableTableAsList,
+			ArrayList<LocalVarAttrEntry> localVariableTableAsList,
 			HashMap<Integer, Integer> lineNumberMap,
 			LineNumberAttribute lineNumberTable) throws BadBytecode,
 			CannotCompileException {
@@ -176,7 +176,7 @@ public class MethodCallAnalyzer extends Analyzer {
 			if (opString.matches("aload.*")
 					&& (!Mnemonic.OPCODE[prevInstrOp].matches("goto.*") && pos <= methodMaxPc)) {
 				aloadsInInstructionsOfOneLine.add(pos);
-				int locVarIndexInLocVarTable = getLocalVarTableIndex(
+				int locVarIndexInLocVarTable = getLocalVarAttrIndex(
 						codeIterator, localVariableTableAsList, pos, "aload.*");
 
 				// store locVar
