@@ -121,9 +121,6 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 								invocationBytecodeInterval);
 					}
 
-					codeIter.move(pos);
-					codeIter.next();
-
 					// String instr = p.getInstruction(behavior, pos);
 					// String targetVarClassName = getClassName(codeIter, pos);
 
@@ -153,6 +150,18 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		for (int i = lineNrAttrIndex + 1; i < lineNrAttr.tableLength(); i++) {
 			if (lineNrAttr.lineNumber(i) <= lineNr) {
 				int possibleStartLineNr = lineNrAttr.lineNumber(i);
+
+				if (lineNrAttrIndex == 0) {
+					return multipleLineInterval;
+				} else if (possibleStartLineNr != lineNr) {
+					for (int j = lineNrAttrIndex - 1; j >= 0; j--) {
+						if (j == 0
+								&& lineNrAttr.lineNumber(j) != possibleStartLineNr) {
+							return multipleLineInterval;
+						}
+					}
+				}
+
 				int lineNrDiff = lineNr - possibleStartLineNr;
 
 				if (lineNrDiff > 1 && i > 0) {
@@ -376,6 +385,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 							possibleReceiverIndex, possibleReceiverStartPc);
 					startPos = codeIter.next();
 					codeIter.move(startPos);
+					codeIter.next();
 				} else {
 					System.out.println();
 					return;
