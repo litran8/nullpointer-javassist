@@ -64,9 +64,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		CodeAttribute codeAttr;
 		CodeIterator codeIter;
 		LineNumberAttribute lineNrAttr;
-		LocalVariableAttribute localVarAttr;
 
-		Printer p = new Printer();
+		// Printer p = new Printer();
 		System.out.println(cc.getName());
 
 		for (CtBehavior behavior : behaviorList) {
@@ -82,12 +81,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 			lineNrAttr = (LineNumberAttribute) codeAttr
 					.getAttribute(LineNumberAttribute.tag);
-			localVarAttr = (LocalVariableAttribute) codeAttr
-					.getAttribute(LocalVariableAttribute.tag);
 
 			codeIter = codeAttr.iterator();
 			codeIter.begin();
-			int testNr = 0;
 
 			while (codeIter.hasNext()) {
 				int pos = codeIter.next();
@@ -95,14 +91,14 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 				if (isInvoke(op)) {
 
-					int lineNr = lineNrAttr.toLineNumber(pos);
-					// FIXME: multipleLineTest
 					ArrayList<Integer> multipleLineInterval = getMultipleLineInterval(
 							codeAttr, pos);
 
 					int startPos;
 					ArrayList<Integer> invocationBytecodeInterval = new ArrayList<>();
+
 					if (multipleLineInterval.size() == 0) {
+						int lineNr = lineNrAttr.toLineNumber(pos);
 						startPos = lineNrAttr.toStartPc(lineNr);
 
 						// store bytecode interval until invocation
@@ -287,7 +283,6 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		codeIter.move(startPos);
 		int pos = startPos;
 
-		// HashMap<Integer, Integer> invocationPcIntervalMap = new HashMap<>();
 		ArrayList<Integer> invocationPcList = new ArrayList<>();
 		ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList = new ArrayList<>();
 
@@ -306,7 +301,6 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					int index = invocationBytecodeInterval
 							.indexOf(lastAddedInvocationPos);
 					startPos2 = invocationBytecodeInterval.get(index + 1);
-					// invocationPcIntervalMap.put(pos, startPos2);
 				}
 
 				invocationPcList.add(pos);
@@ -326,38 +320,19 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				filterPossibleReceiver(possibleReceiverIntervalList, codeIter,
 						startPos2, pos);
 
-				// FIXME: extract getting right index in new method
-				// get right receiver list index by excluding numbers of
-				// parameters
 				int possibleReceiverListSize = possibleReceiverIntervalList
 						.size();
 
-				int possibleReceiverIndex = possibleReceiverListSize
-						- paramCount - 1;
-
-				// invokestatic does not need receiver, so the first parameter
-				// of method is the starting point
-				if (op == Opcode.INVOKESTATIC) {
-					possibleReceiverIndex = possibleReceiverListSize
-							- paramCount;
-				}
+				// get right receiver list index
+				int possibleReceiverIndex = getPossibleReceiverIndex(codeIter,
+						possibleReceiverIntervalList, op, paramCount,
+						possibleReceiverListSize);
 
 				PossibleReceiverInterval possibleReceiverInterval = possibleReceiverIntervalList
 						.get(possibleReceiverIndex);
 				int possibleReceiverStartPc = possibleReceiverInterval.startPc;
 				int possibleReceiverStartOp = codeIter
 						.byteAt(possibleReceiverStartPc);
-
-				if (op == Opcode.INVOKESTATIC
-						&& possibleReceiverStartOp != Opcode.GETSTATIC) {
-					possibleReceiverIndex = possibleReceiverListSize
-							- paramCount;
-					possibleReceiverInterval = possibleReceiverIntervalList
-							.get(possibleReceiverIndex);
-					possibleReceiverStartPc = possibleReceiverInterval.startPc;
-					possibleReceiverStartOp = codeIter
-							.byteAt(possibleReceiverStartPc);
-				}
 
 				// print possible receiver just for testing
 				String possibleReceiverStartOpcode = ""
@@ -394,6 +369,37 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 			}
 			// }
 		}
+	}
+
+	private int getPossibleReceiverIndex(CodeIterator codeIter,
+			ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList,
+			int op, int paramCount, int possibleReceiverListSize) {
+		int possibleReceiverIndex = possibleReceiverListSize - paramCount - 1;
+
+		PossibleReceiverInterval possibleReceiverInterval;
+		int possibleReceiverStartPc;
+		int possibleReceiverStartOp;
+
+		// invokestatic does not need receiver, so the first parameter
+		// of method is the starting point
+		if (op == Opcode.INVOKESTATIC) {
+			possibleReceiverIndex = possibleReceiverListSize - paramCount - 1;
+			if (possibleReceiverIndex >= 0) {
+				possibleReceiverInterval = possibleReceiverIntervalList
+						.get(possibleReceiverIndex);
+				possibleReceiverStartPc = possibleReceiverInterval.startPc;
+				possibleReceiverStartOp = codeIter
+						.byteAt(possibleReceiverStartPc);
+
+				if (possibleReceiverStartOp != Opcode.GETSTATIC) {
+					possibleReceiverIndex = possibleReceiverListSize
+							- paramCount;
+				}
+			} else {
+				possibleReceiverIndex = possibleReceiverListSize - paramCount;
+			}
+		}
+		return possibleReceiverIndex;
 	}
 
 	/**
