@@ -183,7 +183,7 @@ public class MainProjectModifier {
 			// .equals("org.jhotdraw.contrib.html.DisposableResourceManagerFactory"))
 			// {
 			if (!cc.isInterface()) {
-				classAdapter.instrumentCodeAfterFieldLocVarAssignment(cc,
+				classAdapter.adaptProject(cc,
 						csvCreator);
 			}
 		} catch (Throwable e) {

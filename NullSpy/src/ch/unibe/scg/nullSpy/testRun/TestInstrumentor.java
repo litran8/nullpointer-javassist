@@ -10,8 +10,8 @@ public class TestInstrumentor {
 	// "isFieldOrLocalVariableNullExample.MainAssignToNull";
 
 	private static String className = "isFieldOrLocalVariableNullExample.testMethodCall.FooTest";
-	private static String path = "C:\\Users\\Lina Tran\\Desktop\\blub.csv";
-	private static CsvFileCreator csv;
+	private static String path = "C:\\Users\\Lina Tran\\Desktop\\VarData.csv";
+	public static CsvFileCreator csv;
 
 	// public static String className =
 	// "org.jhotdraw.samples.javadraw.JavaDrawApp";
@@ -20,13 +20,14 @@ public class TestInstrumentor {
 
 	public static void main(String[] args) throws Throwable {
 		long startTime = System.nanoTime();
+		csv = new CsvFileCreator(path);
 		Translator translator = new ClassFileTranslator();
 		ClassPool pool = ClassPool.getDefault();
 		Loader loader = new Loader();
 		loader.addTranslator(pool, translator);
 
 		loader.run(className, args);
-		ClassFileTranslator.csvCreator.closeCsvFile();
+		csv.closeCsvFile();
 		System.out.println("Modification + modified class time: "
 				+ ((System.nanoTime() - startTime) / 1000000) + "ms");
 

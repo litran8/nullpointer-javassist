@@ -25,6 +25,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	private HashMap<Integer, Variable> methodInvokationVarDataMap;
 	private CsvFileCreator csvCreator;
 	private ConstPool constPool;
+	private static int count = 0;
 
 	public MethodInvokationAnalyzer(CtClass cc,
 			HashMap<String, HashMap<Integer, Variable>> methodInvokationVarMap,
@@ -267,9 +268,11 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 * @param behavior
 	 * @param invocationBytecodeInterval
 	 * @throws BadBytecode
+	 * @throws IOException
 	 */
 	private void storePossibleMethodReceiverInterval(CtBehavior behavior,
-			ArrayList<Integer> invocationBytecodeInterval) throws BadBytecode {
+			ArrayList<Integer> invocationBytecodeInterval) throws BadBytecode,
+			IOException {
 
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
@@ -352,9 +355,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				codeIter.next();
 
 				if (pos != endPos) {
-					// updating receiver list by wrapping nested invocations
-					// into
-					// one list entry
+					// updating receiver list
 					updateReceiverList(pos, possibleReceiverIntervalList,
 							paramCount, possibleReceiverListSize,
 							possibleReceiverIndex, possibleReceiverStartPc);
@@ -428,7 +429,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	}
 
 	private void storeMethodreceiverData(CtBehavior behavior,
-			int possibleReceiverStartPc) throws BadBytecode {
+			int possibleReceiverStartPc) throws BadBytecode, IOException {
 		MethodInfo methodInfo = behavior.getMethodInfo2();
 		ConstPool constPool = methodInfo.getConstPool();
 		CodeAttribute codeAttr = methodInfo.getCodeAttribute();
@@ -465,7 +466,26 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 						int length = localVarAttr.codeLength(i);
 						int endPc = startPc + length;
 						if (pos >= startPc && pos <= endPc) {
-							System.out.println(localVarAttr.variableName(i));
+							String varName = localVarAttr.variableName(i);
+							String varDescr = localVarAttr.descriptor(i);
+							String varSign = localVarAttr.signature(i);
+							String className = behavior.getDeclaringClass()
+									.getName();
+							System.out.println(varName);
+
+							varData.add(Integer.toString(count));
+							count++;
+							varData.add(varName);
+							varData.add("Tran.Keira");
+							varData.add(varSign);
+							varData.add(className);
+							varData.add(className);
+							varData.add(behavior.getName());
+							varData.add(behavior.getSignature());
+							// TODO: Add to csv
+							csvCreator.addCsvLine(varData);
+
+							System.out.println();
 							if (codeIter.hasNext()) {
 								pos = codeIter.next();
 								op = codeIter.byteAt(pos);

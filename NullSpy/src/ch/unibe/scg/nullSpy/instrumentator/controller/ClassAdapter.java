@@ -45,7 +45,7 @@ public class ClassAdapter {
 		return instance;
 	}
 
-	public void instrumentCodeAfterFieldLocVarAssignment(CtClass cc,
+	public void adaptProject(CtClass cc,
 			CsvFileCreator csvCreator) throws NotFoundException,
 			CannotCompileException, BadBytecode, IllegalAccessException,
 			InvocationTargetException, NoSuchMethodException, IOException {
