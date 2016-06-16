@@ -52,7 +52,7 @@ public class MainProjectModifier {
 		File runtimeSupporterFile = new File(currentWorkingDirPath + "\\bin");
 
 		csvCreator = new CsvFileCreator(modifiedProjectDestDirPath
-				+ "\\blub.csv");
+				+ "\\VarData.csv");
 
 		// make sure source exists
 		if (!srcDir.exists()) {
@@ -183,8 +183,7 @@ public class MainProjectModifier {
 			// .equals("org.jhotdraw.contrib.html.DisposableResourceManagerFactory"))
 			// {
 			if (!cc.isInterface()) {
-				classAdapter.adaptProject(cc,
-						csvCreator);
+				classAdapter.adaptProject(cc, csvCreator);
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();

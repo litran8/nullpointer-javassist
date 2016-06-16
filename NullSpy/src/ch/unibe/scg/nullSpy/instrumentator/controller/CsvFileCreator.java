@@ -7,7 +7,7 @@ import java.util.ArrayList;
 public class CsvFileCreator {
 
 	private static FileWriter writer;
-	private final int dataSize = 8;
+	private final int dataSize = 11;
 
 	public CsvFileCreator(String path) throws IOException {
 		writer = new FileWriter(path);
@@ -19,22 +19,32 @@ public class CsvFileCreator {
 	}
 
 	private void generateCsvFile() throws IOException {
-
-		this.writer.append("VarLineNr");
+		// FIXME: adapt table
+		this.writer.append("Nr");
+		this.writer.append(",");
+		this.writer.append("LineNr");
+		this.writer.append(",");
+		this.writer.append("VarID");
 		this.writer.append(",");
 		this.writer.append("VarName");
 		this.writer.append(",");
-		this.writer.append("VarFullName");
+		this.writer.append("varType");
 		this.writer.append(",");
-		this.writer.append("VarType");
+		this.writer.append("isStatic");
 		this.writer.append(",");
-		this.writer.append("ClassNameInWhichVarIsUsed");
+		this.writer.append("ClassWhereVarIsUsed");
 		this.writer.append(",");
-		this.writer.append("ClassNameInWhichVarIsInstantiated");
+		this.writer.append("Behavior");
 		this.writer.append(",");
-		this.writer.append("MethodNameInWhichVarIsUsed");
+		this.writer.append("BehaviorSignature");
 		this.writer.append(",");
-		this.writer.append("MethodSignatureInWhichVarIsUsed");
+
+		// localVar
+		this.writer.append("LocalVarAttrIndex");
+		this.writer.append(",");
+
+		// field
+		this.writer.append("FieldDeclaringClassName");
 		this.writer.append("\n");
 
 	}

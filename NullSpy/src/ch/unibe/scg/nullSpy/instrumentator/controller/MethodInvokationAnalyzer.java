@@ -253,7 +253,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		int op = codeIter.byteAt(endPos);
 
 		// remove the rest after invocation
-		while (!isInvoke(op)) {
+		while (!isInvoke(op) && invocationBytecodeInterval.size() != 0) {
 			int i = invocationBytecodeInterval.indexOf(endPos);
 			invocationBytecodeInterval.remove(i);
 			endPos = getIntervalEndPos(invocationBytecodeInterval);
@@ -276,6 +276,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
+
+		if (invocationBytecodeInterval.size() == 0)
+			return;
 
 		int startPos = getIntervalStartPos(invocationBytecodeInterval);
 		int endPos = getIntervalEndPos(invocationBytecodeInterval);
@@ -434,71 +437,148 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		ConstPool constPool = methodInfo.getConstPool();
 		CodeAttribute codeAttr = methodInfo.getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
+		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+				.getAttribute(LineNumberAttribute.tag);
+		int lineNr = lineNrAttr.toLineNumber(possibleReceiverStartPc);
 
 		ArrayList<String> varData = new ArrayList<>();
 
 		codeIter.move(possibleReceiverStartPc);
 		int pos = codeIter.next();
 		int op = codeIter.byteAt(pos);
+		int op2 = 0;
 
-		if (op == Opcode.AALOAD || op == Opcode.ALOAD || op == Opcode.ALOAD_0
+		if (isField(op)) {
+			// field
+			varData = getFieldData(behavior, constPool, codeIter, lineNr,
+					varData, pos, op);
+			op2 = op;
+
+		} else if (isLocalVar(op)) {
+			// localVar
+			varData = getLocalVarData(behavior, codeAttr, codeIter, lineNr,
+					varData, pos, op);
+			op2 = op;
+		}
+
+		csvCreator.addCsvLine(varData);
+
+		if (codeIter.hasNext()) {
+			pos = codeIter.next();
+			op = codeIter.byteAt(pos);
+			if (op == Opcode.GETFIELD) {
+				storeMethodreceiverData(behavior, pos);
+			}
+		}
+
+		if (shouldCountBeIncremented(op2, op) || !codeIter.hasNext()) {
+			count++;
+		}
+
+	}
+
+	private boolean shouldCountBeIncremented(int currentOp, int nextOp) {
+		return (isLocalVar(currentOp) && nextOp != Opcode.GETFIELD)
+				|| (isField(currentOp) && nextOp != Opcode.GETFIELD);
+	}
+
+	private boolean isLocalVar(int op) {
+		return op == Opcode.AALOAD || op == Opcode.ALOAD_0
 				|| op == Opcode.ALOAD_1 || op == Opcode.ALOAD_2
-				|| op == Opcode.ALOAD_3 || op == Opcode.GETSTATIC) {
-			switch (op) {
-			case Opcode.GETSTATIC:
-				int index = codeIter.u16bitAt(pos + 1);
-				System.out.println(constPool.getFieldrefName(index));
-				break;
-			default:
-				LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
-						.getAttribute(LocalVariableAttribute.tag);
-				int slot = 0;
-				String opString = Mnemonic.OPCODE[op];
-				if (opString.matches("aload_.*")) {
-					slot = Integer.parseInt(opString.substring(opString
-							.indexOf("_") + 1));
-				} else {
-					slot = codeIter.u16bitAt(pos) - 6400;
-				}
-				for (int i = 0; i < localVarAttr.tableLength(); i++) {
-					if (localVarAttr.index(i) == slot) {
-						int startPc = localVarAttr.startPc(i);
-						int length = localVarAttr.codeLength(i);
-						int endPc = startPc + length;
-						if (pos >= startPc && pos <= endPc) {
-							String varName = localVarAttr.variableName(i);
-							String varDescr = localVarAttr.descriptor(i);
-							String varSign = localVarAttr.signature(i);
-							String className = behavior.getDeclaringClass()
-									.getName();
-							System.out.println(varName);
+				|| op == Opcode.ALOAD_3 || op == Opcode.ALOAD;
+	}
 
-							varData.add(Integer.toString(count));
-							count++;
-							varData.add(varName);
-							varData.add("Tran.Keira");
-							varData.add(varSign);
-							varData.add(className);
-							varData.add(className);
-							varData.add(behavior.getName());
-							varData.add(behavior.getSignature());
-							// TODO: Add to csv
-							csvCreator.addCsvLine(varData);
+	private boolean isField(int op) {
+		return op == Opcode.GETSTATIC || op == Opcode.GETFIELD;
+	}
 
-							System.out.println();
-							if (codeIter.hasNext()) {
-								pos = codeIter.next();
-								op = codeIter.byteAt(pos);
-								if (op == Opcode.GETFIELD) {
-									storeMethodreceiverData(behavior, pos);
-								}
-							}
-							return;
-						}
-					}
+	private ArrayList<String> getFieldData(CtBehavior behavior,
+			ConstPool constPool, CodeIterator codeIter, int lineNr,
+			ArrayList<String> varData, int pos, int op) {
+		String varID = "field";
+		int index = codeIter.u16bitAt(pos + 1);
+		String varName = constPool.getFieldrefName(index);
+		String varSign = constPool.getFieldrefType(index);
+
+		String isStatic;
+		if (op == Opcode.GETFIELD)
+			isStatic = Boolean.toString(true);
+		else
+			isStatic = Boolean.toString(false);
+
+		String className = behavior.getDeclaringClass().getName();
+		String declaringClassName = constPool.getFieldrefClassName(index);
+
+		// #9
+		varData.add(Integer.toString(count));
+		varData.add(Integer.toString(lineNr));
+		varData.add(varID);
+		varData.add(varName);
+		varData.add(varSign);
+		varData.add(isStatic);
+		varData.add(className);
+		varData.add(behavior.getName());
+		varData.add(behavior.getSignature());
+
+		// localVar additional #1
+		varData.add("");
+
+		// field #1
+		varData.add(declaringClassName);
+
+		return varData;
+	}
+
+	private ArrayList<String> getLocalVarData(CtBehavior behavior,
+			CodeAttribute codeAttr, CodeIterator codeIter, int lineNr,
+			ArrayList<String> varData, int pos, int op) throws IOException,
+			BadBytecode {
+		LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
+				.getAttribute(LocalVariableAttribute.tag);
+		int slot = 0;
+		String opString = Mnemonic.OPCODE[op];
+
+		if (opString.matches("aload_.*")) {
+			slot = Integer
+					.parseInt(opString.substring(opString.indexOf("_") + 1));
+		} else {
+			slot = codeIter.u16bitAt(pos) - 6400;
+		}
+
+		for (int i = 0; i < localVarAttr.tableLength(); i++) {
+			if (localVarAttr.index(i) == slot) {
+				int startPc = localVarAttr.startPc(i);
+				int length = localVarAttr.codeLength(i);
+				int endPc = startPc + length;
+				if (pos >= startPc && pos <= endPc) {
+					String varID = "aload_" + slot;
+					String varName = localVarAttr.variableName(i);
+					String varSign = localVarAttr.signature(i);
+					String className = behavior.getDeclaringClass().getName();
+					String isStatic = Boolean.toString(false);
+
+					System.out.println("" + count + " " + varName);
+
+					// #9
+					varData.add(Integer.toString(count));
+					varData.add(Integer.toString(lineNr));
+					varData.add(varID);
+					varData.add(varName);
+					varData.add(varSign);
+					varData.add(isStatic);
+					varData.add(className);
+					varData.add(behavior.getName());
+					varData.add(behavior.getSignature());
+
+					// localVar additional #1
+					varData.add(Integer.toString(i));
+
+					// field #1
+					varData.add("");
 				}
 			}
 		}
+		return varData;
 	}
 
 	/**
@@ -531,11 +611,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 			pos = codeIter.next();
 
-		} else if (op == Opcode.AALOAD || op == Opcode.ALOAD
-				|| op == Opcode.ALOAD_0 || op == Opcode.ALOAD_1
-				|| op == Opcode.ALOAD_2 || op == Opcode.ALOAD_3
-				|| op == Opcode.GETSTATIC) { // only getstatic because getfield
-												// can't be at the beginning
+		} else if ((isField(op) && op != Opcode.GETFIELD) || isLocalVar(op)) {
+			// only getstatic because getfield can't be at the beginning
 
 			pos = codeIter.next();
 			op = codeIter.byteAt(pos);

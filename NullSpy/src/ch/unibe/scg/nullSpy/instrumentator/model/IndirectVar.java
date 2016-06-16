@@ -10,19 +10,19 @@ public class IndirectVar {
 
 	private String indirectVarName;
 	private String indirectVarType;
-	private String classNameInWhichIndirectVarIsInstantiated; // Person p; p.a :
+	private String indirectVarDeclaringClassName; // Person p; p.a :
 																// p
 
 	private boolean isIndirectVarStatic;
 	private String indirectVarOpCode;
 
 	public IndirectVar(String indirectVarName, String indirectVarType,
-			String classNameInWhichIndirectVarIsInstantiated,
+			String indirectVarDeclaringClassNamed,
 			boolean isIndirectVarStatic, String indirectVarOpCode) {
 
 		this.indirectVarName = indirectVarName;
 		this.indirectVarType = indirectVarType;
-		this.classNameInWhichIndirectVarIsInstantiated = classNameInWhichIndirectVarIsInstantiated;
+		this.indirectVarDeclaringClassName = indirectVarDeclaringClassNamed;
 
 		this.isIndirectVarStatic = isIndirectVarStatic;
 
@@ -37,8 +37,8 @@ public class IndirectVar {
 		return indirectVarType;
 	}
 
-	public String getClassNameInWhichIndirectVarIsInstantiated() {
-		return classNameInWhichIndirectVarIsInstantiated;
+	public String getIndirectVarDeclaringClassName() {
+		return indirectVarDeclaringClassName;
 	}
 
 	public boolean isIndirectVarStatic() {

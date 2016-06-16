@@ -12,13 +12,13 @@ import javassist.CtClass;
 
 public class Field extends Variable {
 
-	private String classNameInWhichFieldIsInstantiated; // package.Person
+	private String fieldDeclaringClassName; // package.Person
 
 	// object_filed
 	private IndirectVar indirectVar;
 
 	public Field(String varID, String fieldName, String fieldType,
-			String classNameInWhichFieldIsInstantiated, int fieldLineNr,
+			String fieldDeclaringClassName, int fieldLineNr,
 			int storePos, int startPos, int afterPos,
 			CtClass classWhereFieldIsUsed, CtBehavior behavior,
 			boolean isStatic, IndirectVar indirectVar) {
@@ -26,14 +26,14 @@ public class Field extends Variable {
 		super(varID, fieldName, fieldLineNr, fieldType, isStatic,
 				classWhereFieldIsUsed, behavior, storePos, startPos, afterPos);
 
-		this.classNameInWhichFieldIsInstantiated = classNameInWhichFieldIsInstantiated;
+		this.fieldDeclaringClassName = fieldDeclaringClassName;
 
 		// OBJECT_field
 		this.indirectVar = indirectVar;
 	}
 
-	public String getClassNameInWhichFieldIsInstantiated() {
-		return classNameInWhichFieldIsInstantiated;
+	public String getFieldDeclaringClassName() {
+		return fieldDeclaringClassName;
 	}
 
 	public IndirectVar getIndirectVar() {

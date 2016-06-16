@@ -97,10 +97,10 @@ public class ByteCodeAdapter {
 
 			Field field = (Field) var;
 			String classNameInWhichFieldIsInstantiated = field
-					.getClassNameInWhichFieldIsInstantiated();
+					.getFieldDeclaringClassName();
 
 			testMethodByteCode.addLdc(field
-					.getClassNameInWhichFieldIsInstantiated());
+					.getFieldDeclaringClassName());
 
 			// int 1 -> static, 0 -> nonStatic
 			testMethodByteCode.addOpcode(Opcode.BIPUSH);
@@ -119,7 +119,7 @@ public class ByteCodeAdapter {
 				if (field.isStatic()) {
 					// static field: getstatic
 					testMethodByteCode.addGetstatic(
-							field.getClassNameInWhichFieldIsInstantiated(),
+							field.getFieldDeclaringClassName(),
 							var.getVarName(), var.getVarType());
 				} else {
 					// this.f: aload_0, getfield
@@ -166,21 +166,21 @@ public class ByteCodeAdapter {
 								.getIndirectVarType());
 						testMethodByteCode
 								.addLdc(indirectVar
-										.getClassNameInWhichIndirectVarIsInstantiated());
+										.getIndirectVarDeclaringClassName());
 						testMethodByteCode.addLdc("");
 
 						// indirectStaticVar, just the indirect object
 						testMethodByteCode
 								.addGetstatic(
 										indirectVar
-												.getClassNameInWhichIndirectVarIsInstantiated(),
+												.getIndirectVarDeclaringClassName(),
 										indirectVar.getIndirectVarName(),
 										indirectVar.getIndirectVarType());
 
 						testMethodByteCode
 								.addGetstatic(
 										indirectVar
-												.getClassNameInWhichIndirectVarIsInstantiated(),
+												.getIndirectVarDeclaringClassName(),
 										indirectVar.getIndirectVarName(),
 										indirectVar.getIndirectVarType());
 					} else {
@@ -191,7 +191,7 @@ public class ByteCodeAdapter {
 						testMethodByteCode.addLdc("");
 						testMethodByteCode
 								.addLdc(indirectVar
-										.getClassNameInWhichIndirectVarIsInstantiated());
+										.getIndirectVarDeclaringClassName());
 						testMethodByteCode.addLdc("");
 
 						// this.field, just the indirect object
@@ -202,7 +202,7 @@ public class ByteCodeAdapter {
 						testMethodByteCode
 								.addGetfield(
 										indirectVar
-												.getClassNameInWhichIndirectVarIsInstantiated(),
+												.getIndirectVarDeclaringClassName(),
 										indirectVar.getIndirectVarName(),
 										indirectVar.getIndirectVarType());
 
@@ -215,7 +215,7 @@ public class ByteCodeAdapter {
 						testMethodByteCode
 								.addGetfield(
 										indirectVar
-												.getClassNameInWhichIndirectVarIsInstantiated(),
+												.getIndirectVarDeclaringClassName(),
 										indirectVar.getIndirectVarName(),
 										indirectVar.getIndirectVarType());
 
@@ -326,7 +326,7 @@ public class ByteCodeAdapter {
 			Field field = (Field) var;
 
 			testMethodByteCode.addLdc(field
-					.getClassNameInWhichFieldIsInstantiated());
+					.getFieldDeclaringClassName());
 			// int 1 -> static, 0 -> nonStatic
 			testMethodByteCode.addOpcode(Opcode.BIPUSH);
 			if (field.isStatic()) {
@@ -397,14 +397,14 @@ public class ByteCodeAdapter {
 								.getIndirectVarType());
 						testMethodByteCode
 								.addLdc(indirectFieldObject_field
-										.getClassNameInWhichIndirectVarIsInstantiated());
+										.getIndirectVarDeclaringClassName());
 						testMethodByteCode.addLdc("");
 
 						// indirectStaticVar, just the indirect object
 						testMethodByteCode
 								.addGetstatic(
 										indirectFieldObject_field
-												.getClassNameInWhichIndirectVarIsInstantiated(),
+												.getIndirectVarDeclaringClassName(),
 										indirectFieldObject_field
 												.getIndirectVarName(),
 										indirectFieldObject_field
@@ -414,7 +414,7 @@ public class ByteCodeAdapter {
 						testMethodByteCode
 								.addGetstatic(
 										indirectFieldObject_field
-												.getClassNameInWhichIndirectVarIsInstantiated(),
+												.getIndirectVarDeclaringClassName(),
 										indirectFieldObject_field
 												.getIndirectVarName(),
 										indirectFieldObject_field
@@ -426,7 +426,7 @@ public class ByteCodeAdapter {
 						testMethodByteCode.addLdc("");
 						testMethodByteCode
 								.addLdc(indirectFieldObject_field
-										.getClassNameInWhichIndirectVarIsInstantiated());
+										.getIndirectVarDeclaringClassName());
 						testMethodByteCode.addLdc("");
 
 						// this.field, just the indirect object
@@ -434,7 +434,7 @@ public class ByteCodeAdapter {
 						testMethodByteCode
 								.addGetfield(
 										indirectFieldObject_field
-												.getClassNameInWhichIndirectVarIsInstantiated(),
+												.getIndirectVarDeclaringClassName(),
 										indirectFieldObject_field
 												.getIndirectVarName(),
 										indirectFieldObject_field
@@ -450,7 +450,7 @@ public class ByteCodeAdapter {
 						testMethodByteCode
 								.addGetfield(
 										indirectFieldObject_field
-												.getClassNameInWhichIndirectVarIsInstantiated(),
+												.getIndirectVarDeclaringClassName(),
 										indirectFieldObject_field
 												.getIndirectVarName(),
 										indirectFieldObject_field
@@ -462,7 +462,7 @@ public class ByteCodeAdapter {
 				// field itself
 				// _._.field
 				String nameOfClassInWhichFieldIsInstantiated = field
-						.getClassNameInWhichFieldIsInstantiated();
+						.getFieldDeclaringClassName();
 				testMethodByteCode
 						.addGetfield(nameOfClassInWhichFieldIsInstantiated,
 								varName, varType);
@@ -478,7 +478,7 @@ public class ByteCodeAdapter {
 				// static field
 				// getstatic
 				testMethodByteCode.addGetstatic(
-						field.getClassNameInWhichFieldIsInstantiated(),
+						field.getFieldDeclaringClassName(),
 						var.getVarName(), var.getVarType());
 			}
 
