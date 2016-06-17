@@ -45,9 +45,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 */
 	public void getMethodReceiver() throws CannotCompileException, BadBytecode,
 			IOException {
-		getMethodReceiverData(cc.getDeclaredConstructors());
 		getMethodReceiverData(cc.getDeclaredBehaviors());
-
 	}
 
 	/**
@@ -128,6 +126,12 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					// store all receiver, the nested ones (as parameter) too
 					storePossibleMethodReceiverInterval(behavior,
 							invocationBytecodeInterval);
+
+					int lastInvocationPc = invocationBytecodeInterval
+							.get(invocationBytecodeInterval.size() - 1);
+
+					codeIter.move(lastInvocationPc);
+					codeIter.next();
 
 					System.out.println();
 
@@ -387,6 +391,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 						codeIter.next();
 					}
 				} else {
+					codeIter.move(startPos);
+					codeIter.next();
 					System.out.println();
 					return;
 				}
@@ -578,7 +584,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					String className = behavior.getDeclaringClass().getName();
 					String isStatic = Boolean.toString(false);
 
-					System.out.println("" + count + " " + varName);
+					System.out.println("Nr.: " + count + ", VarName: "
+							+ varName);
 
 					// #9
 					varData.add(Integer.toString(count));
