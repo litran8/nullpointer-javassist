@@ -124,7 +124,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					// String targetVarClassName = getClassName(codeIter, pos);
 
 					// store all receiver, the nested ones (as parameter) too
-					storePossibleMethodReceiverInterval(behavior,
+					checkInvocationInterval(behavior,
 							invocationBytecodeInterval);
 
 					int lastInvocationPc = invocationBytecodeInterval
@@ -287,7 +287,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 * @throws BadBytecode
 	 * @throws IOException
 	 */
-	private void storePossibleMethodReceiverInterval(CtBehavior behavior,
+	private void checkInvocationInterval(CtBehavior behavior,
 			ArrayList<Integer> invocationBytecodeInterval) throws BadBytecode,
 			IOException {
 
@@ -304,9 +304,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		int pos = startPos;
 
 		ArrayList<Integer> invocationPcList = new ArrayList<>();
-		ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList = new ArrayList<>();
+		ArrayList<MethodReceiverInterval> possibleReceiverIntervalList = new ArrayList<>();
 
-		while (codeIter.hasNext()) {
+		while (codeIter.hasNext() && pos < endPos) {
 			pos = codeIter.next();
 			int op = codeIter.byteAt(pos);
 
@@ -326,8 +326,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				invocationPcList.add(pos);
 
 				int nameAndType = getNameAndType(codeIter, pos);
-				String methodInvokationName = getMethodName(nameAndType);
-				boolean isSuper = isSuper(behavior, pos);
+				// String methodInvokationName = getMethodName(nameAndType);
+				// boolean isSuper = isSuper(behavior, pos);
 
 				// init or super call can't cause NPE, so ignore them
 				// if (methodInvokationName.equals("<init>") || isSuper)
@@ -340,16 +340,32 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				filterPossibleReceiver(possibleReceiverIntervalList, codeIter,
 						startPos2, pos);
 
-				int possibleReceiverListSize = possibleReceiverIntervalList
-						.size();
+				// int possibleReceiverListSize = possibleReceiverIntervalList
+				// .size();
 
 				// get right receiver list index
-				int possibleReceiverIndex = getPossibleReceiverIndex(codeIter,
-						possibleReceiverIntervalList, op, paramCount,
-						possibleReceiverListSize);
+				int possibleReceiverIndex = getMethodReceiverIndex(codeIter,
+						possibleReceiverIntervalList, op, paramCount);
 
-				PossibleReceiverInterval possibleReceiverInterval = possibleReceiverIntervalList
+				MethodReceiverInterval possibleReceiverInterval = possibleReceiverIntervalList
 						.get(possibleReceiverIndex);
+
+				// ignore (final) or combine (nested) methodReceiver if it
+				// includes methodInvocation
+				if (doesMethodReceiverIncludeMethodInvocation(codeIter,
+						possibleReceiverInterval)) {
+
+					if (pos == endPos)
+						return;
+
+					updateReceiverList(possibleReceiverIntervalList,
+							possibleReceiverIndex, pos, paramCount);
+
+					codeIter.move(pos);
+					codeIter.next();
+					continue;
+				}
+
 				int possibleReceiverStartPc = possibleReceiverInterval.startPc;
 				int possibleReceiverStartOp = codeIter
 						.byteAt(possibleReceiverStartPc);
@@ -373,9 +389,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 				if (pos != endPos) {
 					// updating receiver list
-					updateReceiverList(pos, possibleReceiverIntervalList,
-							paramCount, possibleReceiverListSize,
-							possibleReceiverIndex, possibleReceiverStartPc);
+					updateReceiverList(possibleReceiverIntervalList,
+							possibleReceiverIndex, pos, paramCount);
 					startPos = codeIter.next();
 
 					op = codeIter.byteAt(startPos);
@@ -387,8 +402,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 							startPos = codeIter.next();
 						codeIter.move(startPos);
 					} else {
-						codeIter.move(startPos);
+						codeIter.move(pos);
 						codeIter.next();
+						System.out.println();
 					}
 				} else {
 					codeIter.move(startPos);
@@ -402,56 +418,78 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		}
 	}
 
-	private int getPossibleReceiverIndex(CodeIterator codeIter,
-			ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList,
-			int op, int paramCount, int possibleReceiverListSize) {
-		int possibleReceiverIndex = possibleReceiverListSize - paramCount - 1;
+	private boolean doesMethodReceiverIncludeMethodInvocation(
+			CodeIterator codeIter,
+			MethodReceiverInterval possibleReceiverInterval) throws BadBytecode {
+		int pos = possibleReceiverInterval.startPc;
+		int endPc = possibleReceiverInterval.endPc;
+		codeIter.move(pos);
+		codeIter.next();
 
-		PossibleReceiverInterval possibleReceiverInterval;
-		int possibleReceiverStartPc;
-		int possibleReceiverStartOp;
+		while (pos <= endPc) {
+
+			int op = codeIter.byteAt(pos);
+
+			if (isInvoke(op) && op != Opcode.INVOKESTATIC)
+				return true;
+
+			pos = codeIter.next();
+		}
+		return false;
+	}
+
+	private int getMethodReceiverIndex(CodeIterator codeIter,
+			ArrayList<MethodReceiverInterval> methodReceiverIntervalList,
+			int op, int paramCount) {
+		int listSize = methodReceiverIntervalList.size();
+		int methodReceiverIndex = listSize - paramCount - 1;
+
+		MethodReceiverInterval methodReceiverInterval;
+		int methodReceiverStartPc;
+		int methodReceiverStartOp;
 
 		// invokestatic does not need receiver, so the first parameter
 		// of method is the starting point
 		if (op == Opcode.INVOKESTATIC) {
-			possibleReceiverIndex = possibleReceiverListSize - paramCount - 1;
-			if (possibleReceiverIndex >= 0) {
-				possibleReceiverInterval = possibleReceiverIntervalList
-						.get(possibleReceiverIndex);
-				possibleReceiverStartPc = possibleReceiverInterval.startPc;
-				possibleReceiverStartOp = codeIter
-						.byteAt(possibleReceiverStartPc);
+			methodReceiverIndex = listSize - paramCount - 1;
+			if (methodReceiverIndex >= 0) {
+				methodReceiverInterval = methodReceiverIntervalList
+						.get(methodReceiverIndex);
+				methodReceiverStartPc = methodReceiverInterval.startPc;
+				methodReceiverStartOp = codeIter.byteAt(methodReceiverStartPc);
 
-				if (possibleReceiverStartOp != Opcode.GETSTATIC) {
-					possibleReceiverIndex = possibleReceiverListSize
-							- paramCount;
+				if (methodReceiverStartOp != Opcode.GETSTATIC) {
+					methodReceiverIndex = listSize - paramCount;
 				}
 			} else {
-				possibleReceiverIndex = possibleReceiverListSize - paramCount;
+				methodReceiverIndex = listSize - paramCount;
 			}
 		}
-		return possibleReceiverIndex;
+		return methodReceiverIndex;
 	}
 
 	/**
 	 * Wrap nested invocation into one receiverList entry
 	 * 
-	 * @param pos
+	 * @param endPc
 	 * @param possibleReceiverIntervalList
 	 * @param paramCount
 	 * @param possibleReceiverListSize
 	 * @param possibleReceiverIndex
-	 * @param possibleReceiverStartPc
+	 * @param startPc
 	 */
-	private void updateReceiverList(int pos,
-			ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList,
-			int paramCount, int possibleReceiverListSize,
-			int possibleReceiverIndex, int possibleReceiverStartPc) {
-		PossibleReceiverInterval replace = new PossibleReceiverInterval(
-				possibleReceiverStartPc, pos);
+	private void updateReceiverList(
+			ArrayList<MethodReceiverInterval> possibleReceiverIntervalList,
+			int possibleReceiverIndex, int endPc, int paramCount) {
+		MethodReceiverInterval toBeReplaced = possibleReceiverIntervalList
+				.get(possibleReceiverIndex);
+		int startPc = toBeReplaced.startPc;
+		MethodReceiverInterval replace = new MethodReceiverInterval(startPc,
+				endPc);
+		int listSize = possibleReceiverIntervalList.size();
 
 		if (paramCount != 0) {
-			for (int i = possibleReceiverListSize - 1; i > possibleReceiverIndex; i--) {
+			for (int i = listSize - 1; i > possibleReceiverIndex; i--) {
 				possibleReceiverIntervalList.remove(i);
 			}
 		}
@@ -620,7 +658,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 * @throws BadBytecode
 	 */
 	private void filterPossibleReceiver(
-			ArrayList<PossibleReceiverInterval> possibleReceiverIntervalList,
+			ArrayList<MethodReceiverInterval> possibleReceiverIntervalList,
 			CodeIterator codeIter, int startPos, int endPos) throws BadBytecode {
 
 		codeIter.move(startPos);
@@ -659,7 +697,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 			pos = codeIter.next();
 		}
 
-		possibleReceiverIntervalList.add(new PossibleReceiverInterval(startPos,
+		possibleReceiverIntervalList.add(new MethodReceiverInterval(startPos,
 				pos2));
 
 		if (pos != endPos)
@@ -806,11 +844,11 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 * Descriptor.getReturnType(getMethodDesc(), thisClass.getClassPool()); }
 	 */
 
-	private class PossibleReceiverInterval {
+	private class MethodReceiverInterval {
 		public int startPc;
 		public int endPc;
 
-		public PossibleReceiverInterval(int startPc, int endPc) {
+		public MethodReceiverInterval(int startPc, int endPc) {
 			this.startPc = startPc;
 			this.endPc = endPc;
 		}
