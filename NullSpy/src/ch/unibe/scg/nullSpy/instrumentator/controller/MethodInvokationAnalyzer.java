@@ -207,9 +207,12 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				codeIter.move(pos);
 
 				if (i != lineNrAttr.tableLength() - 1) {
-					int nextLineNr = lineNrAttr.lineNumber(i + 1);
-					int nextLineNrStartPc = lineNrAttr.toStartPc(nextLineNr);
 
+					int nextLineNrStartPc = getNextBiggerLineNrPcThanMaxLineNrPc(
+							lineNrAttr, maxLineNrIndex);
+					// lineNrAttr.lineNumber(i + 1);
+					// int nextLineNrStartPc = lineNrAttr.toStartPc(nextLineNr);
+					//
 					while (codeIter.hasNext() && pos < nextLineNrStartPc) {
 						endPc = pos;
 						pos = codeIter.next();
@@ -229,6 +232,18 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 		return multipleLineInterval;
 
+	}
+
+	private int getNextBiggerLineNrPcThanMaxLineNrPc(
+			LineNumberAttribute lineNrAttr, int maxLineNrIndex) {
+		int maxLineNr = lineNrAttr.lineNumber(maxLineNrIndex);
+
+		for (int i = maxLineNrIndex + 1; i < lineNrAttr.tableLength(); i++) {
+			int provLineNr = lineNrAttr.lineNumber(i);
+			if (provLineNr > maxLineNr)
+				return lineNrAttr.startPc(i);
+		}
+		return 0;
 	}
 
 	private int getMaxLineNrIndex(LineNumberAttribute lineNrAttr,
@@ -293,8 +308,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				// for (int j = 0; j < lineNrAttr.tableLength(); j++) {
 				// int line = lineNrAttr.lineNumber(j);
 				// int pc = lineNrAttr.toStartPc(line);
-				// System.out.println("line: " + lineNrAttr.lineNumber(j)
-				// + ", pc: " + pc);
+				// System.out.println("pc: " + pc + ", line: "
+				// + lineNrAttr.lineNumber(j));
 				// }
 				return i;
 			}
