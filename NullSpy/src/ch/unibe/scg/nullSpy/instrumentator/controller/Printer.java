@@ -9,8 +9,7 @@ import javassist.bytecode.InstructionPrinter;
 
 public class Printer {
 
-	public void printInstruction(CtBehavior behavior, int pos)
-			throws BadBytecode {
+	public void printBehavior(CtBehavior behavior, int pos) throws BadBytecode {
 		CodeAttribute ca = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator iter = ca.iterator();
 		ConstPool pool = behavior.getMethodInfo2().getConstPool();
@@ -23,7 +22,7 @@ public class Printer {
 		}
 	}
 
-	public String getInstruction(CtBehavior behavior, int pos)
+	public String printInstruction(CtBehavior behavior, int pos)
 			throws BadBytecode {
 		CodeAttribute ca = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator iter = ca.iterator();

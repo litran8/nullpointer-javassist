@@ -64,11 +64,22 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		CodeIterator codeIter;
 		LineNumberAttribute lineNrAttr;
 
-		// Printer p = new Printer();
+		Printer p = new Printer();
 		System.out.println(cc.getName());
+
+		// if (!cc.getName().equals("org.jhotdraw.applet.DrawApplet"))
+		// return;
 
 		for (CtBehavior behavior : behaviorList) {
 			System.out.println(behavior.getName());
+
+			// if (!behavior.getName().equals("createColorChoice"))
+			// continue;
+
+			// if (!behavior.getName().equals("main"))
+			// continue;
+
+			// p.printBehavior(behavior, 0);
 
 			methodInfo = behavior.getMethodInfo2();
 			constPool = methodInfo.getConstPool();
@@ -91,7 +102,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				if (isInvoke(op)) {
 
 					ArrayList<Integer> multipleLineInterval = getMultipleLineInterval(
-							codeAttr, pos);
+							behavior, pos);
 
 					int startPos;
 					ArrayList<Integer> invocationBytecodeInterval = new ArrayList<>();
@@ -140,9 +151,12 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		}
 	}
 
-	private ArrayList<Integer> getMultipleLineInterval(CodeAttribute codeAttr,
+	private ArrayList<Integer> getMultipleLineInterval(CtBehavior behavior,
 			int pos) throws BadBytecode {
 		ArrayList<Integer> multipleLineInterval = new ArrayList<>();
+
+		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
+
 		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 				.getAttribute(LineNumberAttribute.tag);
 		int startPc;
@@ -150,10 +164,13 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		int lineNr = lineNrAttr.toLineNumber(pos);
 		CodeIterator codeIter = codeAttr.iterator();
 
+		// FIXME: nested multipleLines
+
 		int lineNrAttrIndex = getIndexOfLineNrFromLineNrAttr(lineNr, lineNrAttr);
 
 		for (int i = lineNrAttrIndex + 1; i < lineNrAttr.tableLength(); i++) {
 			if (lineNrAttr.lineNumber(i) <= lineNr) {
+				// int maxLineNr = lineNrAttr.lineNumber(i - 1);
 				int possibleStartLineNr = lineNrAttr.lineNumber(i);
 
 				if (lineNrAttrIndex == 0) {
@@ -163,11 +180,16 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 						if (j == 0
 								&& lineNrAttr.lineNumber(j) != possibleStartLineNr) {
 							return multipleLineInterval;
-						}
+						} else if (lineNrAttr.lineNumber(j) == possibleStartLineNr)
+							break;
 					}
 				}
 
-				int lineNrDiff = lineNr - possibleStartLineNr;
+				int maxLineNrIndex = getMaxLineNrIndex(lineNrAttr, i);
+
+				int maxLineNr = lineNrAttr.lineNumber(maxLineNrIndex);
+
+				int lineNrDiff = maxLineNr - possibleStartLineNr;
 
 				if (lineNrDiff > 1 && i > 0) {
 					startPc = lineNrAttr.toStartPc(possibleStartLineNr - 1);
@@ -176,6 +198,11 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				}
 
 				multipleLineInterval.add(startPc);
+
+				getNestedMultipleLineInterval(multipleLineInterval, lineNrAttr,
+						i, possibleStartLineNr);
+
+				startPc = getMinPc(multipleLineInterval);
 
 				codeIter.move(pos);
 
@@ -193,6 +220,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 						pos = codeIter.next();
 					}
 				}
+				multipleLineInterval.clear();
+				multipleLineInterval.add(startPc);
 				multipleLineInterval.add(endPc);
 				return multipleLineInterval;
 			}
@@ -202,10 +231,71 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 	}
 
+	private int getMaxLineNrIndex(LineNumberAttribute lineNrAttr,
+			int possibleStartLineNrIndex) {
+		int startLineNr = lineNrAttr.lineNumber(possibleStartLineNrIndex);
+		int maxLineNrIndex = 0;
+		int maxLineNr = startLineNr;
+		for (int i = possibleStartLineNrIndex - 1; i >= 0; i--) {
+			int provLineNr = lineNrAttr.lineNumber(i);
+			if (provLineNr > maxLineNr) {
+				maxLineNrIndex = i;
+				maxLineNr = lineNrAttr.lineNumber(maxLineNrIndex);
+			} else if (provLineNr == startLineNr)
+				break;
+
+		}
+		return maxLineNrIndex;
+	}
+
+	private int getMinPc(ArrayList<Integer> multipleLineInterval)
+			throws BadBytecode {
+		int res = multipleLineInterval.get(0);
+		for (int i = 1; i < multipleLineInterval.size(); i++) {
+			int prov = multipleLineInterval.get(i);
+			if (prov < res)
+				res = prov;
+		}
+		return res;
+
+	}
+
+	private void getNestedMultipleLineInterval(
+			ArrayList<Integer> multipleLineInterval,
+			LineNumberAttribute lineNrAttr, int lineNrAttrIndex,
+			int possibleStartLineNr) {
+		for (int i = lineNrAttrIndex; i < lineNrAttr.tableLength(); i++) {
+			int provLineNr = lineNrAttr.lineNumber(i);
+			if (provLineNr <= possibleStartLineNr) {
+				for (int j = lineNrAttrIndex; j >= 0; j--) {
+					int provLineNr2 = lineNrAttr.lineNumber(j);
+
+					if (provLineNr2 == provLineNr) {
+						if (!multipleLineInterval.contains(lineNrAttr
+								.toStartPc(provLineNr)))
+							multipleLineInterval.add(lineNrAttr
+									.toStartPc(provLineNr));
+						getNestedMultipleLineInterval(multipleLineInterval,
+								lineNrAttr, i + 1, provLineNr);
+						return;
+					}
+				}
+
+			}
+		}
+	}
+
 	private int getIndexOfLineNrFromLineNrAttr(int lineNr,
 			LineNumberAttribute lineNrAttr) {
 		for (int i = 0; i < lineNrAttr.tableLength(); i++) {
+
 			if (lineNrAttr.lineNumber(i) == lineNr) {
+				// for (int j = 0; j < lineNrAttr.tableLength(); j++) {
+				// int line = lineNrAttr.lineNumber(j);
+				// int pc = lineNrAttr.toStartPc(line);
+				// System.out.println("line: " + lineNrAttr.lineNumber(j)
+				// + ", pc: " + pc);
+				// }
 				return i;
 			}
 		}
@@ -313,9 +403,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 			if (isInvoke(op)) {
 				int startPos2 = startPos;
 
-				if (pos == endPos) {
-					startPos2 = startPos;
-				} else if (invocationPcList.size() != 0) {
+				if (invocationPcList.size() != 0) {
 					int lastAddedInvocationPos = invocationPcList
 							.get(invocationPcList.size() - 1);
 					int index = invocationBytecodeInterval
@@ -342,6 +430,17 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 				// int possibleReceiverListSize = possibleReceiverIntervalList
 				// .size();
+
+				if (op == Opcode.INVOKESTATIC && paramCount == 0) {
+					possibleReceiverIntervalList
+							.add(new MethodReceiverInterval(pos, pos));
+					if (codeIter.hasNext()) {
+						startPos = codeIter.next();
+						codeIter.move(startPos);
+					}
+					continue;
+
+				}
 
 				// get right receiver list index
 				int possibleReceiverIndex = getMethodReceiverIndex(codeIter,

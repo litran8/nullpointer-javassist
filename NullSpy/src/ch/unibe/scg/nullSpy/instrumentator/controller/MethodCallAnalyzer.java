@@ -80,7 +80,7 @@ public class MethodCallAnalyzer extends Analyzer {
 				int op = codeIter.byteAt(pos);
 
 				Printer p = new Printer();
-				p.printInstruction(behavior, pos);
+				p.printBehavior(behavior, pos);
 
 				if (isInvokeByteCode(op)) {
 
