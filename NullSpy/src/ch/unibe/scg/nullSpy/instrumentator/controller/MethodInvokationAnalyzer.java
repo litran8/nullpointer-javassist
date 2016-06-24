@@ -66,20 +66,18 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 		Printer p = new Printer();
 		System.out.println(cc.getName());
+		System.out.println();
 
-		// if (!cc.getName().equals("org.jhotdraw.applet.DrawApplet"))
-		// return;
+		// FIXME: class choice
+		if (!cc.getName().equals("org.jhotdraw.contrib.dnd.DragNDropTool$1"))
+			return;
 
 		for (CtBehavior behavior : behaviorList) {
 			System.out.println(behavior.getName());
 
-			// if (!behavior.getName().equals("createColorChoice"))
-			// continue;
-
-			// if (!behavior.getName().equals("main"))
-			// continue;
-
-			// p.printBehavior(behavior, 0);
+			// FIXME: method choice
+			if (!behavior.getName().equals("dragGestureRecognized"))
+				continue;
 
 			methodInfo = behavior.getMethodInfo2();
 			constPool = methodInfo.getConstPool();
@@ -91,6 +89,15 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 			lineNrAttr = (LineNumberAttribute) codeAttr
 					.getAttribute(LineNumberAttribute.tag);
+
+			// FIXME: just printer mark
+			p.printBehavior(behavior, 0);
+			for (int j = 0; j < lineNrAttr.tableLength(); j++) {
+				int line = lineNrAttr.lineNumber(j);
+				int pc = lineNrAttr.toStartPc(line);
+				System.out.println("pc: " + pc + ", line: "
+						+ lineNrAttr.lineNumber(j));
+			}
 
 			codeIter = codeAttr.iterator();
 			codeIter.begin();
@@ -164,8 +171,6 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		int lineNr = lineNrAttr.toLineNumber(pos);
 		CodeIterator codeIter = codeAttr.iterator();
 
-		// FIXME: nested multipleLines
-
 		int lineNrAttrIndex = getIndexOfLineNrFromLineNrAttr(lineNr, lineNrAttr);
 
 		for (int i = lineNrAttrIndex + 1; i < lineNrAttr.tableLength(); i++) {
@@ -191,19 +196,6 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 				int lineNrDiff = maxLineNr - possibleStartLineNr;
 
-				if (lineNrDiff > 1 && i > 0) {
-					startPc = lineNrAttr.toStartPc(possibleStartLineNr - 1);
-				} else {
-					startPc = lineNrAttr.toStartPc(possibleStartLineNr);
-				}
-
-				multipleLineInterval.add(startPc);
-
-				getNestedMultipleLineInterval(multipleLineInterval, lineNrAttr,
-						i, possibleStartLineNr);
-
-				startPc = getMinPc(multipleLineInterval);
-
 				codeIter.move(pos);
 
 				if (i != lineNrAttr.tableLength() - 1) {
@@ -223,6 +215,28 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 						pos = codeIter.next();
 					}
 				}
+
+				int op = codeIter.byteAt(endPc);
+
+				// FIXME: startLine -1
+
+				if (lineNrDiff > 1 && i > 0
+						&& possibleStartLineNr != lineNrAttr.lineNumber(0)
+						&& !Mnemonic.OPCODE[op].matches("if.*")) {
+					startPc = lineNrAttr.toStartPc(possibleStartLineNr - 1);
+					if (startPc < 0)
+						startPc = lineNrAttr.toStartPc(possibleStartLineNr);
+				} else {
+					startPc = lineNrAttr.toStartPc(possibleStartLineNr);
+				}
+
+				multipleLineInterval.add(startPc);
+
+				getNestedMultipleLineInterval(multipleLineInterval, lineNrAttr,
+						i, possibleStartLineNr);
+
+				startPc = getMinPc(multipleLineInterval);
+
 				multipleLineInterval.clear();
 				multipleLineInterval.add(startPc);
 				multipleLineInterval.add(endPc);
@@ -305,12 +319,6 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		for (int i = 0; i < lineNrAttr.tableLength(); i++) {
 
 			if (lineNrAttr.lineNumber(i) == lineNr) {
-				// for (int j = 0; j < lineNrAttr.tableLength(); j++) {
-				// int line = lineNrAttr.lineNumber(j);
-				// int pc = lineNrAttr.toStartPc(line);
-				// System.out.println("pc: " + pc + ", line: "
-				// + lineNrAttr.lineNumber(j));
-				// }
 				return i;
 			}
 		}
@@ -457,6 +465,16 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 				}
 
+				if (op != Opcode.INVOKESTATIC
+						&& possibleReceiverIntervalList.size() <= paramCount) {
+					updatePossibleReceiverIntervalList(codeIter,
+							invocationBytecodeInterval, paramCount);
+					checkInvocationInterval(behavior,
+							invocationBytecodeInterval);
+					return;
+				}
+
+				// FIXME: wrong index
 				// get right receiver list index
 				int possibleReceiverIndex = getMethodReceiverIndex(codeIter,
 						possibleReceiverIntervalList, op, paramCount);
@@ -530,6 +548,37 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 			}
 			// }
 		}
+	}
+
+	private void updatePossibleReceiverIntervalList(CodeIterator codeIter,
+			ArrayList<Integer> invocationBytecodeInterval, int paramCount)
+			throws BadBytecode {
+		codeIter.begin();
+		int pos = 0;
+		ArrayList<Integer> provInterval = new ArrayList<>();
+		while (codeIter.hasNext()
+				&& pos < invocationBytecodeInterval
+						.get(invocationBytecodeInterval.size() - 1)) {
+			pos = codeIter.next();
+			provInterval.add(pos);
+		}
+
+		int startPcIndex = provInterval.indexOf(invocationBytecodeInterval
+				.get(0));
+
+		for (int i = startPcIndex - 1; i >= 0; i--) {
+			int provPc = provInterval.get(i);
+			invocationBytecodeInterval.add(0, provPc);
+			int op = codeIter.byteAt(provPc);
+			String opString = Mnemonic.OPCODE[op];
+			if (op == Opcode.GETFIELD || opString.matches("dup.*"))
+				continue;
+			else if (opString.matches("aload.*") || opString.matches("new")) {
+				return;
+
+			}
+		}
+
 	}
 
 	private boolean doesMethodReceiverIncludeMethodInvocation(
@@ -804,11 +853,16 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				op = codeIter.byteAt(pos);
 			}
 
+			if (op == Opcode.CHECKCAST) {
+				pos2 = pos;
+				pos = codeIter.next();
+			}
+
 		} else {
 			if (!codeIter.hasNext())
 				return;
-
 			pos = codeIter.next();
+
 		}
 
 		possibleReceiverIntervalList.add(new MethodReceiverInterval(startPos,
