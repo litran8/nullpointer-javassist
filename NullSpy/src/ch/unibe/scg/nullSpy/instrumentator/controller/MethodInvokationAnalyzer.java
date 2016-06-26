@@ -69,16 +69,16 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		System.out.println();
 
 		// FIXME: class choice
-		if (!cc.getName()
-				.equals("org.jhotdraw.standard.ChangeConnectionHandle"))
-			return;
+		// if (!cc.getName()
+		// .equals("org.jhotdraw.standard.ChangeConnectionHandle"))
+		// return;
 
 		for (CtBehavior behavior : behaviorList) {
 			System.out.println(behavior.getName());
 
 			// FIXME: method choice
-			if (!behavior.getName().equals("invokeEnd"))
-				continue;
+			// if (!behavior.getName().equals("invokeEnd"))
+			// continue;
 
 			methodInfo = behavior.getMethodInfo2();
 			constPool = methodInfo.getConstPool();
@@ -174,20 +174,34 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 		int lineNrAttrIndex = getIndexOfLineNrFromLineNrAttr(lineNr, lineNrAttr);
 
+		int nextLineNr = lineNrAttrIndex + 1 < lineNrAttr.tableLength() ? lineNrAttr
+				.lineNumber(lineNrAttrIndex + 1) : 0;
+		boolean isAlternating = false;
+
 		for (int i = lineNrAttrIndex + 1; i < lineNrAttr.tableLength(); i++) {
+
 			if (lineNrAttr.lineNumber(i) <= lineNr) {
-				// int maxLineNr = lineNrAttr.lineNumber(i - 1);
 				int possibleStartLineNr = lineNrAttr.lineNumber(i);
 
 				if (lineNrAttrIndex == 0 && i - lineNrAttrIndex <= 1) {
 					return multipleLineInterval;
 				} else if (possibleStartLineNr != lineNr) {
-					for (int j = lineNrAttrIndex - 1; j >= 0; j--) {
-						if (j == 0
-								&& lineNrAttr.lineNumber(j) != possibleStartLineNr) {
-							return multipleLineInterval;
-						} else if (lineNrAttr.lineNumber(j) == possibleStartLineNr)
+					for (int k = i + 1; k < lineNrAttr.tableLength(); k++) {
+						int possibleStartLineNr2 = lineNrAttr.lineNumber(k);
+						if (possibleStartLineNr2 == nextLineNr) {
+							isAlternating = true;
 							break;
+						}
+
+					}
+					if (!isAlternating) {
+						for (int j = lineNrAttrIndex - 1; j >= 0; j--) {
+							if (j == 0
+									&& lineNrAttr.lineNumber(j) != possibleStartLineNr) {
+								return multipleLineInterval;
+							} else if (lineNrAttr.lineNumber(j) == possibleStartLineNr)
+								break;
+						}
 					}
 				}
 
@@ -217,8 +231,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				int op = codeIter.byteAt(endPc);
 
 				// FIXME: startLine -1
-
-				if (lineNrDiff > 1 && i > 0
+				if (isAlternating) {
+					startPc = lineNrAttr.toStartPc(lineNr);
+				} else if (lineNrDiff > 1 && i > 0
 						&& possibleStartLineNr != lineNrAttr.lineNumber(0)
 						&& !Mnemonic.OPCODE[op].matches("if.*")) {
 					startPc = lineNrAttr.toStartPc(possibleStartLineNr - 1);
@@ -427,9 +442,16 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				if (invocationPcList.size() != 0) {
 					int lastAddedInvocationPos = invocationPcList
 							.get(invocationPcList.size() - 1);
-					int index = invocationBytecodeInterval
-							.indexOf(lastAddedInvocationPos);
-					startPos2 = invocationBytecodeInterval.get(index + 1);
+
+					int lastAddedReceiverEndPc = possibleReceiverIntervalList
+							.get(possibleReceiverIntervalList.size() - 1).endPc;
+					if (codeIter.byteAt(lastAddedReceiverEndPc) == Opcode.CHECKCAST)
+						startPos2 = startPos;
+					else {
+						int index = invocationBytecodeInterval
+								.indexOf(lastAddedInvocationPos);
+						startPos2 = invocationBytecodeInterval.get(index + 1);
+					}
 				}
 
 				invocationPcList.add(pos);
