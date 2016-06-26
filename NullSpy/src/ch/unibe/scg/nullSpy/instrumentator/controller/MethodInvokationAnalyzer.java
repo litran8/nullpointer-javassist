@@ -7,6 +7,7 @@ import java.util.HashMap;
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
 import javassist.CtClass;
+import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
@@ -42,9 +43,10 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 * @throws CannotCompileException
 	 * @throws BadBytecode
 	 * @throws IOException
+	 * @throws NotFoundException
 	 */
 	public void getMethodReceiver() throws CannotCompileException, BadBytecode,
-			IOException {
+			IOException, NotFoundException {
 		getMethodReceiverData(cc.getDeclaredBehaviors());
 	}
 
@@ -55,9 +57,11 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 * @throws CannotCompileException
 	 * @throws BadBytecode
 	 * @throws IOException
+	 * @throws NotFoundException
 	 */
 	private void getMethodReceiverData(CtBehavior[] behaviorList)
-			throws CannotCompileException, BadBytecode, IOException {
+			throws CannotCompileException, BadBytecode, IOException,
+			NotFoundException {
 
 		MethodInfo methodInfo;
 		CodeAttribute codeAttr;
@@ -69,15 +73,14 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		System.out.println();
 
 		// FIXME: class choice
-		// if (!cc.getName()
-		// .equals("org.jhotdraw.standard.ChangeConnectionHandle"))
+		// if (!cc.getName().equals("org.jhotdraw.util.PaletteLayout"))
 		// return;
 
 		for (CtBehavior behavior : behaviorList) {
 			System.out.println(behavior.getName());
 
 			// FIXME: method choice
-			// if (!behavior.getName().equals("invokeEnd"))
+			// if (!behavior.getName().equals("layoutContainer"))
 			// continue;
 
 			methodInfo = behavior.getMethodInfo2();
@@ -412,10 +415,11 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 * @param invocationBytecodeInterval
 	 * @throws BadBytecode
 	 * @throws IOException
+	 * @throws NotFoundException
 	 */
 	private void checkInvocationInterval(CtBehavior behavior,
 			ArrayList<Integer> invocationBytecodeInterval) throws BadBytecode,
-			IOException {
+			IOException, NotFoundException {
 
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
@@ -464,15 +468,14 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				// if (methodInvokationName.equals("<init>") || isSuper)
 				// continue;
 				// else {
-				String methodInvokationSignature = getSignature(nameAndType);
-				int paramCount = getParameterAmount(methodInvokationSignature);
+
+				// FIXME: paramCount
+
+				int paramCount = getParameterAmount(nameAndType);
 
 				// get receiver list
 				filterPossibleReceiver(possibleReceiverIntervalList, codeIter,
 						startPos2, pos);
-
-				// int possibleReceiverListSize = possibleReceiverIntervalList
-				// .size();
 
 				if (op == Opcode.INVOKESTATIC && paramCount == 0) {
 					possibleReceiverIntervalList
@@ -907,43 +910,13 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				.get(invocationBytecodeInterval.size() - 1);
 	}
 
-	private int getParameterAmount(String methodInvokationSignature) {
-		int paramCount = 0;
-		int closingBracket = methodInvokationSignature.indexOf(")");
-		methodInvokationSignature = methodInvokationSignature.substring(1,
-				closingBracket);
-		for (int i = 0; i < methodInvokationSignature.length(); i++) {
-			char c = methodInvokationSignature.charAt(i);
-			// int, byte, long, double, float, char, short, boolean
-			if (isParameterType(c) || c == 'L') {
-				if (i == 0) {
-					paramCount++;
-				} else {
-					char charBefore = methodInvokationSignature.charAt(i - 1);
-					if (c == 'L'
-							&& (isParameterType(charBefore) || charBefore == ';')
-							&& charBefore != '/') {
-						paramCount++;
-					} else {
+	private int getParameterAmount(int nameAndType) throws BadBytecode {
 
-						int charAfter = i != methodInvokationSignature.length() - 1 ? methodInvokationSignature
-								.charAt(i + 1) : 0;
-						if ((isParameterType(charBefore) || charBefore == ';')
-								&& charBefore != '/'
-								&& !(charAfter >= 'a' && charAfter <= 'z'))
-							paramCount++;
-					}
-				}
-			}
-		}
-		System.out.println();
+		String methodInvokationSignature = getSignature(nameAndType);
+		int paramCount = 0;
+		paramCount = Descriptor.numOfParameters(methodInvokationSignature);
 		return paramCount;
 
-	}
-
-	private boolean isParameterType(char c) {
-		return c == 'I' || c == 'B' || c == 'J' || c == 'D' || c == 'F'
-				|| c == 'C' || c == 'S' || c == 'Z';
 	}
 
 	private boolean isInvoke(int op) {
@@ -960,13 +933,6 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		else
 			return constPool.getMethodrefNameAndType(index);
 	}
-
-	// /**
-	// * Returns the class of the target object, which the method is called on.
-	// */
-	// protected CtClass getCtClass() throws NotFoundException {
-	// return this.cc.getClassPool().get(getClassName());
-	// }
 
 	/**
 	 * Returns the class name of the target object, which the method is called
@@ -996,13 +962,6 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		return constPool.getUtf8Info(constPool.getNameAndTypeName(nameAndType));
 	}
 
-	// /**
-	// * Returns the called method.
-	// */
-	// public CtMethod getMethod() throws NotFoundException {
-	// return getCtClass().getMethod(getMethodName(), getSignature());
-	// }
-
 	/**
 	 * Returns the method signature (the parameter types and the return type).
 	 * The method signature is represented by a character string called method
@@ -1029,31 +988,12 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 						.equals(getClassName(codeIter, pos));
 	}
 
-	/*
-	 * Returns the parameter types of the called method.
-	 * 
-	 * public CtClass[] getParameterTypes() throws NotFoundException { return
-	 * Descriptor.getParameterTypes(getMethodDesc(), thisClass.getClassPool());
-	 * }
-	 */
-
-	/*
-	 * Returns the return type of the called method.
-	 * 
-	 * public CtClass getReturnType() throws NotFoundException { return
-	 * Descriptor.getReturnType(getMethodDesc(), thisClass.getClassPool()); }
-	 */
-
 	private class MethodReceiverInterval {
 		public int startPc;
 		public int endPc;
 
 		public MethodReceiverInterval(int startPc, int endPc) {
 			this.startPc = startPc;
-			this.endPc = endPc;
-		}
-
-		public void setEndPc(int endPc) {
 			this.endPc = endPc;
 		}
 
