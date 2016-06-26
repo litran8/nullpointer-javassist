@@ -69,14 +69,15 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		System.out.println();
 
 		// FIXME: class choice
-		if (!cc.getName().equals("org.jhotdraw.contrib.dnd.DragNDropTool$1"))
+		if (!cc.getName()
+				.equals("org.jhotdraw.standard.ChangeConnectionHandle"))
 			return;
 
 		for (CtBehavior behavior : behaviorList) {
 			System.out.println(behavior.getName());
 
 			// FIXME: method choice
-			if (!behavior.getName().equals("dragGestureRecognized"))
+			if (!behavior.getName().equals("invokeEnd"))
 				continue;
 
 			methodInfo = behavior.getMethodInfo2();
@@ -91,13 +92,13 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					.getAttribute(LineNumberAttribute.tag);
 
 			// FIXME: just printer mark
-			p.printBehavior(behavior, 0);
-			for (int j = 0; j < lineNrAttr.tableLength(); j++) {
-				int line = lineNrAttr.lineNumber(j);
-				int pc = lineNrAttr.toStartPc(line);
-				System.out.println("pc: " + pc + ", line: "
-						+ lineNrAttr.lineNumber(j));
-			}
+			// p.printBehavior(behavior, 0);
+			// for (int j = 0; j < lineNrAttr.tableLength(); j++) {
+			// int line = lineNrAttr.lineNumber(j);
+			// int pc = lineNrAttr.toStartPc(line);
+			// System.out.println("pc: " + pc + ", line: "
+			// + lineNrAttr.lineNumber(j));
+			// }
 
 			codeIter = codeAttr.iterator();
 			codeIter.begin();
@@ -178,7 +179,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				// int maxLineNr = lineNrAttr.lineNumber(i - 1);
 				int possibleStartLineNr = lineNrAttr.lineNumber(i);
 
-				if (lineNrAttrIndex == 0) {
+				if (lineNrAttrIndex == 0 && i - lineNrAttrIndex <= 1) {
 					return multipleLineInterval;
 				} else if (possibleStartLineNr != lineNr) {
 					for (int j = lineNrAttrIndex - 1; j >= 0; j--) {
@@ -202,9 +203,6 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 					int nextLineNrStartPc = getNextBiggerLineNrPcThanMaxLineNrPc(
 							lineNrAttr, maxLineNrIndex);
-					// lineNrAttr.lineNumber(i + 1);
-					// int nextLineNrStartPc = lineNrAttr.toStartPc(nextLineNr);
-					//
 					while (codeIter.hasNext() && pos < nextLineNrStartPc) {
 						endPc = pos;
 						pos = codeIter.next();
@@ -900,11 +898,23 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					paramCount++;
 				} else {
 					char charBefore = methodInvokationSignature.charAt(i - 1);
-					if (isParameterType(charBefore) || charBefore == ';')
+					if (c == 'L'
+							&& (isParameterType(charBefore) || charBefore == ';')
+							&& charBefore != '/') {
 						paramCount++;
+					} else {
+
+						int charAfter = i != methodInvokationSignature.length() - 1 ? methodInvokationSignature
+								.charAt(i + 1) : 0;
+						if ((isParameterType(charBefore) || charBefore == ';')
+								&& charBefore != '/'
+								&& !(charAfter >= 'a' && charAfter <= 'z'))
+							paramCount++;
+					}
 				}
 			}
 		}
+		System.out.println();
 		return paramCount;
 
 	}
