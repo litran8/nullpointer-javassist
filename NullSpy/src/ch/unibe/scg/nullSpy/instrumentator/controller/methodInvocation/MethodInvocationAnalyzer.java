@@ -13,7 +13,6 @@ import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.Descriptor;
 import javassist.bytecode.LineNumberAttribute;
-import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
@@ -270,14 +269,25 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 				filterPossibleReceiver(receiverIntervalList, codeIter,
 						startPos2, pos);
 
-				if (op == Opcode.INVOKESTATIC && paramCount == 0) {
-					receiverIntervalList.add(new MethodReceiverInterval(pos,
-							pos));
+				if (op == Opcode.INVOKESTATIC) {
+					if (paramCount == 0) {
+						receiverIntervalList.add(new MethodReceiverInterval(
+								pos, pos));
+					} else {
+						int index = receiverIntervalList.size() - paramCount;
+						MethodReceiverInterval firstParam = receiverIntervalList
+								.get(index);
+						for (int i = index; i < receiverIntervalList.size(); i++)
+							receiverIntervalList.remove(i);
+						receiverIntervalList.add(new MethodReceiverInterval(
+								firstParam.startPc, pos));
+					}
 					if (codeIter.hasNext()) {
 						startPos = codeIter.next();
 						codeIter.move(startPos);
 					}
 					continue;
+
 				}
 
 				if (op != Opcode.INVOKESTATIC
@@ -315,12 +325,11 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 				int possibleReceiverStartPc = possibleReceiverInterval.startPc;
 
 				// print possible receiver just for testing
-				// LineNumberAttribute lineNrAttr = (LineNumberAttribute)
-				// codeAttr
-				// .getAttribute(LineNumberAttribute.tag);
-				// int lineNr = lineNrAttr.toLineNumber(pos);
-				// System.out.println("LineNr: " + lineNr + ", StartPc: "
-				// + possibleReceiverStartPc);
+				LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+						.getAttribute(LineNumberAttribute.tag);
+				int lineNr = lineNrAttr.toLineNumber(pos);
+				System.out.println("LineNr: " + lineNr + ", StartPc: "
+						+ possibleReceiverStartPc);
 				// end testing
 
 				// actually storing data in csv file
@@ -489,7 +498,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 	private void storeMethodreceiverData(CtBehavior behavior,
 			int possibleReceiverStartPc) throws BadBytecode, IOException {
 		MethodInfo methodInfo = behavior.getMethodInfo2();
-		ConstPool constPool = methodInfo.getConstPool();
 		CodeAttribute codeAttr = methodInfo.getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
 		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
@@ -503,16 +511,18 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 		int op = codeIter.byteAt(pos);
 		int op2 = 0;
 
+		ReceiverData receiverData = new ReceiverData(behavior);
+
 		if (isField(op)) {
 			// field
-			varData = getFieldData(behavior, constPool, codeIter, lineNr,
-					varData, pos, op);
+			varData = receiverData.getFieldData(varData, lineNr, pos,
+					MethodInvocationAnalyzer.count);
 			op2 = op;
 
 		} else if (isLocalVar(op)) {
 			// localVar
-			varData = getLocalVarData(behavior, codeAttr, codeIter, lineNr,
-					varData, pos, op);
+			varData = receiverData.getLocalVarData(varData, lineNr, pos,
+					MethodInvocationAnalyzer.count);
 			op2 = op;
 		}
 
@@ -547,96 +557,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
 	private boolean isField(int op) {
 		return op == Opcode.GETSTATIC || op == Opcode.GETFIELD;
-	}
-
-	private ArrayList<String> getFieldData(CtBehavior behavior,
-			ConstPool constPool, CodeIterator codeIter, int lineNr,
-			ArrayList<String> varData, int pos, int op) {
-		String varID = "field";
-		int index = codeIter.u16bitAt(pos + 1);
-		String varName = constPool.getFieldrefName(index);
-		String varSign = constPool.getFieldrefType(index);
-
-		String isStatic;
-		if (op == Opcode.GETFIELD)
-			isStatic = Boolean.toString(true);
-		else
-			isStatic = Boolean.toString(false);
-
-		String className = behavior.getDeclaringClass().getName();
-		String declaringClassName = constPool.getFieldrefClassName(index);
-
-		// #9
-		varData.add(Integer.toString(count));
-		varData.add(Integer.toString(lineNr));
-		varData.add(varID);
-		varData.add(varName);
-		varData.add(varSign);
-		varData.add(isStatic);
-		varData.add(className);
-		varData.add(behavior.getName());
-		varData.add(behavior.getSignature());
-
-		// localVar additional #1
-		varData.add("");
-
-		// field #1
-		varData.add(declaringClassName);
-
-		return varData;
-	}
-
-	private ArrayList<String> getLocalVarData(CtBehavior behavior,
-			CodeAttribute codeAttr, CodeIterator codeIter, int lineNr,
-			ArrayList<String> varData, int pos, int op) throws IOException,
-			BadBytecode {
-		LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
-				.getAttribute(LocalVariableAttribute.tag);
-		int slot = 0;
-		String opString = Mnemonic.OPCODE[op];
-
-		if (opString.matches("aload_.*")) {
-			slot = Integer
-					.parseInt(opString.substring(opString.indexOf("_") + 1));
-		} else {
-			slot = codeIter.u16bitAt(pos) - 6400;
-		}
-
-		for (int i = 0; i < localVarAttr.tableLength(); i++) {
-			if (localVarAttr.index(i) == slot) {
-				int startPc = localVarAttr.startPc(i);
-				int length = localVarAttr.codeLength(i);
-				int endPc = startPc + length;
-				if (pos >= startPc && pos <= endPc) {
-					String varID = "aload_" + slot;
-					String varName = localVarAttr.variableName(i);
-					String varSign = localVarAttr.signature(i);
-					String className = behavior.getDeclaringClass().getName();
-					String isStatic = Boolean.toString(false);
-
-					System.out.println("Nr.: " + count + ", VarName: "
-							+ varName);
-
-					// #9
-					varData.add(Integer.toString(count));
-					varData.add(Integer.toString(lineNr));
-					varData.add(varID);
-					varData.add(varName);
-					varData.add(varSign);
-					varData.add(isStatic);
-					varData.add(className);
-					varData.add(behavior.getName());
-					varData.add(behavior.getSignature());
-
-					// localVar additional #1
-					varData.add(Integer.toString(i));
-
-					// field #1
-					varData.add("");
-				}
-			}
-		}
-		return varData;
 	}
 
 	/**
