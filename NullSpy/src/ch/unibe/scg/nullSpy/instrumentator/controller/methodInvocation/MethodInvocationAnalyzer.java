@@ -17,7 +17,7 @@ import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
 import ch.unibe.scg.nullSpy.instrumentator.controller.VariableAnalyzer;
-import ch.unibe.scg.nullSpy.testRun.TestInstrumentor;
+import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
 public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
@@ -106,8 +106,7 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 					IntervalManager intervalManager = new IntervalManager(
 							behavior);
 					ArrayList<Integer> invocationInterval = intervalManager
-							.getInvocationInterval(codeAttr, lineNrAttr, pos,
-									multipleLineInterval);
+							.getInvocationInterval(multipleLineInterval, pos);
 
 					if (invocationInterval.size() == 0)
 						continue;
@@ -127,101 +126,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 			}
 		}
 	}
-
-	// private ArrayList<Integer> getInvocationInterval(CodeAttribute codeAttr,
-	// LineNumberAttribute lineNrAttr, int pos,
-	// ArrayList<Integer> multipleLineInterval) throws BadBytecode {
-	// ArrayList<Integer> invocationInterval = new ArrayList<>();
-	// int startPos;
-	// if (multipleLineInterval.size() == 0) {
-	// int lineNr = lineNrAttr.toLineNumber(pos);
-	// startPos = lineNrAttr.toStartPc(lineNr);
-	//
-	// // store bytecode interval until invocation
-	// return getCleanInvocationInterval(codeAttr, startPos);
-	// } else {
-	// CodeIterator codeIter = codeAttr.iterator();
-	// startPos = multipleLineInterval.get(0);
-	// int endPos = multipleLineInterval.get(1);
-	// codeIter.move(startPos);
-	// int pos2 = pos;
-	// while (codeIter.hasNext() && pos2 <= endPos) {
-	// pos2 = codeIter.next();
-	// invocationInterval.add(pos2);
-	// }
-	//
-	// removeUnnecessaryOpcodesFromInvocationInterval(codeIter,
-	// invocationInterval);
-	// return invocationInterval;
-	// }
-	// }
-
-	/**
-	 * Returns only the interval of the invocation without anything else after
-	 * the invocation opcode
-	 * 
-	 * @param codeAttr
-	 * @param startPos
-	 * @return interval of invocation only, without anything else after it as
-	 *         ArrayList
-	 * @throws BadBytecode
-	 */
-	// private ArrayList<Integer> getCleanInvocationInterval(
-	// CodeAttribute codeAttr, int startPos) throws BadBytecode {
-	// LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-	// .getAttribute(LineNumberAttribute.tag);
-	// CodeIterator codeIter = codeAttr.iterator();
-	// ArrayList<Integer> invocationBytecodeInterval = new ArrayList<>();
-	//
-	// int startLineNr = lineNrAttr.toLineNumber(startPos);
-	// codeIter.move(startPos);
-	// int pos2 = codeIter.next();
-	// invocationBytecodeInterval.add(pos2);
-	//
-	// pos2 = codeIter.next();
-	//
-	// int lineNr2 = lineNrAttr.toLineNumber(pos2);
-	// int startPos2 = lineNrAttr.toStartPc(lineNr2);
-	//
-	// // adding all pc that has the same startPos -> get whole interval of
-	// // the "source line"
-	// while (startPos2 == startPos || lineNr2 == startLineNr) {
-	// invocationBytecodeInterval.add(pos2);
-	// if (!codeIter.hasNext())
-	// break;
-	// pos2 = codeIter.next();
-	// lineNr2 = lineNrAttr.toLineNumber(pos2);
-	// startPos2 = lineNrAttr.toStartPc(lineNr2);
-	// }
-	//
-	// if (invocationBytecodeInterval.size() != 0)
-	// removeUnnecessaryOpcodesFromInvocationInterval(codeIter,
-	// invocationBytecodeInterval);
-	//
-	// return invocationBytecodeInterval;
-	//
-	// }
-
-	// private void removeUnnecessaryOpcodesFromInvocationInterval(
-	// CodeIterator codeIter, ArrayList<Integer> invocationBytecodeInterval) {
-	//
-	// if (invocationBytecodeInterval.size() == 0)
-	// return;
-	// int endPos = getIntervalEndPos(invocationBytecodeInterval);
-	// int op = codeIter.byteAt(endPos);
-	//
-	// // remove the rest after invocation
-	// while (!isInvoke(op) && invocationBytecodeInterval.size() != 0) {
-	// int i = invocationBytecodeInterval.indexOf(endPos);
-	// invocationBytecodeInterval.remove(i);
-	//
-	// if (invocationBytecodeInterval.size() == 0)
-	// return;
-	//
-	// endPos = getIntervalEndPos(invocationBytecodeInterval);
-	// op = codeIter.byteAt(endPos);
-	// }
-	// }
 
 	/**
 	 * Store receiver data by only checking the received interval (whole and
@@ -364,7 +268,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 					codeIter.next();
 					return;
 				}
-
 			}
 		}
 	}
@@ -530,8 +433,8 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 		}
 
 		// FIXME: Main || Test
-		// MainProjectModifier.csv.addCsvLine(varData);
-		TestInstrumentor.csv.addCsvLine(varData);
+		MainProjectModifier.csv.addCsvLine(varData);
+		// TestInstrumentor.csv.addCsvLine(varData);
 
 		if (codeIter.hasNext()) {
 			pos = codeIter.next();
@@ -659,34 +562,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 	}
 
 	/**
-	 * Returns the class name of the target object, which the method is called
-	 * on.
-	 */
-	public String getClassName(CodeIterator codeIter, int pos) {
-		String cname;
-
-		int op = codeIter.byteAt(pos);
-		int index = codeIter.u16bitAt(pos + 1);
-
-		if (op == Opcode.INVOKEINTERFACE)
-			cname = constPool.getInterfaceMethodrefClassName(index);
-		else
-			cname = constPool.getMethodrefClassName(index);
-
-		if (cname.charAt(0) == '[')
-			cname = Descriptor.toClassName(cname);
-
-		return cname;
-	}
-
-	/**
-	 * Returns the name of the called method.
-	 */
-	public String getMethodName(int nameAndType) {
-		return constPool.getUtf8Info(constPool.getNameAndTypeName(nameAndType));
-	}
-
-	/**
 	 * Returns the method signature (the parameter types and the return type).
 	 * The method signature is represented by a character string called method
 	 * descriptor, which is defined in the JVM specification.
@@ -698,18 +573,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 	public String getSignature(int nameAndType) {
 		return constPool.getUtf8Info(constPool
 				.getNameAndTypeDescriptor(nameAndType));
-	}
-
-	/**
-	 * Returns true if the called method is of a superclass of the current
-	 * class.
-	 */
-	public boolean isSuper(CtBehavior behavior, int pos) {
-		CodeIterator codeIter = behavior.getMethodInfo().getCodeAttribute()
-				.iterator();
-		return codeIter.byteAt(pos) == Opcode.INVOKESPECIAL
-				&& !behavior.getDeclaringClass().getName()
-						.equals(getClassName(codeIter, pos));
 	}
 
 	private class MethodReceiverInterval {
@@ -727,3 +590,43 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 	}
 
 }
+
+// /**
+// * Returns the class name of the target object, which the method is called
+// * on.
+// */
+// public String getClassName(CodeIterator codeIter, int pos) {
+// String cname;
+//
+// int op = codeIter.byteAt(pos);
+// int index = codeIter.u16bitAt(pos + 1);
+//
+// if (op == Opcode.INVOKEINTERFACE)
+// cname = constPool.getInterfaceMethodrefClassName(index);
+// else
+// cname = constPool.getMethodrefClassName(index);
+//
+// if (cname.charAt(0) == '[')
+// cname = Descriptor.toClassName(cname);
+//
+// return cname;
+// }
+//
+// /**
+// * Returns the name of the called method.
+// */
+// public String getMethodName(int nameAndType) {
+// return constPool.getUtf8Info(constPool.getNameAndTypeName(nameAndType));
+// }
+//
+// /**
+// * Returns true if the called method is of a superclass of the current
+// * class.
+// */
+// public boolean isSuper(CtBehavior behavior, int pos) {
+// CodeIterator codeIter = behavior.getMethodInfo().getCodeAttribute()
+// .iterator();
+// return codeIter.byteAt(pos) == Opcode.INVOKESPECIAL
+// && !behavior.getDeclaringClass().getName()
+// .equals(getClassName(codeIter, pos));
+// }
