@@ -74,18 +74,17 @@ public class ClassAdapter {
 				cc);
 		methodInvokationAnalyzer.getMethodReceiver();
 
-		// System.out.println("\n------------- FIELD -------------\n");
-		//
-		// FieldAnalyzer fieldAnalyzer = new FieldAnalyzer(cc,
-		// fieldIsWritterInfoList, fieldMap);
-		// fieldAnalyzer.instrumentAfterFieldAssignment();
-		//
-		// System.out.println("\n------------- LOCAL VAR -------------\n");
-		//
-		// LocalVariableAnalyzer localVarAnalyzer = new
-		// LocalVariableAnalyzer(cc,
-		// localVarList, localVarMap);
-		// localVarAnalyzer.instrumentAfterLocVarAssignment();
+		System.out.println("\n------------- FIELD -------------\n");
+
+		FieldAnalyzer fieldAnalyzer = new FieldAnalyzer(cc,
+				fieldIsWritterInfoList, fieldMap);
+		fieldAnalyzer.instrumentAfterFieldAssignment();
+
+		System.out.println("\n------------- LOCAL VAR -------------\n");
+
+		LocalVariableAnalyzer localVarAnalyzer = new LocalVariableAnalyzer(cc,
+				localVarList, localVarMap);
+		localVarAnalyzer.instrumentAfterLocVarAssignment();
 
 		System.out.println();
 	}

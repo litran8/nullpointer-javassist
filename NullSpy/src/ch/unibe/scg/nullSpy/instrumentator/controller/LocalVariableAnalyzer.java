@@ -7,7 +7,6 @@ import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
-import javassist.CtField;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
@@ -20,6 +19,7 @@ import javassist.bytecode.Opcode;
 import ch.unibe.scg.nullSpy.instrumentator.model.LocalVar;
 import ch.unibe.scg.nullSpy.instrumentator.model.LocalVarKey;
 import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
+import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
 /**
  * Instruments test-code after locVars.
@@ -73,8 +73,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 		for (CtBehavior method : behaviorList) {
 			// if (method.getName().equals("initManager")) {
-			CodeAttribute codeAttr = method.getMethodInfo()
-					.getCodeAttribute();
+			CodeAttribute codeAttr = method.getMethodInfo().getCodeAttribute();
 
 			if (codeAttr == null) {
 				continue;
@@ -98,8 +97,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			ArrayList<Integer> instrPositions = new ArrayList<Integer>();
 
-			int methodMaxPc = lineNrAttr.startPc(lineNrAttr
-					.tableLength() - 1);
+			int methodMaxPc = lineNrAttr.startPc(lineNrAttr.tableLength() - 1);
 
 			while (codeIter.hasNext()) {
 
@@ -113,8 +111,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					int startPos = getStartPos(method, pos);
 					int afterPos = codeIter.next();
 
-					int localVarAttrIndex = getLocalVarAttrIndex(
-							codeIter, localVarAttrAsList, pos, "astore.*");
+					int localVarAttrIndex = getLocalVarAttrIndex(codeIter,
+							localVarAttrAsList, pos, "astore.*");
 
 					// Printer p = new Printer();
 					// p.printMethod(method, 0);
@@ -174,8 +172,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					codeIter.move(afterPos);
 
 					// update statement for if() and othe stuffs
-					methodMaxPc = lineNrAttr.startPc(lineNrAttr
-							.tableLength() - 1);
+					methodMaxPc = lineNrAttr
+							.startPc(lineNrAttr.tableLength() - 1);
 					lineNrAttr = (LineNumberAttribute) codeAttr
 							.getAttribute(LineNumberAttribute.tag);
 					localVarAttrAsList = getLocalVarAttrAsList(localVarAttr);
@@ -192,7 +190,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			}
 
 			// calculates the time modified project uses
-			addTimeToModifiedProject(method);
+			if (method.getName().equals("main"))
+				addTimeToModifiedProject(method);
 
 			// Printer p = new Printer();
 			// System.out.println("Method: " + method.getName());
@@ -278,25 +277,42 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 	private void addTimeToModifiedProject(CtBehavior method)
 			throws CannotCompileException, NotFoundException {
-		if (method.getName().equals("main")) {
-			CtField f = CtField.make("public static long startTime;", cc);
-			cc.addField(f);
-			method.insertBefore("startTime = System.nanoTime();");
-			method.insertAfter("System.out.println(\"\\nModified class time: \" +((System.nanoTime() - startTime)/1000000) + \" ms\");");
-			CtClass etype = ClassPool.getDefault().get(
-					"java.lang.NullPointerException");
-			method.addCatch(
-					"{System.out.println(\"Hallo\");"
-							+ "StackTraceElement[] elements = $e.getStackTrace();"
-							+ "System.out.println(elements[1]);"
-							+ "ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.checkMethodInvokationVar(\"className\",8);"
-							+ "System.out.println($e); throw $e;}", etype);
 
-			// CtClass etype = ClassPool.getDefault().get(
-			// "java.io.IOException");
-			// method.addCatch("{ System.out.println($e); throw $e; }",
-			// etype);
-		}
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("{");
+
+		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.DataMatcher.printLocationOnMatch");
+		sb.append("(");
+		sb.append("\"" + MainProjectModifier.csvPath + "\"");
+		sb.append(",");
+		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.getLocalVarMap()");
+		sb.append(",");
+		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.getFieldMap()");
+		sb.append(");");
+
+		sb.append("System.out.println(\"HAAAALLLLLLOOOOOOO\");");
+		sb.append("System.out.println($e); throw $e;");
+
+		sb.append("}");
+
+		CtClass etype = ClassPool.getDefault().get("java.lang.Throwable");
+		method.addCatch(sb.toString(), etype);
+
+		// CtField f = CtField.make("public static long startTime;", cc);
+		// cc.addField(f);
+		// method.insertBefore("startTime = System.nanoTime();");
+		// method.insertAfter("System.out.println(\"\\nModified class time: \" +((System.nanoTime() - startTime)/1000000) + \" ms\");");
+		// CtClass etype = ClassPool.getDefault().get(
+		// "java.lang.NullPointerException");
+		// method.addCatch(
+		// "{System.out.println(\"Hallo\");"
+		// + "StackTraceElement[] elements = $e.getStackTrace();"
+		// + "System.out.println(elements[1]);"
+		// +
+		// "ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.checkMethodInvokationVar(\"className\",8);"
+		// + "System.out.println($e); throw $e;}", etype);
+
 	}
 
 }

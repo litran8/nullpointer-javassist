@@ -1,60 +1,13 @@
 package ch.unibe.scg.nullSpy.runtimeSupporter;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.HashMap;
-
-import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 public class NullDisplayer {
 
 	// private static List<Variable> fieldList = new ArrayList<>();
 	// private static List<Variable> localVariableList = new ArrayList<>();
-	private HashMap<String, HashMap<Integer, Variable>> methodInvokationVarMap = new HashMap<>();;
 	private static HashMap<LocalVarKey, LocalVariable> localVarMap = new HashMap<>();
 	private static HashMap<FieldKey, Field> fieldMap = new HashMap<>();
-
-	public static void checkMethodInvokationVar(String className, int lineNr) {
-		checkMethodInvocationOnVarList(className, lineNr);
-	}
-
-	private static void checkMethodInvocationOnVarList(String className,
-			int lineNr) {
-		String csvFile = "C:\\Users\\Lina Tran\\Desktop\\bachelor\\NullSpy\\VarMethodCalledOnList.csv";
-		BufferedReader br = null;
-		String line = "";
-		String cvsSplitBy = ",";
-
-		try {
-			br = new BufferedReader(new FileReader(csvFile));
-			String[] varData = line.split(cvsSplitBy);
-			while ((line = br.readLine()) != null) {
-
-				StringBuffer sb = new StringBuffer();
-				sb.append("VarLineNr: " + varData[0]);
-				sb.append(",");
-				sb.append("VarName: " + varData[1]);
-				sb.append(",");
-				sb.append("VarFullName: " + varData[2]);
-				sb.append(",");
-				sb.append("VarType: " + varData[3]);
-				sb.append(",");
-				sb.append("ClassNameInWhichVarIsUsed: " + varData[4]);
-				sb.append(",");
-				sb.append("ClassNameInWhichVarIsInstantiated: " + varData[5]);
-				sb.append(",");
-				sb.append("MethodNameInWhichVarIsUsed: " + varData[6]);
-				sb.append(",");
-				sb.append("MethodSignatureInWhichVarIsUsed: " + varData[7]);
-				sb.append("\n");
-
-				System.out.println(sb);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-	}
 
 	public static void testIndirectField(String classNameInWhichVarIsUsed,
 			String behaviorName, String behaviorSignature, String varID,
@@ -65,44 +18,42 @@ public class NullDisplayer {
 			String indirectVarOpcode, Object indirectVar, Object varValue,
 			int varLineNr, int startPos, int storePos, int afterPos) {
 
+		boolean isVarStatic = (isStatic == 1 ? true : false);
+		boolean isIndirectVarStatic = false;
+
+		String linkVarName = varName;
+
+		FieldKey fieldKey = null;
+
+		IndirectFieldObject indirectFieldObject = new IndirectFieldObject(
+				indirectVar, indirectVarName, indirectVarType,
+				classNameInWhichIndirectVarIsInstantiated, isIndirectVarStatic,
+				indirectVarOpcode);
+		linkVarName = indirectVarName + "." + varName;
+
+		if (!classNameInWhichIndirectVarIsInstantiated.equals("")
+				&& indirectVarType.equals("")) {
+			// indirectNonStaticVar.f
+			fieldKey = new FieldKey(varName, classNameInWhichVarIsInstantiated,
+					indirectVarName, classNameInWhichIndirectVarIsInstantiated);
+
+		} else if (!classNameInWhichIndirectVarIsInstantiated.equals("")
+				&& !indirectVarType.equals("")) {
+			// indirectStaticVar.f
+			isIndirectVarStatic = true;
+			fieldKey = new FieldKey(varName, classNameInWhichVarIsInstantiated,
+					indirectVarName, indirectVarType, isIndirectVarStatic);
+			linkVarName = classNameInWhichIndirectVarIsInstantiated + "."
+					+ indirectVarName + "." + varName;
+
+		} else {
+			// localVar.f
+			fieldKey = new FieldKey(varName, classNameInWhichVarIsInstantiated,
+					indirectVarName, classNameInWhichVarIsUsed, behaviorName,
+					behaviorSignature);
+		}
+
 		if (varValue == null) {
-			boolean isVarStatic = (isStatic == 1 ? true : false);
-			boolean isIndirectVarStatic = false;
-
-			String linkVarName = varName;
-
-			FieldKey fieldKey = null;
-
-			IndirectFieldObject indirectFieldObject = new IndirectFieldObject(
-					indirectVar, indirectVarName, indirectVarType,
-					classNameInWhichIndirectVarIsInstantiated,
-					isIndirectVarStatic, indirectVarOpcode);
-			linkVarName = indirectVarName + "." + varName;
-
-			if (!classNameInWhichIndirectVarIsInstantiated.equals("")
-					&& indirectVarType.equals("")) {
-				// indirectNonStaticVar.f
-				fieldKey = new FieldKey(varName,
-						classNameInWhichVarIsInstantiated, indirectVarName,
-						classNameInWhichIndirectVarIsInstantiated);
-
-			} else if (!classNameInWhichIndirectVarIsInstantiated.equals("")
-					&& !indirectVarType.equals("")) {
-				// indirectStaticVar.f
-				isIndirectVarStatic = true;
-				fieldKey = new FieldKey(varName,
-						classNameInWhichVarIsInstantiated, indirectVarName,
-						indirectVarType, isIndirectVarStatic);
-				linkVarName = classNameInWhichIndirectVarIsInstantiated + "."
-						+ indirectVarName + "." + varName;
-
-			} else {
-				// localVar.f
-				fieldKey = new FieldKey(varName,
-						classNameInWhichVarIsInstantiated, indirectVarName,
-						classNameInWhichVarIsUsed, behaviorName,
-						behaviorSignature);
-			}
 
 			Field field = new Field(classNameInWhichVarIsUsed, behaviorName,
 					behaviorSignature, varID, varName, varType,
@@ -113,8 +64,10 @@ public class NullDisplayer {
 
 			// fieldList.add(field);
 
-			System.out.print("Field ");
-			printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName);
+			// System.out.print("Field ");
+			// printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName);
+		} else if (fieldMap.containsKey(fieldKey)) {
+			fieldMap.remove(fieldKey);
 		}
 	}
 
@@ -125,6 +78,9 @@ public class NullDisplayer {
 			Object varValue, int varLineNr, int startPos, int storePos,
 			int afterPos) {
 
+		FieldKey fieldKey = new FieldKey(varName,
+				classNameInWhichVarIsInstantiated);
+
 		if (varValue == null) {
 			boolean isVarStatic = (isStatic == 1 ? true : false);
 			IndirectFieldObject indirectFieldObject = null;
@@ -132,8 +88,6 @@ public class NullDisplayer {
 			String linkVarName = varName;
 
 			// this.f
-			FieldKey fieldKey = new FieldKey(varName,
-					classNameInWhichVarIsInstantiated);
 
 			if (isVarStatic) {
 				// staticField
@@ -150,89 +104,20 @@ public class NullDisplayer {
 
 			// fieldList.add(field);
 
-			System.out.print("Field ");
-			printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName);
+			// System.out.print("Field ");
+			// printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName);
+		} else if (fieldMap.containsKey(fieldKey)) {
+			fieldMap.remove(fieldKey);
 		}
-
 	}
-
-	// public static void test(String classNameInWhichVarIsUsed,
-	// String behaviorName, String behaviorSignature, String varID,
-	// String varName, String varType,
-	// String classNameInWhichVarIsInstantiated, int isStatic,
-	// String indirectVarName, String indirectVarType,
-	// String classNameInWhichIndirectVarIsInstantiated,
-	// String indirectVarOpcode, Object varValue, int varLineNr,
-	// int startPos, int storePos, int afterPos) {
-	//
-	// if (varValue == null) {
-	// boolean isVarStatic = (isStatic == 1 ? true : false);
-	// boolean isIndirectVarStatic = false;
-	// IndirectFieldObject indirectFieldObject = null;
-	//
-	// String linkVarName = varName;
-	//
-	// // this.f
-	// FieldKey fieldKey = new FieldKey(varName,
-	// classNameInWhichVarIsInstantiated);
-	//
-	// if (isVarStatic) {
-	// // class.f
-	// fieldKey = new FieldKey(varName, varType, isVarStatic);
-	// linkVarName = classNameInWhichVarIsInstantiated + "." + varName;
-	//
-	// } else if (!isVarStatic && !indirectVarName.equals("")) {
-	// // indirectVar.f
-	// indirectFieldObject = new IndirectFieldObject(indirectVarName,
-	// indirectVarType,
-	// classNameInWhichIndirectVarIsInstantiated,
-	// isIndirectVarStatic, indirectVarOpcode);
-	// linkVarName = indirectVarName + "." + varName;
-	//
-	// if (!classNameInWhichIndirectVarIsInstantiated.equals("")
-	// && indirectVarType.equals("")) {
-	// // indirectNonStaticVar.f
-	// fieldKey = new FieldKey(varName,
-	// classNameInWhichVarIsInstantiated, indirectVarName,
-	// classNameInWhichIndirectVarIsInstantiated);
-	//
-	// } else if (!classNameInWhichIndirectVarIsInstantiated
-	// .equals("") && !indirectVarType.equals("")) {
-	// // indirestStaticVar.f
-	// isIndirectVarStatic = true;
-	// fieldKey = new FieldKey(varName,
-	// classNameInWhichVarIsInstantiated, indirectVarName,
-	// indirectVarType, isIndirectVarStatic);
-	// linkVarName = classNameInWhichIndirectVarIsInstantiated
-	// + "." + indirectVarName + "." + varName;
-	//
-	// } else {
-	// // localVar.f
-	// fieldKey = new FieldKey(varName,
-	// classNameInWhichVarIsInstantiated, indirectVarName,
-	// classNameInWhichVarIsUsed, behaviorName,
-	// behaviorSignature);
-	// }
-	// }
-	//
-	// Field field = new Field(classNameInWhichVarIsUsed, behaviorName,
-	// behaviorSignature, varID, varName, varType,
-	// classNameInWhichVarIsInstantiated, isVarStatic, varLineNr,
-	// startPos, storePos, afterPos, indirectFieldObject);
-	//
-	// fieldMap.put(fieldKey, field);
-	//
-	// // fieldList.add(field);
-	//
-	// System.out.print("Field ");
-	// printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName);
-	// }
-	// }
 
 	public static void testLocalVar(String classNameInWhichVarIsUsed,
 			String behaviorName, String behaviorSignature, String varID,
 			String varName, String varType, Object varValue, int varSlot,
 			int varLineNr, int startPos, int storePos, int afterPos) {
+
+		LocalVarKey localVarKey = new LocalVarKey(varName,
+				classNameInWhichVarIsUsed, behaviorName, behaviorSignature);
 
 		if (varValue == null) {
 			LocalVariable localVar = new LocalVariable(
@@ -242,11 +127,12 @@ public class NullDisplayer {
 
 			// localVariableList.add(localVar);
 
-			localVarMap.put(new LocalVarKey(varName, classNameInWhichVarIsUsed,
-					behaviorName, behaviorSignature), localVar);
+			localVarMap.put(localVarKey, localVar);
 
-			System.out.print("LocalVar ");
-			printNullLink(classNameInWhichVarIsUsed, varLineNr, varName);
+			// System.out.print("LocalVar ");
+			// printNullLink(classNameInWhichVarIsUsed, varLineNr, varName);
+		} else if (localVarMap.containsKey(localVarKey)) {
+			localVarMap.remove(localVarKey);
 		}
 	}
 
@@ -262,4 +148,87 @@ public class NullDisplayer {
 		return nullLink;
 	}
 
+	// ---- For MethodReceiver-Match -------
+
+	public static HashMap<LocalVarKey, LocalVariable> getLocalVarMap() {
+		return NullDisplayer.localVarMap;
+	}
+
+	public static HashMap<FieldKey, Field> getFieldMap() {
+		return NullDisplayer.getFieldMap();
+	}
+
 }
+
+// public static void test(String classNameInWhichVarIsUsed,
+// String behaviorName, String behaviorSignature, String varID,
+// String varName, String varType,
+// String classNameInWhichVarIsInstantiated, int isStatic,
+// String indirectVarName, String indirectVarType,
+// String classNameInWhichIndirectVarIsInstantiated,
+// String indirectVarOpcode, Object varValue, int varLineNr,
+// int startPos, int storePos, int afterPos) {
+//
+// if (varValue == null) {
+// boolean isVarStatic = (isStatic == 1 ? true : false);
+// boolean isIndirectVarStatic = false;
+// IndirectFieldObject indirectFieldObject = null;
+//
+// String linkVarName = varName;
+//
+// // this.f
+// FieldKey fieldKey = new FieldKey(varName,
+// classNameInWhichVarIsInstantiated);
+//
+// if (isVarStatic) {
+// // class.f
+// fieldKey = new FieldKey(varName, varType, isVarStatic);
+// linkVarName = classNameInWhichVarIsInstantiated + "." + varName;
+//
+// } else if (!isVarStatic && !indirectVarName.equals("")) {
+// // indirectVar.f
+// indirectFieldObject = new IndirectFieldObject(indirectVarName,
+// indirectVarType,
+// classNameInWhichIndirectVarIsInstantiated,
+// isIndirectVarStatic, indirectVarOpcode);
+// linkVarName = indirectVarName + "." + varName;
+//
+// if (!classNameInWhichIndirectVarIsInstantiated.equals("")
+// && indirectVarType.equals("")) {
+// // indirectNonStaticVar.f
+// fieldKey = new FieldKey(varName,
+// classNameInWhichVarIsInstantiated, indirectVarName,
+// classNameInWhichIndirectVarIsInstantiated);
+//
+// } else if (!classNameInWhichIndirectVarIsInstantiated
+// .equals("") && !indirectVarType.equals("")) {
+// // indirestStaticVar.f
+// isIndirectVarStatic = true;
+// fieldKey = new FieldKey(varName,
+// classNameInWhichVarIsInstantiated, indirectVarName,
+// indirectVarType, isIndirectVarStatic);
+// linkVarName = classNameInWhichIndirectVarIsInstantiated
+// + "." + indirectVarName + "." + varName;
+//
+// } else {
+// // localVar.f
+// fieldKey = new FieldKey(varName,
+// classNameInWhichVarIsInstantiated, indirectVarName,
+// classNameInWhichVarIsUsed, behaviorName,
+// behaviorSignature);
+// }
+// }
+//
+// Field field = new Field(classNameInWhichVarIsUsed, behaviorName,
+// behaviorSignature, varID, varName, varType,
+// classNameInWhichVarIsInstantiated, isVarStatic, varLineNr,
+// startPos, storePos, afterPos, indirectFieldObject);
+//
+// fieldMap.put(fieldKey, field);
+//
+// // fieldList.add(field);
+//
+// System.out.print("Field ");
+// printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName);
+// }
+// }

@@ -77,9 +77,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 				continue;
 			}
 
-			LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-					.getAttribute(LineNumberAttribute.tag);
-
 			// FIXME: just printer mark
 			// p.printBehavior(behavior, 0);
 			// for (int j = 0; j < lineNrAttr.tableLength(); j++) {
@@ -238,6 +235,9 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 				System.out.println("LineNr: " + lineNr + ", StartPc: "
 						+ possibleReceiverStartPc);
 				// end testing
+
+				if (lineNr == 214)
+					System.out.println();
 
 				// actually storing data in csv file
 				storeMethodreceiverData(behavior, possibleReceiverStartPc);

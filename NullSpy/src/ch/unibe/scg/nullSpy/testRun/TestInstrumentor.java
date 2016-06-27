@@ -10,7 +10,7 @@ public class TestInstrumentor {
 	// "isFieldOrLocalVariableNullExample.MainAssignToNull";
 
 	private static String className = "isFieldOrLocalVariableNullExample.testMethodCall.FooTest";
-	private static String path = "C:\\Users\\Lina Tran\\Desktop\\VarData.csv";
+	public static String path = "C:\\Users\\Lina Tran\\Desktop\\VarData.csv";
 	public static CsvFileCreator csv;
 
 	// public static String className =

@@ -20,6 +20,7 @@ public class MainProjectModifier {
 	private static String originalProjectBinPath;
 	private static String modifiedProjectDestDirPath;
 	private static String mainClassNameOfProject;
+	public static String csvPath;
 	public static CsvFileCreator csv;
 
 	public static void main(String[] args) throws NotFoundException,
@@ -51,8 +52,9 @@ public class MainProjectModifier {
 		String currentWorkingDirPath = new java.io.File(".").getCanonicalPath();
 		File runtimeSupporterFile = new File(currentWorkingDirPath + "\\bin");
 
-		csv = new CsvFileCreator(modifiedProjectDestDirPath
-				+ "\\VarData.csv");
+		MainProjectModifier.csvPath = modifiedProjectDestDirPath
+				+ "\\VarData.csv";
+		csv = new CsvFileCreator(MainProjectModifier.csvPath);
 
 		// make sure source exists
 		if (!srcDir.exists()) {
@@ -103,8 +105,9 @@ public class MainProjectModifier {
 		// only copy package ch.unibe.scg.nullSpy.runtimeSupporter
 		String srcName = src.getName();
 		if (isOwnProject
-				&& (srcName.equals("instrumentator") || srcName.equals("model")
-						|| srcName.equals("testRun") || srcName.equals("tests") || srcName
+				&& (srcName.equals("run") || srcName.equals("instrumentator")
+						|| srcName.equals("model") || srcName.equals("testRun")
+						|| srcName.equals("tests") || srcName
 							.equals("isFieldOrLocalVariableNullExample")))
 			return;
 
