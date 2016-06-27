@@ -58,8 +58,7 @@ public class ClassFileTranslator implements Translator {
 
 			try {
 				// if (cc.getName().equals("org.jhotdraw.standard.QuadTree"))
-				classAdapter.adaptProject(cc,
-						TestInstrumentor.csv);
+				classAdapter.adaptProject(cc);
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}

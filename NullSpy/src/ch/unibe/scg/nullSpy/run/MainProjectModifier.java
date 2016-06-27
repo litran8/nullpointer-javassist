@@ -13,14 +13,14 @@ import javassist.CtMethod;
 import javassist.NotFoundException;
 import javassist.bytecode.ClassFile;
 import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
-import ch.unibe.scg.nullSpy.instrumentator.controller.CsvFileCreator;
+import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.CsvFileCreator;
 
 public class MainProjectModifier {
 
 	private static String originalProjectBinPath;
 	private static String modifiedProjectDestDirPath;
 	private static String mainClassNameOfProject;
-	private static CsvFileCreator csvCreator;
+	public static CsvFileCreator csv;
 
 	public static void main(String[] args) throws NotFoundException,
 			IOException {
@@ -51,7 +51,7 @@ public class MainProjectModifier {
 		String currentWorkingDirPath = new java.io.File(".").getCanonicalPath();
 		File runtimeSupporterFile = new File(currentWorkingDirPath + "\\bin");
 
-		csvCreator = new CsvFileCreator(modifiedProjectDestDirPath
+		csv = new CsvFileCreator(modifiedProjectDestDirPath
 				+ "\\VarData.csv");
 
 		// make sure source exists
@@ -67,7 +67,7 @@ public class MainProjectModifier {
 				// modifies project by instrumenting code
 				modifyProjectAndStoreToDestDir(srcDir, modifiedProjectDestDir,
 						false);
-				csvCreator.closeCsvFile();
+				csv.closeCsvFile();
 				// modifies project by adding runtime supporter class file
 				modifyProjectAndStoreToDestDir(runtimeSupporterFile,
 						runTimeSupporterDestDir, true);
@@ -183,7 +183,7 @@ public class MainProjectModifier {
 			// .equals("org.jhotdraw.contrib.html.DisposableResourceManagerFactory"))
 			// {
 			if (!cc.isInterface()) {
-				classAdapter.adaptProject(cc, csvCreator);
+				classAdapter.adaptProject(cc);
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();

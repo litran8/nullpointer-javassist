@@ -1,8 +1,7 @@
-package ch.unibe.scg.nullSpy.instrumentator.controller;
+package ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
@@ -18,23 +17,16 @@ import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
-import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentator.controller.VariableAnalyzer;
+import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
-public class MethodInvokationAnalyzer extends VariableAnalyzer {
+public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
-	private HashMap<String, HashMap<Integer, Variable>> methodInvokationVarMap;
-	private HashMap<Integer, Variable> methodInvokationVarDataMap;
-	private CsvFileCreator csvCreator;
 	private ConstPool constPool;
 	private static int count = 0;
 
-	public MethodInvokationAnalyzer(CtClass cc,
-			HashMap<String, HashMap<Integer, Variable>> methodInvokationVarMap,
-			CsvFileCreator csvCreator) {
+	public MethodInvocationAnalyzer(CtClass cc) {
 		super(cc);
-		this.methodInvokationVarMap = methodInvokationVarMap;
-		this.methodInvokationVarDataMap = new HashMap<>();
-		this.csvCreator = csvCreator;
 	}
 
 	/**
@@ -63,14 +55,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 			throws CannotCompileException, BadBytecode, IOException,
 			NotFoundException {
 
-		MethodInfo methodInfo;
-		CodeAttribute codeAttr;
-		CodeIterator codeIter;
-		LineNumberAttribute lineNrAttr;
-
-		Printer p = new Printer();
-		System.out.println(cc.getName());
-		System.out.println();
+		// Printer p = new Printer();
+		// System.out.println(cc.getName());
+		// System.out.println();
 
 		// FIXME: class choice
 		// if (!cc.getName().equals("org.jhotdraw.util.PaletteLayout"))
@@ -83,15 +70,15 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 			// if (!behavior.getName().equals("layoutContainer"))
 			// continue;
 
-			methodInfo = behavior.getMethodInfo2();
+			MethodInfo methodInfo = behavior.getMethodInfo2();
 			constPool = methodInfo.getConstPool();
-			codeAttr = methodInfo.getCodeAttribute();
+			CodeAttribute codeAttr = methodInfo.getCodeAttribute();
 
 			if (codeAttr == null) {
 				continue;
 			}
 
-			lineNrAttr = (LineNumberAttribute) codeAttr
+			LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 					.getAttribute(LineNumberAttribute.tag);
 
 			// FIXME: just printer mark
@@ -103,7 +90,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 			// + lineNrAttr.lineNumber(j));
 			// }
 
-			codeIter = codeAttr.iterator();
+			CodeIterator codeIter = codeAttr.iterator();
 			codeIter.begin();
 
 			while (codeIter.hasNext()) {
@@ -112,45 +99,22 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 				if (isInvoke(op)) {
 
-					ArrayList<Integer> multipleLineInterval = getMultipleLineInterval(
-							behavior, pos);
+					MultipleLineManager multipleLineManager = new MultipleLineManager(
+							behavior);
+					ArrayList<Integer> multipleLineInterval = multipleLineManager
+							.getMultipleLineInterval(pos);
 
-					int startPos;
-					ArrayList<Integer> invocationBytecodeInterval = new ArrayList<>();
+					ArrayList<Integer> invocationInterval = getInvocationInterval(
+							codeAttr, lineNrAttr, pos, multipleLineInterval);
 
-					if (multipleLineInterval.size() == 0) {
-						int lineNr = lineNrAttr.toLineNumber(pos);
-						startPos = lineNrAttr.toStartPc(lineNr);
-
-						// store bytecode interval until invocation
-						invocationBytecodeInterval = getInvocationInterval(
-								codeAttr, startPos);
-						if (invocationBytecodeInterval.size() == 0)
-							continue;
-					} else {
-						startPos = multipleLineInterval.get(0);
-						int endPos = multipleLineInterval.get(1);
-						codeIter.move(startPos);
-						int pos2 = pos;
-						while (codeIter.hasNext() && pos2 <= endPos) {
-							pos2 = codeIter.next();
-							invocationBytecodeInterval.add(pos2);
-						}
-
-						removeUnnecessaryOpcodes(codeIter,
-								invocationBytecodeInterval);
-					}
-					if (invocationBytecodeInterval.size() == 0)
+					if (invocationInterval.size() == 0)
 						continue;
-					// String instr = p.getInstruction(behavior, pos);
-					// String targetVarClassName = getClassName(codeIter, pos);
 
 					// store all receiver, the nested ones (as parameter) too
-					checkInvocationInterval(behavior,
-							invocationBytecodeInterval);
+					checkInvocationInterval(behavior, invocationInterval);
 
-					int lastInvocationPc = invocationBytecodeInterval
-							.get(invocationBytecodeInterval.size() - 1);
+					int lastInvocationPc = invocationInterval
+							.get(invocationInterval.size() - 1);
 
 					codeIter.move(lastInvocationPc);
 					codeIter.next();
@@ -162,183 +126,32 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		}
 	}
 
-	private ArrayList<Integer> getMultipleLineInterval(CtBehavior behavior,
-			int pos) throws BadBytecode {
-		ArrayList<Integer> multipleLineInterval = new ArrayList<>();
+	private ArrayList<Integer> getInvocationInterval(CodeAttribute codeAttr,
+			LineNumberAttribute lineNrAttr, int pos,
+			ArrayList<Integer> multipleLineInterval) throws BadBytecode {
+		ArrayList<Integer> invocationInterval = new ArrayList<>();
+		int startPos;
+		if (multipleLineInterval.size() == 0) {
+			int lineNr = lineNrAttr.toLineNumber(pos);
+			startPos = lineNrAttr.toStartPc(lineNr);
 
-		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
-
-		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-				.getAttribute(LineNumberAttribute.tag);
-		int startPc;
-		int endPc = 0;
-		int lineNr = lineNrAttr.toLineNumber(pos);
-		CodeIterator codeIter = codeAttr.iterator();
-
-		int lineNrAttrIndex = getIndexOfLineNrFromLineNrAttr(lineNr, lineNrAttr);
-
-		int nextLineNr = lineNrAttrIndex + 1 < lineNrAttr.tableLength() ? lineNrAttr
-				.lineNumber(lineNrAttrIndex + 1) : 0;
-		boolean isAlternating = false;
-
-		for (int i = lineNrAttrIndex + 1; i < lineNrAttr.tableLength(); i++) {
-
-			if (lineNrAttr.lineNumber(i) <= lineNr) {
-				int possibleStartLineNr = lineNrAttr.lineNumber(i);
-
-				if (lineNrAttrIndex == 0 && i - lineNrAttrIndex <= 1) {
-					return multipleLineInterval;
-				} else if (possibleStartLineNr != lineNr) {
-					for (int k = i + 1; k < lineNrAttr.tableLength(); k++) {
-						int possibleStartLineNr2 = lineNrAttr.lineNumber(k);
-						if (possibleStartLineNr2 == nextLineNr) {
-							isAlternating = true;
-							break;
-						}
-
-					}
-					if (!isAlternating) {
-						for (int j = lineNrAttrIndex - 1; j >= 0; j--) {
-							if (j == 0
-									&& lineNrAttr.lineNumber(j) != possibleStartLineNr) {
-								return multipleLineInterval;
-							} else if (lineNrAttr.lineNumber(j) == possibleStartLineNr)
-								break;
-						}
-					}
-				}
-
-				int maxLineNrIndex = getMaxLineNrIndex(lineNrAttr, i);
-
-				int maxLineNr = lineNrAttr.lineNumber(maxLineNrIndex);
-
-				int lineNrDiff = maxLineNr - possibleStartLineNr;
-
-				codeIter.move(pos);
-
-				if (i != lineNrAttr.tableLength() - 1) {
-
-					int nextLineNrStartPc = getNextBiggerLineNrPcThanMaxLineNrPc(
-							lineNrAttr, maxLineNrIndex);
-					while (codeIter.hasNext() && pos < nextLineNrStartPc) {
-						endPc = pos;
-						pos = codeIter.next();
-					}
-				} else {
-					while (codeIter.hasNext()) {
-						endPc = pos;
-						pos = codeIter.next();
-					}
-				}
-
-				int op = codeIter.byteAt(endPc);
-
-				// FIXME: startLine -1
-				if (isAlternating) {
-					startPc = lineNrAttr.toStartPc(lineNr);
-				} else if (lineNrDiff > 1 && i > 0
-						&& possibleStartLineNr != lineNrAttr.lineNumber(0)
-						&& !Mnemonic.OPCODE[op].matches("if.*")) {
-					startPc = lineNrAttr.toStartPc(possibleStartLineNr - 1);
-					if (startPc < 0)
-						startPc = lineNrAttr.toStartPc(possibleStartLineNr);
-				} else {
-					startPc = lineNrAttr.toStartPc(possibleStartLineNr);
-				}
-
-				multipleLineInterval.add(startPc);
-
-				getNestedMultipleLineInterval(multipleLineInterval, lineNrAttr,
-						i, possibleStartLineNr);
-
-				startPc = getMinPc(multipleLineInterval);
-
-				multipleLineInterval.clear();
-				multipleLineInterval.add(startPc);
-				multipleLineInterval.add(endPc);
-				return multipleLineInterval;
+			// store bytecode interval until invocation
+			return getCleanInvocationInterval(codeAttr, startPos);
+		} else {
+			CodeIterator codeIter = codeAttr.iterator();
+			startPos = multipleLineInterval.get(0);
+			int endPos = multipleLineInterval.get(1);
+			codeIter.move(startPos);
+			int pos2 = pos;
+			while (codeIter.hasNext() && pos2 <= endPos) {
+				pos2 = codeIter.next();
+				invocationInterval.add(pos2);
 			}
+
+			removeUnnecessaryOpcodesFromInvocationInterval(codeIter,
+					invocationInterval);
+			return invocationInterval;
 		}
-
-		return multipleLineInterval;
-
-	}
-
-	private int getNextBiggerLineNrPcThanMaxLineNrPc(
-			LineNumberAttribute lineNrAttr, int maxLineNrIndex) {
-		int maxLineNr = lineNrAttr.lineNumber(maxLineNrIndex);
-
-		for (int i = maxLineNrIndex + 1; i < lineNrAttr.tableLength(); i++) {
-			int provLineNr = lineNrAttr.lineNumber(i);
-			if (provLineNr > maxLineNr)
-				return lineNrAttr.startPc(i);
-		}
-		return 0;
-	}
-
-	private int getMaxLineNrIndex(LineNumberAttribute lineNrAttr,
-			int possibleStartLineNrIndex) {
-		int startLineNr = lineNrAttr.lineNumber(possibleStartLineNrIndex);
-		int maxLineNrIndex = 0;
-		int maxLineNr = startLineNr;
-		for (int i = possibleStartLineNrIndex - 1; i >= 0; i--) {
-			int provLineNr = lineNrAttr.lineNumber(i);
-			if (provLineNr > maxLineNr) {
-				maxLineNrIndex = i;
-				maxLineNr = lineNrAttr.lineNumber(maxLineNrIndex);
-			} else if (provLineNr == startLineNr)
-				break;
-
-		}
-		return maxLineNrIndex;
-	}
-
-	private int getMinPc(ArrayList<Integer> multipleLineInterval)
-			throws BadBytecode {
-		int res = multipleLineInterval.get(0);
-		for (int i = 1; i < multipleLineInterval.size(); i++) {
-			int prov = multipleLineInterval.get(i);
-			if (prov < res)
-				res = prov;
-		}
-		return res;
-
-	}
-
-	private void getNestedMultipleLineInterval(
-			ArrayList<Integer> multipleLineInterval,
-			LineNumberAttribute lineNrAttr, int lineNrAttrIndex,
-			int possibleStartLineNr) {
-		for (int i = lineNrAttrIndex; i < lineNrAttr.tableLength(); i++) {
-			int provLineNr = lineNrAttr.lineNumber(i);
-			if (provLineNr <= possibleStartLineNr) {
-				for (int j = lineNrAttrIndex; j >= 0; j--) {
-					int provLineNr2 = lineNrAttr.lineNumber(j);
-
-					if (provLineNr2 == provLineNr) {
-						if (!multipleLineInterval.contains(lineNrAttr
-								.toStartPc(provLineNr)))
-							multipleLineInterval.add(lineNrAttr
-									.toStartPc(provLineNr));
-						getNestedMultipleLineInterval(multipleLineInterval,
-								lineNrAttr, i + 1, provLineNr);
-						return;
-					}
-				}
-
-			}
-		}
-	}
-
-	private int getIndexOfLineNrFromLineNrAttr(int lineNr,
-			LineNumberAttribute lineNrAttr) {
-		for (int i = 0; i < lineNrAttr.tableLength(); i++) {
-
-			if (lineNrAttr.lineNumber(i) == lineNr) {
-				return i;
-			}
-		}
-		return 0;
 	}
 
 	/**
@@ -351,8 +164,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 *         ArrayList
 	 * @throws BadBytecode
 	 */
-	private ArrayList<Integer> getInvocationInterval(CodeAttribute codeAttr,
-			int startPos) throws BadBytecode {
+	private ArrayList<Integer> getCleanInvocationInterval(
+			CodeAttribute codeAttr, int startPos) throws BadBytecode {
 		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 				.getAttribute(LineNumberAttribute.tag);
 		CodeIterator codeIter = codeAttr.iterator();
@@ -380,14 +193,15 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		}
 
 		if (invocationBytecodeInterval.size() != 0)
-			removeUnnecessaryOpcodes(codeIter, invocationBytecodeInterval);
+			removeUnnecessaryOpcodesFromInvocationInterval(codeIter,
+					invocationBytecodeInterval);
 
 		return invocationBytecodeInterval;
 
 	}
 
-	private void removeUnnecessaryOpcodes(CodeIterator codeIter,
-			ArrayList<Integer> invocationBytecodeInterval) {
+	private void removeUnnecessaryOpcodesFromInvocationInterval(
+			CodeIterator codeIter, ArrayList<Integer> invocationBytecodeInterval) {
 
 		if (invocationBytecodeInterval.size() == 0)
 			return;
@@ -412,20 +226,20 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 	 * subintervals)
 	 * 
 	 * @param behavior
-	 * @param invocationBytecodeInterval
+	 * @param invocationInterval
 	 * @throws BadBytecode
 	 * @throws IOException
 	 * @throws NotFoundException
 	 */
 	private void checkInvocationInterval(CtBehavior behavior,
-			ArrayList<Integer> invocationBytecodeInterval) throws BadBytecode,
+			ArrayList<Integer> invocationInterval) throws BadBytecode,
 			IOException, NotFoundException {
 
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
 
-		int startPos = getIntervalStartPos(invocationBytecodeInterval);
-		int endPos = getIntervalEndPos(invocationBytecodeInterval);
+		int startPos = invocationInterval.get(0);
+		int endPos = getIntervalEndPos(invocationInterval);
 
 		if (startPos == endPos)
 			return;
@@ -434,75 +248,52 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		int pos = startPos;
 
 		ArrayList<Integer> invocationPcList = new ArrayList<>();
-		ArrayList<MethodReceiverInterval> possibleReceiverIntervalList = new ArrayList<>();
+		ArrayList<MethodReceiverInterval> receiverIntervalList = new ArrayList<>();
 
 		while (codeIter.hasNext() && pos < endPos) {
 			pos = codeIter.next();
 			int op = codeIter.byteAt(pos);
 
 			if (isInvoke(op)) {
-				int startPos2 = startPos;
 
-				if (invocationPcList.size() != 0) {
-					int lastAddedInvocationPos = invocationPcList
-							.get(invocationPcList.size() - 1);
-
-					int lastAddedReceiverEndPc = possibleReceiverIntervalList
-							.get(possibleReceiverIntervalList.size() - 1).endPc;
-					if (codeIter.byteAt(lastAddedReceiverEndPc) == Opcode.CHECKCAST)
-						startPos2 = startPos;
-					else {
-						int index = invocationBytecodeInterval
-								.indexOf(lastAddedInvocationPos);
-						startPos2 = invocationBytecodeInterval.get(index + 1);
-					}
-				}
+				int startPos2 = getStartPos(invocationInterval, codeIter,
+						startPos, invocationPcList, receiverIntervalList);
 
 				invocationPcList.add(pos);
 
 				int nameAndType = getNameAndType(codeIter, pos);
-				// String methodInvokationName = getMethodName(nameAndType);
-				// boolean isSuper = isSuper(behavior, pos);
-
-				// init or super call can't cause NPE, so ignore them
-				// if (methodInvokationName.equals("<init>") || isSuper)
-				// continue;
-				// else {
 
 				// FIXME: paramCount
-
 				int paramCount = getParameterAmount(nameAndType);
 
 				// get receiver list
-				filterPossibleReceiver(possibleReceiverIntervalList, codeIter,
+				filterPossibleReceiver(receiverIntervalList, codeIter,
 						startPos2, pos);
 
 				if (op == Opcode.INVOKESTATIC && paramCount == 0) {
-					possibleReceiverIntervalList
-							.add(new MethodReceiverInterval(pos, pos));
+					receiverIntervalList.add(new MethodReceiverInterval(pos,
+							pos));
 					if (codeIter.hasNext()) {
 						startPos = codeIter.next();
 						codeIter.move(startPos);
 					}
 					continue;
-
 				}
 
 				if (op != Opcode.INVOKESTATIC
-						&& possibleReceiverIntervalList.size() <= paramCount) {
+						&& receiverIntervalList.size() <= paramCount) {
 					updatePossibleReceiverIntervalList(codeIter,
-							invocationBytecodeInterval, paramCount);
-					checkInvocationInterval(behavior,
-							invocationBytecodeInterval);
+							invocationInterval, paramCount);
+					checkInvocationInterval(behavior, invocationInterval);
 					return;
 				}
 
 				// FIXME: wrong index
 				// get right receiver list index
 				int possibleReceiverIndex = getMethodReceiverIndex(codeIter,
-						possibleReceiverIntervalList, op, paramCount);
+						receiverIntervalList, op, paramCount);
 
-				MethodReceiverInterval possibleReceiverInterval = possibleReceiverIntervalList
+				MethodReceiverInterval possibleReceiverInterval = receiverIntervalList
 						.get(possibleReceiverIndex);
 
 				// ignore (final) or combine (nested) methodReceiver if it
@@ -513,7 +304,7 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 					if (pos == endPos)
 						return;
 
-					updateReceiverList(possibleReceiverIntervalList,
+					updateReceiverList(receiverIntervalList,
 							possibleReceiverIndex, pos, paramCount);
 
 					codeIter.move(pos);
@@ -522,18 +313,14 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				}
 
 				int possibleReceiverStartPc = possibleReceiverInterval.startPc;
-				int possibleReceiverStartOp = codeIter
-						.byteAt(possibleReceiverStartPc);
 
 				// print possible receiver just for testing
-				String possibleReceiverStartOpcode = ""
-						+ possibleReceiverStartPc + " "
-						+ Mnemonic.OPCODE[possibleReceiverStartOp];
-				LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-						.getAttribute(LineNumberAttribute.tag);
-				int lineNr = lineNrAttr.toLineNumber(pos);
-				System.out.println("LineNr: " + lineNr + ", StartPc: "
-						+ possibleReceiverStartPc);
+				// LineNumberAttribute lineNrAttr = (LineNumberAttribute)
+				// codeAttr
+				// .getAttribute(LineNumberAttribute.tag);
+				// int lineNr = lineNrAttr.toLineNumber(pos);
+				// System.out.println("LineNr: " + lineNr + ", StartPc: "
+				// + possibleReceiverStartPc);
 				// end testing
 
 				// actually storing data in csv file
@@ -544,33 +331,52 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 
 				if (pos != endPos) {
 					// updating receiver list
-					updateReceiverList(possibleReceiverIntervalList,
+					updateReceiverList(receiverIntervalList,
 							possibleReceiverIndex, pos, paramCount);
 					startPos = codeIter.next();
 
 					op = codeIter.byteAt(startPos);
 
 					if (op == Opcode.CHECKCAST) {
-						int lastIndex = possibleReceiverIntervalList.size() - 1;
-						possibleReceiverIntervalList.get(lastIndex).endPc = startPos;
+						int lastIndex = receiverIntervalList.size() - 1;
+						receiverIntervalList.get(lastIndex).endPc = startPos;
 						if (codeIter.hasNext())
 							startPos = codeIter.next();
 						codeIter.move(startPos);
 					} else {
 						codeIter.move(pos);
 						codeIter.next();
-						System.out.println();
 					}
 				} else {
 					codeIter.move(startPos);
 					codeIter.next();
-					System.out.println();
 					return;
 				}
 
 			}
-			// }
 		}
+	}
+
+	private int getStartPos(ArrayList<Integer> invocationBytecodeInterval,
+			CodeIterator codeIter, int startPos,
+			ArrayList<Integer> invocationPcList,
+			ArrayList<MethodReceiverInterval> possibleReceiverIntervalList) {
+		int startPos2 = startPos;
+
+		if (invocationPcList.size() != 0) {
+
+			int lastAddedReceiverEndPc = possibleReceiverIntervalList
+					.get(possibleReceiverIntervalList.size() - 1).endPc;
+
+			if (codeIter.byteAt(lastAddedReceiverEndPc) != Opcode.CHECKCAST) {
+				int lastAddedInvocationPos = invocationPcList
+						.get(invocationPcList.size() - 1);
+				int index = invocationBytecodeInterval
+						.indexOf(lastAddedInvocationPos);
+				startPos2 = invocationBytecodeInterval.get(index + 1);
+			}
+		}
+		return startPos2;
 	}
 
 	private void updatePossibleReceiverIntervalList(CodeIterator codeIter,
@@ -598,10 +404,8 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 				continue;
 			else if (opString.matches("aload.*") || opString.matches("new")) {
 				return;
-
 			}
 		}
-
 	}
 
 	private boolean doesMethodReceiverIncludeMethodInvocation(
@@ -712,7 +516,9 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 			op2 = op;
 		}
 
-		csvCreator.addCsvLine(varData);
+		// FIXME: Main || Test
+		MainProjectModifier.csv.addCsvLine(varData);
+		// TestInstrumentor.csv.addCsvLine(varData);
 
 		if (codeIter.hasNext()) {
 			pos = codeIter.next();
@@ -897,11 +703,6 @@ public class MethodInvokationAnalyzer extends VariableAnalyzer {
 		else
 			return;
 
-	}
-
-	private int getIntervalStartPos(
-			ArrayList<Integer> invocationBytecodeInterval) {
-		return invocationBytecodeInterval.get(0);
 	}
 
 	private Integer getIntervalEndPos(

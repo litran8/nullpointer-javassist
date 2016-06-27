@@ -12,6 +12,7 @@ import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.LineNumberAttribute;
+import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.MethodInvocationAnalyzer;
 import ch.unibe.scg.nullSpy.instrumentator.model.Field;
 import ch.unibe.scg.nullSpy.instrumentator.model.FieldKey;
 import ch.unibe.scg.nullSpy.instrumentator.model.LocalVar;
@@ -45,8 +46,7 @@ public class ClassAdapter {
 		return instance;
 	}
 
-	public void adaptProject(CtClass cc,
-			CsvFileCreator csvCreator) throws NotFoundException,
+	public void adaptProject(CtClass cc) throws NotFoundException,
 			CannotCompileException, BadBytecode, IllegalAccessException,
 			InvocationTargetException, NoSuchMethodException, IOException {
 
@@ -70,8 +70,8 @@ public class ClassAdapter {
 
 		System.out.println("\n------------- INVOKES -------------\n");
 
-		MethodInvokationAnalyzer methodInvokationAnalyzer = new MethodInvokationAnalyzer(
-				cc, methodInvokationVarMap, csvCreator);
+		MethodInvocationAnalyzer methodInvokationAnalyzer = new MethodInvocationAnalyzer(
+				cc);
 		methodInvokationAnalyzer.getMethodReceiver();
 
 		// System.out.println("\n------------- FIELD -------------\n");
