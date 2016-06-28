@@ -28,9 +28,9 @@ public class CsvFileCreator {
 		this.writer.append(",");
 		this.writer.append("VarName");
 		this.writer.append(",");
-		this.writer.append("varType");
+		this.writer.append("VarType");
 		this.writer.append(",");
-		this.writer.append("isStatic");
+		this.writer.append("IsStatic");
 		this.writer.append(",");
 		this.writer.append("ClassWhereVarIsUsed");
 		this.writer.append(",");

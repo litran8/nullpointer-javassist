@@ -20,13 +20,14 @@ public class DataMatcher {
 
 		while (fileScan.hasNext()) {
 			receiverEntry = fileScan.nextLine();
-			// System.out.println("ReceiverEntry: " + receiverEntry);
+			System.out.println("ReceiverEntry: " + receiverEntry);
 
 			receiverScan = new Scanner(receiverEntry);
 			receiverScan.useDelimiter(",");
 
 			while (receiverScan.hasNext()) {
-				// System.out.println("\t" + receiverScan.next());
+
+				System.out.println("\t" + receiverScan.next());
 			}
 
 			System.out.println("");

@@ -155,7 +155,7 @@ public class NullDisplayer {
 	}
 
 	public static HashMap<FieldKey, Field> getFieldMap() {
-		return NullDisplayer.getFieldMap();
+		return NullDisplayer.fieldMap;
 	}
 
 }

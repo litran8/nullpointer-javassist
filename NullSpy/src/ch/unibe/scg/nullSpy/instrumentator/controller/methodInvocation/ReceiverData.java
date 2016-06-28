@@ -95,8 +95,8 @@ public class ReceiverData {
 							.getName();
 					String isStatic = Boolean.toString(false);
 
-					System.out.println("Nr.: " + count + ", VarName: "
-							+ varName);
+					// System.out.println("Nr.: " + count + ", VarName: "
+					// + varName);
 
 					// #9
 					varData.add(Integer.toString(count));

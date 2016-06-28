@@ -63,7 +63,7 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 		// return;
 
 		for (CtBehavior behavior : behaviorList) {
-			System.out.println(behavior.getName());
+			// System.out.println(behavior.getName());
 
 			// FIXME: method choice
 			// if (!behavior.getName().equals("layoutContainer"))
@@ -117,7 +117,7 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 					codeIter.move(lastInvocationPc);
 					codeIter.next();
 
-					System.out.println();
+					// System.out.println();
 
 				}
 			}
@@ -229,15 +229,16 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 				int possibleReceiverStartPc = possibleReceiverInterval.startPc;
 
 				// print possible receiver just for testing
-				LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-						.getAttribute(LineNumberAttribute.tag);
-				int lineNr = lineNrAttr.toLineNumber(pos);
-				System.out.println("LineNr: " + lineNr + ", StartPc: "
-						+ possibleReceiverStartPc);
+				// LineNumberAttribute lineNrAttr = (LineNumberAttribute)
+				// codeAttr
+				// .getAttribute(LineNumberAttribute.tag);
+				// int lineNr = lineNrAttr.toLineNumber(pos);
+				// System.out.println("LineNr: " + lineNr + ", StartPc: "
+				// + possibleReceiverStartPc);
 				// end testing
 
-				if (lineNr == 214)
-					System.out.println();
+				// if (lineNr == 214)
+				// System.out.println();
 
 				// actually storing data in csv file
 				storeMethodreceiverData(behavior, possibleReceiverStartPc);

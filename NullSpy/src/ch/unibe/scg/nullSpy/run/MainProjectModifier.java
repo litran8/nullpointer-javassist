@@ -23,12 +23,12 @@ public class MainProjectModifier {
 	public static String csvPath;
 	public static CsvFileCreator csv;
 
-	public static void main(String[] args) throws NotFoundException,
-			IOException {
+	public static void main(String[] args) throws Throwable {
 
 		if (args.length == 2) {
-			originalProjectBinPath = args[0];
-			modifiedProjectDestDirPath = args[1];
+			originalProjectBinPath = args[0]; // "C:\Users\Lina
+												// Tran\Desktop\bachelor\jhotdraw60b1\bin"
+			modifiedProjectDestDirPath = args[1]; // "C:\\Users\\Lina Tran\\Desktop\\modifiedProject"
 		} else {
 			System.out.println("Amount of args is not enough or too big.");
 			System.exit(0);
@@ -53,7 +53,7 @@ public class MainProjectModifier {
 		File runtimeSupporterFile = new File(currentWorkingDirPath + "\\bin");
 
 		MainProjectModifier.csvPath = modifiedProjectDestDirPath
-				+ "\\VarData.csv";
+				+ "\\\\VarData.csv";
 		csv = new CsvFileCreator(MainProjectModifier.csvPath);
 
 		// make sure source exists
