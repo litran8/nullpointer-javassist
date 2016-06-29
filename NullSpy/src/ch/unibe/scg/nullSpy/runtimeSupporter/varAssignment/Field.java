@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.runtimeSupporter;
+package ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment;
 
 /**
  * Stores information of a field which can be written for instrumentation after
@@ -10,7 +10,7 @@ package ch.unibe.scg.nullSpy.runtimeSupporter;
 
 public class Field extends Variable {
 
-	private String classNameInWhichVarIsInstantiated; // package.Person
+	private String varDeclaringClassName; // package.Person
 	private boolean isStatic;
 
 	// object_filed
@@ -18,15 +18,15 @@ public class Field extends Variable {
 
 	public Field(String classNameInWhichVarIsUsed, String behaviorName,
 			String behaviorSignature, String varID, String varName,
-			String varType, String classNameInWhichVarIsInstantiated,
-			boolean isStatic, int varLineNr, int startPos, int storePos,
-			int afterPos, IndirectFieldObject indirectFieldObject) {
+			String varType, String verDeclaringClassName, boolean isStatic,
+			int varLineNr, int startPos, int storePos, int afterPos,
+			IndirectFieldObject indirectFieldObject) {
 
 		super(classNameInWhichVarIsUsed, behaviorName, behaviorSignature,
 				varID, varName, varType, varLineNr, startPos, storePos,
 				afterPos);
 
-		this.classNameInWhichVarIsInstantiated = classNameInWhichVarIsInstantiated;
+		this.varDeclaringClassName = verDeclaringClassName;
 		this.isStatic = isStatic;
 
 		// OBJECT_field
@@ -37,8 +37,8 @@ public class Field extends Variable {
 		return isStatic;
 	}
 
-	public String getClassNameInWhichVarIsInstantiated() {
-		return classNameInWhichVarIsInstantiated;
+	public String getVarDeclaringClassName() {
+		return varDeclaringClassName;
 	}
 
 	public IndirectFieldObject getIndirectFieldObject() {

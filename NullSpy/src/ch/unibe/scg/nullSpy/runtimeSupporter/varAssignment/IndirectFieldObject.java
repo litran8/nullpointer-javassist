@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.runtimeSupporter;
+package ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment;
 
 /**
  * Info about OBJECT_field

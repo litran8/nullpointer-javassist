@@ -34,17 +34,21 @@ public class ClassFileTranslator implements Translator {
 		if (!className
 				.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer")
 				&& !className
-						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.Field")
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.Field")
 				&& !className
-						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.LocalVariable")
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.LocalVariable")
 				&& !className
-						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.Variable")
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.Variable")
 				&& !className
-						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.IndirectFieldObject")
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.IndirectFieldObject")
 				&& !className
-						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.FieldKey")
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.FieldKey")
 				&& !className
-						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.LocalVarKey")) {
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.LocalVarKey")
+				&& !className
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.DataMatcher")
+				&& !className
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.ReceiverData")) {
 
 			CtClass cc;
 			if (analyzedClasses.containsKey(className))

@@ -6,10 +6,10 @@ import javassist.Translator;
 import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.CsvFileCreator;
 
 public class TestInstrumentor {
-	// public static String className =
-	// "isFieldOrLocalVariableNullExample.MainAssignToNull";
+	public static String className = "isFieldOrLocalVariableNullExample.MainAssignToNull";
 
-	private static String className = "isFieldOrLocalVariableNullExample.testMethodCall.FooTest";
+	// private static String className =
+	// "isFieldOrLocalVariableNullExample.testMethodCall.FooTest";
 	public static String path = "C:\\Users\\Lina Tran\\Desktop\\VarData.csv";
 	public static CsvFileCreator csv;
 

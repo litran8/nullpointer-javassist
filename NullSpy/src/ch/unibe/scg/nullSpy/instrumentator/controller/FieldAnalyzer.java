@@ -201,10 +201,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				indirectVarOpCode = "aload_" + locVarSlot;
 
 				// localVarName.field
-				indirectVarName = localVarAttrAsList
-						.get(localVarAttrIndex).varName;
-				indirectVarType = localVarAttrAsList
-						.get(localVarAttrIndex).varType;
+				indirectVarName = localVarAttrAsList.get(localVarAttrIndex).varName;
+				indirectVarType = localVarAttrAsList.get(localVarAttrIndex).varType;
 
 			} else {
 				// field.field
@@ -244,8 +242,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 			CtField indirectVar = cc.getField(innerClassFieldName);
 			indirectVarName = indirectVar.getName();
-			indirectVarDeclaringClassName = indirectVar
-					.getDeclaringClass().getName();
+			indirectVarDeclaringClassName = indirectVar.getDeclaringClass()
+					.getName();
 			indirectVarType = indirectVar.getSignature();
 			isIndirectVarStatic = op == Opcode.GETSTATIC;
 		}
@@ -256,8 +254,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		if (!field.isStatic()) {
 			indirectFieldObject = new IndirectVar(indirectVarName,
-					indirectVarType,
-					indirectVarDeclaringClassName,
+					indirectVarType, indirectVarDeclaringClassName,
 					isIndirectVarStatic, indirectVarOpCode);
 		}
 
@@ -265,18 +262,25 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		String fieldDeclaringClassName = field.getClassName();
 
 		Field var = new Field("field", fieldName, fieldType,
-				fieldDeclaringClassName, fieldLineNr, pos, startPos,
-				afterPos, cc, behavior, field.isStatic(), indirectFieldObject);
+				fieldDeclaringClassName, fieldLineNr, pos, startPos, afterPos,
+				cc, behavior, field.isStatic(), indirectFieldObject);
 
 		fieldIsWritterInfoList.add(var);
 
 		// hashMap
-		FieldKey fieldKey = new FieldKey(fieldName,
-				fieldDeclaringClassName);
+
+		FieldKey fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
+				fieldDeclaringClassName, field.isStatic(), "", "", "", false,
+				behavior.getName(), behavior.getSignature());
+
+		// FieldKey fieldKey = new FieldKey(fieldName, fieldDeclaringClassName);
 
 		if (field.isStatic()) {
 			// class.f
-			fieldKey = new FieldKey(fieldName, fieldType, field.isStatic());
+			// fieldKey = new FieldKey(fieldName, fieldType, field.isStatic());
+			// fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
+			// fieldDeclaringClassName, field.isStatic(), "", "", "", false,
+			// behavior.getName(), behavior.getSignature());
 
 		} else if (!field.isStatic() && !indirectVarName.equals("")) {
 			// indirectVar.f
@@ -284,24 +288,35 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			if (!indirectVarDeclaringClassName.equals("")
 					&& indirectVarType.equals("")) {
 				// indirectNonStaticVar.f
-				fieldKey = new FieldKey(fieldName,
-						fieldDeclaringClassName, indirectVarName,
-						indirectVarDeclaringClassName);
+				// fieldKey = new FieldKey(fieldName, fieldDeclaringClassName,
+				// indirectVarName, indirectVarDeclaringClassName);
+				fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
+						fieldDeclaringClassName, field.isStatic(),
+						indirectVarName, "", indirectVarDeclaringClassName,
+						false, behavior.getName(), behavior.getSignature());
 
 			} else if (!indirectVarDeclaringClassName.equals("")
 					&& !indirectVarType.equals("")) {
 				// indirestStaticVar.f
 				isIndirectVarStatic = true;
-				fieldKey = new FieldKey(fieldName,
-						fieldDeclaringClassName, indirectVarName,
-						indirectVarType, isIndirectVarStatic);
+				// fieldKey = new FieldKey(fieldName, fieldDeclaringClassName,
+				// indirectVarName, indirectVarType, isIndirectVarStatic);
+				fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
+						fieldDeclaringClassName, field.isStatic(),
+						indirectVarName, indirectVarType, "",
+						isIndirectVarStatic, behavior.getName(),
+						behavior.getSignature());
 
 			} else {
 				// localVar.f
-				fieldKey = new FieldKey(fieldName,
-						fieldDeclaringClassName, indirectVarName,
-						behavior.getDeclaringClass().getName(),
-						behavior.getName(), behavior.getSignature());
+				// fieldKey = new FieldKey(fieldName, fieldDeclaringClassName,
+				// indirectVarName,
+				// behavior.getDeclaringClass().getName(),
+				// behavior.getName(), behavior.getSignature());
+				fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
+						fieldDeclaringClassName, field.isStatic(),
+						indirectVarName, "", "", false, behavior.getName(),
+						behavior.getSignature());
 			}
 		}
 
@@ -363,14 +378,18 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		fieldIsWritterInfoList.add(var);
 
 		// hashMap
-		FieldKey fieldKey;
-		if (field.isStatic()) {
-			// class.f
-			fieldKey = new FieldKey(fieldName, fieldType, field.isStatic());
-		} else {
-			// this.f
-			fieldKey = new FieldKey(fieldName, fieldDeclaringClassName);
-		}
+		// FieldKey fieldKey;
+		// if (field.isStatic()) {
+		// class.f
+		// fieldKey = new FieldKey(fieldName, fieldType, field.isStatic());
+		String s = behavior.getSignature();
+		FieldKey fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
+				fieldDeclaringClassName, field.isStatic(), "", "", "", false,
+				behavior.getName(), behavior.getSignature());
+		// } else {
+		// this.f
+		// fieldKey = new FieldKey(fieldName, fieldDeclaringClassName);
+		// }
 
 		fieldMap.put(fieldKey, var);
 

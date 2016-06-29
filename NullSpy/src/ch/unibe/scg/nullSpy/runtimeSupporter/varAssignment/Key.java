@@ -1,13 +1,12 @@
-package ch.unibe.scg.nullSpy.runtimeSupporter;
+package ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment;
 
-public class LocalVarKey {
-	public String varName;
+public class Key {
+	protected String varName;
+	protected String classNameInWhichVarIsUsed;
+	protected String behaviorName;
+	protected String behaviorSignature;
 
-	public String classNameInWhichVarIsUsed;
-	public String behaviorName;
-	public String behaviorSignature;
-
-	public LocalVarKey(String varName, String classNameInWhichVarIsUsed,
+	public Key(String varName, String classNameInWhichVarIsUsed,
 			String behaviorName, String behaviorSignature) {
 		this.varName = varName;
 		this.classNameInWhichVarIsUsed = classNameInWhichVarIsUsed;
@@ -15,19 +14,19 @@ public class LocalVarKey {
 		this.behaviorSignature = behaviorSignature;
 	}
 
-	public String getVarName() {
+	protected String getVarName() {
 		return varName;
 	}
 
-	public String getClassNameInWhichVarIsUsed() {
+	protected String getClassNameInWhichVarIsUsed() {
 		return classNameInWhichVarIsUsed;
 	}
 
-	public String getBehaviorName() {
+	protected String getBehaviorName() {
 		return behaviorName;
 	}
 
-	public String getBehaviorSignature() {
+	protected String getBehaviorSignature() {
 		return behaviorSignature;
 	}
 
@@ -57,7 +56,7 @@ public class LocalVarKey {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		LocalVarKey other = (LocalVarKey) obj;
+		Key other = (Key) obj;
 		if (behaviorName == null) {
 			if (other.behaviorName != null)
 				return false;

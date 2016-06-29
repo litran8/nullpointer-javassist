@@ -282,6 +282,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 		sb.append("{");
 
+		sb.append("StackTraceElement[] stElem = $e.getStackTrace();");
 		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.DataMatcher.printLocationOnMatch");
 		sb.append("(");
 		sb.append("\"" + MainProjectModifier.csvPath + "\"");
@@ -289,6 +290,12 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.getLocalVarMap()");
 		sb.append(",");
 		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.getFieldMap()");
+		sb.append(",");
+		sb.append("stElem[0].getClassName()");
+		sb.append(",");
+		sb.append("stElem[0].getLineNumber()");
+		sb.append(",");
+		sb.append("stElem[0].getMethodName()");
 		sb.append(");");
 
 		sb.append("System.out.println(\"HAAAALLLLLLOOOOOOO\");");

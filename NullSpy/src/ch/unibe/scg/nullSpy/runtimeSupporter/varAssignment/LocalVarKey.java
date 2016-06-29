@@ -1,6 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.model;
-
-import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.Key;
+package ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment;
 
 public class LocalVarKey extends Key {
 
