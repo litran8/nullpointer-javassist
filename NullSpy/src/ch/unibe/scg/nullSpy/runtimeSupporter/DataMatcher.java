@@ -33,6 +33,20 @@ public class DataMatcher {
 
 		receiverList = new ArrayList<>();
 
+		storeReceiverDataToMap(csvPath);
+
+		ArrayList<Integer> npeReceiverIndexList = getNPEReceiverIndex(
+				className, lineNr, behaviorName);
+		ArrayList<ArrayList<Integer>> npeReceiverGroupList = getNPEReceiverGroup(npeReceiverIndexList);
+
+		getVariableKey(npeReceiverIndexList, npeReceiverGroupList);
+
+		printNPELocation(npeReceiverIndexList, npeReceiverGroupList);
+
+	}
+
+	private static void storeReceiverDataToMap(String csvPath)
+			throws FileNotFoundException {
 		String receiverEntry;
 		Scanner fileScan, receiverScan;
 
@@ -59,40 +73,125 @@ public class DataMatcher {
 		}
 
 		fileScan.close();
+	}
 
-		// int npeReceiverIndex = getNPEReceiverIndex(className, lineNr,
-		// behaviorName);
-		// ArrayList<Integer> npeReceiverGroup =
-		// getNPEReceiverGroup(npeReceiverIndex);
-		//
-		// getVariableKey(npeReceiverIndex, npeReceiverGroup);
-		//
-		// printNPELocation(npeReceiverIndex, npeReceiverGroup);
+	private static Key getVariableKey(ArrayList<Integer> npeReceiverIndexList,
+			ArrayList<ArrayList<Integer>> npeReceiverGroupList) {
+		Key key = null;
+		for (int i = 0; i < npeReceiverGroupList.size(); i++) {
+			ArrayList<Integer> npeReceiverGroup = npeReceiverGroupList.get(i);
+			int startIndex = npeReceiverGroup.get(0);
+
+			String varID = getVarID(startIndex);
+
+			if (!varID.equals("field")) {
+				return new LocalVarKey(getVariableName(startIndex),
+						getClassNameWhereVariableIsUsed(startIndex),
+						getBehaviorName(startIndex),
+						getBehaviorSignature(startIndex));
+
+			} else {
+				// FIXME: field version
+				return new FieldKey(
+						getClassNameWhereVariableIsUsed(startIndex),
+						getVariableName(startIndex),
+						getVariableType(startIndex),
+						getVariableDeclaringClassName(startIndex),
+						isVariableStatic(startIndex), "", "", "",
+						(Boolean) null, getBehaviorName(startIndex),
+						getBehaviorSignature(startIndex));
+			}
+		}
+
+		return key;
+	}
+
+	private static ArrayList<ArrayList<Integer>> getNPEReceiverGroup(
+			ArrayList<Integer> npeReceiverIndexList) {
+		ArrayList<ArrayList<Integer>> npeReceiverGroupList = new ArrayList<>();
+
+		for (int i = 0; i < npeReceiverIndexList.size(); i++) {
+			ArrayList<Integer> npeReceiverGroup = new ArrayList<>();
+			int npeReceiverIndex = npeReceiverIndexList.get(i);
+			int nr = getNrAsInteger(npeReceiverIndex);
+			int checkIndex = npeReceiverIndex - 1;
+			while (checkIndex >= 0) {
+				int checkNr = getNrAsInteger(checkIndex);
+				if (checkNr == nr) {
+					npeReceiverGroup.add(checkIndex);
+					checkIndex--;
+					continue;
+				} else
+					break;
+			}
+			checkIndex = npeReceiverIndex + 1;
+			while (checkIndex < receiverList.size()) {
+				int checkNr = getNrAsInteger(checkIndex);
+				if (checkNr == nr) {
+					npeReceiverGroup.add(checkIndex);
+					checkIndex++;
+					continue;
+				} else
+					break;
+			}
+
+			npeReceiverGroupList.add(npeReceiverGroup);
+
+		}
+
+		removeDuplicatedEntry(npeReceiverGroupList);
+		return npeReceiverGroupList;
+	}
+
+	private static void removeDuplicatedEntry(
+			ArrayList<ArrayList<Integer>> npeReceiverGroupList) {
+		for (int i = 0; i + 1 < npeReceiverGroupList.size(); i++) {
+			ArrayList<Integer> npeReceiverGroup_1 = npeReceiverGroupList.get(i);
+			ArrayList<Integer> npeReceiverGroup_2 = npeReceiverGroupList
+					.get(i + 1);
+			int j = 0;
+			while (npeReceiverGroup_1.size() == npeReceiverGroup_2.size()
+					&& j < npeReceiverGroup_1.size()
+					&& npeReceiverGroup_1.get(j) == npeReceiverGroup_2.get(j)) {
+				if (j == npeReceiverGroup_1.size() - 1) {
+					npeReceiverGroupList.remove(i);
+					removeDuplicatedEntry(npeReceiverGroupList);
+				}
+				j++;
+			}
+		}
 
 	}
 
-	private static Key getVariableKey(int npeReceiverIndex,
-			ArrayList<Integer> npeReceiverGroup) {
+	private static ArrayList<Integer> getNPEReceiverIndex(String className,
+			int lineNr, String behaviorName) {
+		ArrayList<Integer> receiverElementIndexList = new ArrayList<>();
+		for (int i = 0; i < receiverList.size(); i++) {
+			ArrayList<String> receiverElement = receiverList.get(i);
 
-		String varID = getVarID(npeReceiverIndex);
-
-		if (!varID.equals("field")) {
-			return new LocalVarKey(getVariableName(npeReceiverIndex),
-					getClassNameWhereVariableIsUsed(npeReceiverIndex),
-					getBehaviorName(npeReceiverIndex),
-					getBehaviorSignature(npeReceiverIndex));
-
-		} else {
-			// FIXME: field version
-			return new FieldKey(
-					getClassNameWhereVariableIsUsed(npeReceiverIndex),
-					getVariableName(npeReceiverIndex),
-					getVariableType(npeReceiverIndex),
-					getVariableDeclaringClassName(npeReceiverIndex),
-					isVariableStatic(npeReceiverIndex), "", "", "",
-					(Boolean) null, getBehaviorName(npeReceiverIndex),
-					getBehaviorSignature(npeReceiverIndex));
+			int checkIndex = 0;
+			if (getLineNumberAsInteger(receiverElement) == lineNr
+					&& receiverElement.get(6).equals(className)
+					&& receiverElement.get(7).equals(behaviorName)) {
+				receiverElementIndexList.add(i);
+				checkIndex = i;
+			}
+			if (i > checkIndex
+					&& getLineNumberAsInteger(receiverElement) != lineNr
+					&& !receiverElement.get(6).equals(className)
+					&& !receiverElement.get(7).equals(behaviorName)) {
+				break;
+			}
 		}
+		return receiverElementIndexList;
+	}
+
+	private static int getNrAsInteger(int npeReceiverIndex) {
+		return Integer.parseInt(receiverList.get(npeReceiverIndex).get(0));
+	}
+
+	private static int getLineNumberAsInteger(ArrayList<String> receiverElement) {
+		return Integer.parseInt(receiverElement.get(1));
 	}
 
 	private static boolean isVariableStatic(int npeReceiverIndex) {
@@ -134,66 +233,6 @@ public class DataMatcher {
 	private static void printNPELocation(int npeReceiverIndex,
 			ArrayList<Integer> npeReceiverGroup) {
 
-	}
-
-	private static ArrayList<Integer> getNPEReceiverGroup(int npeReceiverIndex) {
-		ArrayList<Integer> npeReceiverGroup = new ArrayList<>();
-		int nr = getNrAsInteger(npeReceiverIndex);
-		int checkIndex = npeReceiverIndex - 1;
-		while (checkIndex >= 0) {
-			int checkNr = getNrAsInteger(checkIndex);
-			if (checkNr == nr) {
-				npeReceiverGroup.add(checkIndex);
-				checkIndex--;
-				continue;
-			} else
-				break;
-		}
-		checkIndex = npeReceiverIndex + 1;
-		while (checkIndex < receiverList.size()) {
-			int checkNr = getNrAsInteger(checkIndex);
-			if (checkNr == nr) {
-				npeReceiverGroup.add(checkIndex);
-				checkIndex++;
-				continue;
-			} else
-				break;
-		}
-		return npeReceiverGroup;
-	}
-
-	private static int getNPEReceiverIndex(String className, int lineNr,
-			String behaviorName) {
-		for (int i = 0; i < receiverList.size(); i++) {
-			ArrayList<String> receiverElement = receiverList.get(i);
-
-			if (getLineNumberAsInteger(receiverElement) == lineNr
-					&& receiverElement.get(6).equals(className)
-					&& receiverElement.get(7).equals(behaviorName)) {
-				return i;
-			}
-		}
-		return 0;
-	}
-
-	private static int getNrAsInteger(int npeReceiverIndex) {
-		return Integer.parseInt(receiverList.get(npeReceiverIndex).get(0));
-	}
-
-	private static int getLineNumberAsInteger(ArrayList<String> receiverElement) {
-		return Integer.parseInt(receiverElement.get(1));
-	}
-
-	public static String getExceptionClassName(Throwable t) {
-		return t.getStackTrace()[0].getClassName();
-	}
-
-	public static int getExceptionLineNumber(Throwable t) {
-		return t.getStackTrace()[0].getLineNumber();
-	}
-
-	public static String getExceptionMethodName(Throwable t) {
-		return t.getStackTrace()[0].getMethodName();
 	}
 
 	private class NPEKey {
