@@ -24,21 +24,20 @@ public class IntervalManager {
 		this.codeIter = codeAttr.iterator();
 	}
 
-	public ArrayList<Integer> getInvocationInterval(
-			ArrayList<Integer> multipleLineInterval, int pos)
-			throws BadBytecode {
+	public ArrayList<Integer> getInvocationInterval(int[] multipleLineInterval,
+			int pos) throws BadBytecode {
 
 		ArrayList<Integer> invocationInterval = new ArrayList<>();
 		int startPos;
-		if (multipleLineInterval.size() == 0) {
+		if (multipleLineInterval == null) {
 			int lineNr = this.lineNrAttr.toLineNumber(pos);
 			startPos = this.lineNrAttr.toStartPc(lineNr);
 
 			// store bytecode interval until invocation
 			return getCleanInvocationInterval(startPos);
 		} else {
-			startPos = multipleLineInterval.get(0);
-			int endPos = multipleLineInterval.get(1);
+			startPos = multipleLineInterval[0];
+			int endPos = multipleLineInterval[1];
 			this.codeIter.move(startPos);
 			int pos2 = pos;
 			while (this.codeIter.hasNext() && pos2 <= endPos) {

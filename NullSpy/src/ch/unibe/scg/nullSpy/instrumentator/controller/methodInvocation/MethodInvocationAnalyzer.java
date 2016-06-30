@@ -16,7 +16,6 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
-import ch.unibe.scg.nullSpy.instrumentator.controller.Printer;
 import ch.unibe.scg.nullSpy.instrumentator.controller.VariableAnalyzer;
 import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
@@ -59,15 +58,15 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 		// System.out.println();
 
 		// FIXME: class choice
-		if (!cc.getName().equals("org.jhotdraw.applet.DrawApplet"))
-			return;
+		// if (!cc.getName().equals("org.jhotdraw.applet.DrawApplet"))
+		// return;
 
 		for (CtBehavior behavior : behaviorList) {
 			// System.out.println(behavior.getName());
 
 			// FIXME: method choice
-			if (!behavior.getName().equals("createFontChoice"))
-				continue;
+			// if (!behavior.getName().equals("createFontChoice"))
+			// continue;
 
 			MethodInfo methodInfo = behavior.getMethodInfo2();
 			constPool = methodInfo.getConstPool();
@@ -78,16 +77,16 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 			}
 
 			// FIXME: just printer mark
-			Printer p = new Printer();
-			p.printBehavior(behavior, 0);
-			LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-					.getAttribute(LineNumberAttribute.tag);
-			for (int j = 0; j < lineNrAttr.tableLength(); j++) {
-				int line = lineNrAttr.lineNumber(j);
-				int pc = lineNrAttr.toStartPc(line);
-				System.out.println("pc: " + pc + ", line: "
-						+ lineNrAttr.lineNumber(j));
-			}
+			// Printer p = new Printer();
+			// p.printBehavior(behavior, 0);
+			// LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+			// .getAttribute(LineNumberAttribute.tag);
+			// for (int j = 0; j < lineNrAttr.tableLength(); j++) {
+			// int line = lineNrAttr.lineNumber(j);
+			// int pc = lineNrAttr.toStartPc(line);
+			// System.out.println("pc: " + pc + ", line: "
+			// + lineNrAttr.lineNumber(j));
+			// }
 
 			CodeIterator codeIter = codeAttr.iterator();
 			codeIter.begin();
@@ -100,7 +99,7 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
 					MultipleLineManager multipleLineManager = new MultipleLineManager(
 							behavior);
-					ArrayList<Integer> multipleLineInterval = multipleLineManager
+					int[] multipleLineInterval = multipleLineManager
 							.getMultipleLineInterval(pos);
 
 					IntervalManager intervalManager = new IntervalManager(
