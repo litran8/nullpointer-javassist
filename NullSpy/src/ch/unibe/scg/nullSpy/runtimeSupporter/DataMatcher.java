@@ -41,7 +41,7 @@ public class DataMatcher {
 
 		getVariableKey(npeReceiverIndexList, npeReceiverGroupList);
 
-		printNPELocation(npeReceiverIndexList, npeReceiverGroupList);
+		// printNPELocation(npeReceiverIndexList, npeReceiverGroupList);
 
 	}
 
@@ -91,14 +91,21 @@ public class DataMatcher {
 						getBehaviorSignature(startIndex));
 
 			} else {
+
+				// this.field
+
+				// aload.field
+
+				// indirect.field
+
 				// FIXME: field version
 				return new FieldKey(
 						getClassNameWhereVariableIsUsed(startIndex),
 						getVariableName(startIndex),
 						getVariableType(startIndex),
 						getVariableDeclaringClassName(startIndex),
-						isVariableStatic(startIndex), "", "", "",
-						(Boolean) null, getBehaviorName(startIndex),
+						isVariableStatic(startIndex), "", "", "", false,
+						getBehaviorName(startIndex),
 						getBehaviorSignature(startIndex));
 			}
 		}

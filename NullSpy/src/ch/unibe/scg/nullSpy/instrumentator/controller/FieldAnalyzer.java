@@ -382,7 +382,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// if (field.isStatic()) {
 		// class.f
 		// fieldKey = new FieldKey(fieldName, fieldType, field.isStatic());
-		String s = behavior.getSignature();
 		FieldKey fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
 				fieldDeclaringClassName, field.isStatic(), "", "", "", false,
 				behavior.getName(), behavior.getSignature());
