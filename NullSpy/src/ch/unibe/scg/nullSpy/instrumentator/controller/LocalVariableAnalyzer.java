@@ -298,27 +298,12 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		sb.append("stElem[0].getMethodName()");
 		sb.append(");");
 
-		sb.append("System.out.println(\"HAAAALLLLLLOOOOOOO\");");
 		sb.append("System.out.println($e); throw $e;");
 
 		sb.append("}");
 
 		CtClass etype = ClassPool.getDefault().get("java.lang.Throwable");
 		method.addCatch(sb.toString(), etype);
-
-		// CtField f = CtField.make("public static long startTime;", cc);
-		// cc.addField(f);
-		// method.insertBefore("startTime = System.nanoTime();");
-		// method.insertAfter("System.out.println(\"\\nModified class time: \" +((System.nanoTime() - startTime)/1000000) + \" ms\");");
-		// CtClass etype = ClassPool.getDefault().get(
-		// "java.lang.NullPointerException");
-		// method.addCatch(
-		// "{System.out.println(\"Hallo\");"
-		// + "StackTraceElement[] elements = $e.getStackTrace();"
-		// + "System.out.println(elements[1]);"
-		// +
-		// "ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.checkMethodInvokationVar(\"className\",8);"
-		// + "System.out.println($e); throw $e;}", etype);
 
 	}
 

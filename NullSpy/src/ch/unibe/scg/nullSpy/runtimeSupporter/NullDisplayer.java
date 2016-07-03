@@ -50,7 +50,7 @@ public class NullDisplayer {
 		} else if (!indirectVarDeclaringClassName.equals("")
 				&& !indirectVarType.equals("")) {
 			// indirectStaticVar.f
-			isIndirectVarStatic = true;
+			// isIndirectVarStatic = true;
 			// fieldKey = new FieldKey(varName, varDeclaringClassName,
 			// indirectVarName, indirectVarType, isIndirectVarStatic);
 			linkVarName = indirectVarDeclaringClassName + "." + indirectVarName

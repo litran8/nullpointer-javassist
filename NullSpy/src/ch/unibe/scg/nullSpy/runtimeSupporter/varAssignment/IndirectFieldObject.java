@@ -41,7 +41,7 @@ public class IndirectFieldObject {
 		return indirectVarType;
 	}
 
-	public String getClassNameInWhichIndirectVarIsInstantiated() {
+	public String getIndirectVarDeclaringClassName() {
 		return classNameInWhichIndirectVarIsInstantiated;
 	}
 

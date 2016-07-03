@@ -8,9 +8,11 @@ import java.util.Scanner;
 
 import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.Field;
 import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.FieldKey;
+import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.IndirectFieldObject;
 import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.Key;
 import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.LocalVarKey;
 import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.LocalVariable;
+import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.Variable;
 
 public class DataMatcher {
 
@@ -27,22 +29,73 @@ public class DataMatcher {
 		DataMatcher.fieldMap = fieldMap;
 
 		System.out.println("It works!");
-		// System.out.println("ClassName: " + className);
-		// System.out.println("LineNr: " + lineNr);
-		// System.out.println("MethodName: " + behaviorName);
 
 		receiverList = new ArrayList<>();
 
 		storeReceiverDataToMap(csvPath);
-
 		ArrayList<Integer> npeReceiverIndexList = getNPEReceiverIndex(
 				className, lineNr, behaviorName);
-		ArrayList<ArrayList<Integer>> npeReceiverGroupList = getNPEReceiverGroup(npeReceiverIndexList);
+		ArrayList<ArrayList<Integer>> npeReceiverGroupList = getNPEReceiverGroupList(npeReceiverIndexList);
 
-		getVariableKey(npeReceiverIndexList, npeReceiverGroupList);
+		ArrayList<Key> keyList = getVariableKey(npeReceiverIndexList,
+				npeReceiverGroupList);
+		printNPELocation(keyList);
 
-		// printNPELocation(npeReceiverIndexList, npeReceiverGroupList);
+	}
 
+	private static void printNPELocation(ArrayList<Key> keyList) {
+		for (int i = 0; i < keyList.size(); i++) {
+			Key key = keyList.get(i);
+			Variable var = null;
+			String linkVarName = "";
+			if (fieldMap.containsKey(key)) {
+				var = fieldMap.get(key);
+				Field field = (Field) var;
+
+				String varName = field.getVarName();
+				IndirectFieldObject indirectVarObj = field
+						.getIndirectFieldObject();
+
+				String indirectVarName = indirectVarObj.getIndirectVarName();
+				linkVarName = indirectVarName + "." + varName;
+				String indirectVarDeclaringClassName = indirectVarObj
+						.getIndirectVarDeclaringClassName();
+				String indirectVarType = indirectVarObj.getIndirectVarType();
+
+				if (!indirectVarDeclaringClassName.equals("")
+						&& !indirectVarType.equals("")) {
+					linkVarName = indirectVarDeclaringClassName + "."
+							+ indirectVarName + "." + varName;
+				}
+
+				System.out.print("Field ");
+			} else if (localVarMap.containsKey(key)) {
+				var = localVarMap.get(key);
+				linkVarName = var.getVarName();
+				System.out.print("LocalVariable ");
+			} else {
+				return;
+			}
+
+			String classNameInWhichVarIsUsed = var
+					.getClassNameInWhichVarIsUsed();
+			int varLineNr = var.getVarLineNr();
+
+			printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName);
+		}
+
+	}
+
+	private static void printNullLink(String className, int lineNr,
+			String linkVarName) {
+		System.out.print(linkVarName + " at line " + lineNr + " is null: ");
+		System.out.println(getNullLink(className, lineNr));
+	}
+
+	private static String getNullLink(String className, int lineNumber) {
+		String nullLink;
+		nullLink = "(" + className + ".java:" + lineNumber + ")";
+		return nullLink;
 	}
 
 	private static void storeReceiverDataToMap(String csvPath)
@@ -54,7 +107,7 @@ public class DataMatcher {
 
 		while (fileScan.hasNext()) {
 			receiverEntry = fileScan.nextLine();
-			System.out.println("ReceiverEntry: " + receiverEntry);
+			// System.out.println("ReceiverEntry: " + receiverEntry);
 
 			receiverScan = new Scanner(receiverEntry);
 			receiverScan.useDelimiter(",");
@@ -64,62 +117,72 @@ public class DataMatcher {
 			while (receiverScan.hasNext()) {
 				String receiverDataPart = receiverScan.next();
 				receiverElement.add(receiverDataPart);
-				System.out.println("\t" + receiverDataPart);
+				// System.out.println("\t" + receiverDataPart);
+				// System.out.println("receiverElementSize: "
+				// + receiverElement.size());
 			}
 
 			receiverList.add(receiverElement);
 
-			System.out.println("");
+			// System.out.println("");
 		}
 
 		fileScan.close();
 	}
 
-	private static Key getVariableKey(ArrayList<Integer> npeReceiverIndexList,
+	private static ArrayList<Key> getVariableKey(
+			ArrayList<Integer> npeReceiverIndexList,
 			ArrayList<ArrayList<Integer>> npeReceiverGroupList) {
-		Key key = null;
+		ArrayList<Key> keyList = new ArrayList<>();
 		for (int i = 0; i < npeReceiverGroupList.size(); i++) {
 			ArrayList<Integer> npeReceiverGroup = npeReceiverGroupList.get(i);
-			int startIndex = npeReceiverGroup.get(0);
+			int index_1 = npeReceiverGroup.get(0);
+			String varID = getVarID(index_1);
 
-			String varID = getVarID(startIndex);
-
-			if (!varID.equals("field")) {
-				return new LocalVarKey(getVariableName(startIndex),
-						getClassNameWhereVariableIsUsed(startIndex),
-						getBehaviorName(startIndex),
-						getBehaviorSignature(startIndex));
+			if (!varID.equals("field") && npeReceiverGroup.size() == 1) {
+				keyList.add(new LocalVarKey(getVariableName(index_1),
+						getClassNameWhereVariableIsUsed(index_1),
+						getBehaviorName(index_1), getBehaviorSignature(index_1)));
 
 			} else {
-
-				// this.field
-
-				// aload.field
-
-				// indirect.field
-
-				// FIXME: field version
-				return new FieldKey(
-						getClassNameWhereVariableIsUsed(startIndex),
-						getVariableName(startIndex),
-						getVariableType(startIndex),
-						getVariableDeclaringClassName(startIndex),
-						isVariableStatic(startIndex), "", "", "", false,
-						getBehaviorName(startIndex),
-						getBehaviorSignature(startIndex));
+				if (npeReceiverGroup.size() == 1) { // staticField
+					keyList.add(new FieldKey(
+							getClassNameWhereVariableIsUsed(index_1),
+							getVariableName(index_1), getVariableType(index_1),
+							getVariableDeclaringClassName(index_1),
+							isVariableStatic(index_1), "", "", "", false,
+							getBehaviorName(index_1),
+							getBehaviorSignature(index_1)));
+				} else if (npeReceiverGroup.size() == 2) {
+					// this.field; aload.field; staticField.field
+					int index_2 = npeReceiverGroup.get(1);
+					keyList.add(new FieldKey(
+							getClassNameWhereVariableIsUsed(index_2),
+							getVariableName(index_2), getVariableType(index_2),
+							getVariableDeclaringClassName(index_2),
+							isVariableStatic(index_2),
+							getVariableName(index_1), getVariableType(index_1),
+							getVariableDeclaringClassName(index_1),
+							isVariableStatic(index_1),
+							getBehaviorName(index_2),
+							getBehaviorSignature(index_2)));
+				} else if (npeReceiverGroup.size() == 3) {
+					// indirectField.field
+					System.out.println("HHHHEEEEEEEEEEELLLLLLLLLLPPPPPPPPPP");
+				}
 			}
 		}
 
-		return key;
+		return keyList;
 	}
 
-	private static ArrayList<ArrayList<Integer>> getNPEReceiverGroup(
+	private static ArrayList<ArrayList<Integer>> getNPEReceiverGroupList(
 			ArrayList<Integer> npeReceiverIndexList) {
 		ArrayList<ArrayList<Integer>> npeReceiverGroupList = new ArrayList<>();
-
 		for (int i = 0; i < npeReceiverIndexList.size(); i++) {
 			ArrayList<Integer> npeReceiverGroup = new ArrayList<>();
 			int npeReceiverIndex = npeReceiverIndexList.get(i);
+			npeReceiverGroup.add(npeReceiverIndex);
 			int nr = getNrAsInteger(npeReceiverIndex);
 			int checkIndex = npeReceiverIndex - 1;
 			while (checkIndex >= 0) {
@@ -141,7 +204,6 @@ public class DataMatcher {
 				} else
 					break;
 			}
-
 			npeReceiverGroupList.add(npeReceiverGroup);
 
 		}
@@ -172,23 +234,24 @@ public class DataMatcher {
 
 	private static ArrayList<Integer> getNPEReceiverIndex(String className,
 			int lineNr, String behaviorName) {
+		// FIXME: list empty
+		receiverList.remove(0);
 		ArrayList<Integer> receiverElementIndexList = new ArrayList<>();
 		for (int i = 0; i < receiverList.size(); i++) {
 			ArrayList<String> receiverElement = receiverList.get(i);
 
-			int checkIndex = 0;
+			// int checkIndex = 0;
 			if (getLineNumberAsInteger(receiverElement) == lineNr
 					&& receiverElement.get(6).equals(className)
 					&& receiverElement.get(7).equals(behaviorName)) {
 				receiverElementIndexList.add(i);
-				checkIndex = i;
 			}
-			if (i > checkIndex
-					&& getLineNumberAsInteger(receiverElement) != lineNr
-					&& !receiverElement.get(6).equals(className)
-					&& !receiverElement.get(7).equals(behaviorName)) {
-				break;
-			}
+			// if (i > checkIndex
+			// && getLineNumberAsInteger(receiverElement) != lineNr
+			// && !receiverElement.get(6).equals(className)
+			// && !receiverElement.get(7).equals(behaviorName)) {
+			// break;
+			// }
 		}
 		return receiverElementIndexList;
 	}
@@ -235,67 +298,6 @@ public class DataMatcher {
 
 	private static String getVarID(int npeReceiverIndex) {
 		return receiverList.get(npeReceiverIndex).get(2);
-	}
-
-	private static void printNPELocation(int npeReceiverIndex,
-			ArrayList<Integer> npeReceiverGroup) {
-
-	}
-
-	private class NPEKey {
-		public String className;
-		public int lineNr;
-		public String behaviorName;
-
-		public NPEKey(String className, int lineNr, String behaviorName) {
-			this.className = className;
-			this.lineNr = lineNr;
-			this.behaviorName = behaviorName;
-		}
-
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + getOuterType().hashCode();
-			result = prime * result
-					+ ((behaviorName == null) ? 0 : behaviorName.hashCode());
-			result = prime * result
-					+ ((className == null) ? 0 : className.hashCode());
-			result = prime * result + lineNr;
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			NPEKey other = (NPEKey) obj;
-			if (!getOuterType().equals(other.getOuterType()))
-				return false;
-			if (behaviorName == null) {
-				if (other.behaviorName != null)
-					return false;
-			} else if (!behaviorName.equals(other.behaviorName))
-				return false;
-			if (className == null) {
-				if (other.className != null)
-					return false;
-			} else if (!className.equals(other.className))
-				return false;
-			if (lineNr != other.lineNr)
-				return false;
-			return true;
-		}
-
-		private DataMatcher getOuterType() {
-			return DataMatcher.this;
-		}
-
 	}
 
 }
