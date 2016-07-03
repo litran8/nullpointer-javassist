@@ -6,16 +6,12 @@ import java.util.ArrayList;
 
 public class CsvFileCreator {
 
-	private static FileWriter writer;
+	private FileWriter writer;
 	private final int dataSize = 11;
 
 	public CsvFileCreator(String path) throws IOException {
 		writer = new FileWriter(path);
 		generateCsvFile();
-	}
-
-	public FileWriter getWriter() {
-		return this.writer;
 	}
 
 	private void generateCsvFile() throws IOException {

@@ -16,6 +16,7 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
+import ch.unibe.scg.nullSpy.instrumentator.controller.Printer;
 import ch.unibe.scg.nullSpy.instrumentator.controller.VariableAnalyzer;
 import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
@@ -23,6 +24,7 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
 	private ConstPool constPool;
 	private static int count = 0;
+	private CtBehavior behavior;
 
 	public MethodInvocationAnalyzer(CtClass cc) {
 		super(cc);
@@ -58,15 +60,16 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 		// System.out.println();
 
 		// FIXME: class choice
-		// if (!cc.getName().equals("org.jhotdraw.applet.DrawApplet"))
-		// return;
+		if (!cc.getName().equals("org.jhotdraw.applet.DrawApplet"))
+			return;
 
 		for (CtBehavior behavior : behaviorList) {
+			this.behavior = behavior;
 			// System.out.println(behavior.getName());
 
 			// FIXME: method choice
-			// if (!behavior.getName().equals("createFontChoice"))
-			// continue;
+			if (!behavior.getName().equals("createFontChoice"))
+				continue;
 
 			MethodInfo methodInfo = behavior.getMethodInfo2();
 			constPool = methodInfo.getConstPool();
@@ -77,16 +80,16 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 			}
 
 			// FIXME: just printer mark
-			// Printer p = new Printer();
-			// p.printBehavior(behavior, 0);
-			// LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-			// .getAttribute(LineNumberAttribute.tag);
-			// for (int j = 0; j < lineNrAttr.tableLength(); j++) {
-			// int line = lineNrAttr.lineNumber(j);
-			// int pc = lineNrAttr.toStartPc(line);
-			// System.out.println("pc: " + pc + ", line: "
-			// + lineNrAttr.lineNumber(j));
-			// }
+			Printer p = new Printer();
+			p.printBehavior(behavior, 0);
+			LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+					.getAttribute(LineNumberAttribute.tag);
+			for (int j = 0; j < lineNrAttr.tableLength(); j++) {
+				int line = lineNrAttr.lineNumber(j);
+				int pc = lineNrAttr.toStartPc(line);
+				System.out.println("pc: " + pc + ", line: "
+						+ lineNrAttr.lineNumber(j));
+			}
 
 			CodeIterator codeIter = codeAttr.iterator();
 			codeIter.begin();
@@ -459,9 +462,9 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 	}
 
 	private boolean isLocalVar(int op) {
-		return op == Opcode.AALOAD || op == Opcode.ALOAD_0
-				|| op == Opcode.ALOAD_1 || op == Opcode.ALOAD_2
-				|| op == Opcode.ALOAD_3 || op == Opcode.ALOAD;
+		return op == Opcode.ALOAD_0 || op == Opcode.ALOAD_1
+				|| op == Opcode.ALOAD_2 || op == Opcode.ALOAD_3
+				|| op == Opcode.ALOAD;
 	}
 
 	private boolean isField(int op) {
@@ -516,6 +519,36 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 				pos = codeIter.next();
 			}
 
+		} else if (op == Opcode.AALOAD) {
+			ArrayList<Integer> posList = new ArrayList<>();
+			codeIter.begin();
+			pos = 0;
+			while (codeIter.hasNext() && pos < pos2) {
+				pos = codeIter.next();
+				posList.add(pos);
+			}
+
+			int posListSize = posList.size();
+
+			for (int i = posListSize - 1; i >= 0; i--) {
+				int provOp = codeIter.byteAt(posList.get(i));
+				if (isLocalVar(provOp) || isField(provOp)) {
+					int amountOfNonReceiver = posListSize - 1 - i;
+					removeReceiverFromList(possibleReceiverIntervalList,
+							amountOfNonReceiver - 1);
+					startPos = possibleReceiverIntervalList
+							.get(possibleReceiverIntervalList.size() - 1).startPc;
+					removeReceiverFromList(possibleReceiverIntervalList, 1);
+					break;
+				}
+			}
+			pos = codeIter.next();
+			op = codeIter.byteAt(pos);
+			if (op == Opcode.CHECKCAST) {
+				pos2 = pos;
+				pos = codeIter.next();
+			}
+
 		} else {
 			if (!codeIter.hasNext())
 				return;
@@ -531,6 +564,16 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 					endPos);
 		else
 			return;
+
+	}
+
+	private void removeReceiverFromList(
+			ArrayList<MethodReceiverInterval> possibleReceiverIntervalList,
+			int removeAmaount) {
+		for (int i = removeAmaount; i > 0; i--) {
+			possibleReceiverIntervalList.remove(possibleReceiverIntervalList
+					.size() - 1);
+		}
 
 	}
 
