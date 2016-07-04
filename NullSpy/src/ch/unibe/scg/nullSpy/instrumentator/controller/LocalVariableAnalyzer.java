@@ -7,6 +7,7 @@ import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
+import javassist.Modifier;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
@@ -210,16 +211,80 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	}
 
 	private void storeParameterData(CtBehavior behavior)
-			throws NotFoundException {
+			throws NotFoundException, BadBytecode, CannotCompileException {
 		// TODO Auto-generated method stub
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
 				.getAttribute(LocalVariableAttribute.tag);
-
-		if (localVarAttr.tableLength() == 0)
-			return;
+		String behaviorName = behavior.getName();
 
 		int behaviorParamAmount = behavior.getParameterTypes().length;
+		if (localVarAttr.tableLength() == 0 || behaviorParamAmount == 0
+				|| behaviorName.equals("<clinit>")
+				|| behaviorName.contains("$"))
+			return;
+
+		boolean isBehaviorStatic = Modifier.isStatic(behavior.getModifiers());
+
+		int startIndex = isBehaviorStatic ? 0 : 1;
+		if (!isBehaviorStatic)
+			behaviorParamAmount += 1;
+
+		for (int i = startIndex; i < behaviorParamAmount; i++) {
+
+			int varSlot = localVarAttr.index(i);
+			String varName = localVarAttr.variableName(i);
+			String varType = localVarAttr.signature(i);
+			if (!(varType.startsWith("[L") && varType.startsWith("L")))
+				return;
+			String varID = "localVariable_" + varSlot;
+			int varLineNr = behavior.getMethodInfo().getLineNumber(0);
+
+			// create localVar
+			LocalVar localVar = new LocalVar(varID, varName, varLineNr,
+					varType, 0, 0, 0, cc, behavior, varSlot, varSlot);
+
+			// save localVar into list
+			localVarList.add(localVar);
+
+			// hashMap
+			localVarMap.put(
+					new LocalVarKey(varName, cc.getName(), behavior.getName(),
+							behavior.getSignature()), localVar);
+
+			// change byteCode
+			adaptByteCode(localVar);
+
+			// StringBuilder sb = new StringBuilder();
+			// sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer(");
+			// sb.append("\"" + cc.getName() + "\"");
+			// sb.append(",");
+			// sb.append("\"" + behavior.getName() + "\"");
+			// sb.append(",");
+			// sb.append("\"" + behavior.getSignature() + "\"");
+			// sb.append(",");
+			// sb.append("\"" + varID + "\"");
+			// sb.append(",");
+			// sb.append("\"" + varName + "\"");
+			// sb.append(",");
+			// sb.append("\"" + varType + "\"");
+			// sb.append(",");
+			// sb.append(varName);
+			// sb.append(",");
+			// sb.append(varSlot);
+			// sb.append(",");
+			// sb.append(varLineNr);
+			// sb.append(",");
+			// sb.append(0);
+			// sb.append(",");
+			// sb.append(0);
+			// sb.append(",");
+			// sb.append(0);
+			// sb.append(");");
+			// String s = sb.toString();
+			// behavior.insertBefore(s);
+
+		}
 
 	}
 
