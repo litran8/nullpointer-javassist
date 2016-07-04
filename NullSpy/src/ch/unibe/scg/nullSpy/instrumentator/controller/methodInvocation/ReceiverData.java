@@ -113,7 +113,7 @@ public class ReceiverData {
 					varData.add(Integer.toString(i));
 
 					// field #1
-					varData.add("");
+					varData.add(" ");
 				}
 			}
 		}

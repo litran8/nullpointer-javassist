@@ -71,13 +71,16 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	private void instrumentAfterLocVarObject(CtBehavior[] behaviorList)
 			throws BadBytecode, CannotCompileException, NotFoundException {
 
-		for (CtBehavior method : behaviorList) {
+		for (CtBehavior behavior : behaviorList) {
 			// if (method.getName().equals("initManager")) {
-			CodeAttribute codeAttr = method.getMethodInfo().getCodeAttribute();
+			CodeAttribute codeAttr = behavior.getMethodInfo()
+					.getCodeAttribute();
 
 			if (codeAttr == null) {
 				continue;
 			}
+
+			storeParameterData(behavior);
 
 			LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
 					.getAttribute(LocalVariableAttribute.tag);
@@ -108,7 +111,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 				if (isLocVarObject(op) && pos <= methodMaxPc) {
 
-					int startPos = getStartPos(method, pos);
+					int startPos = getStartPos(behavior, pos);
 					int afterPos = codeIter.next();
 
 					int localVarAttrIndex = getLocalVarAttrIndex(codeIter,
@@ -151,7 +154,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					// create localVar
 					LocalVar localVar = new LocalVar(varID, localVarName,
 							localVarLineNr, localVarType, pos, startPos,
-							afterPos, cc, method, localVarAttrIndex,
+							afterPos, cc, behavior, localVarAttrIndex,
 							localVarSlot);
 
 					// save localVar into list
@@ -159,7 +162,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 					// hashMap
 					localVarMap.put(new LocalVarKey(localVarName, cc.getName(),
-							method.getName(), method.getSignature()), localVar);
+							behavior.getName(), behavior.getSignature()),
+							localVar);
 
 					// change byteCode
 					adaptByteCode(localVar);
@@ -167,7 +171,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					// update codeAttr, codeIter; set codeIter to last
 					// checked
 					// pos and iterate further
-					codeAttr = method.getMethodInfo().getCodeAttribute();
+					codeAttr = behavior.getMethodInfo().getCodeAttribute();
 					codeIter = codeAttr.iterator();
 					codeIter.move(afterPos);
 
@@ -190,8 +194,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			}
 
 			// calculates the time modified project uses
-			if (method.getName().equals("main"))
-				addTimeToModifiedProject(method);
+			if (behavior.getName().equals("main"))
+				addTimeToModifiedProject(behavior);
 
 			// Printer p = new Printer();
 			// System.out.println("Method: " + method.getName());
@@ -202,6 +206,20 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			// }
 		}
+
+	}
+
+	private void storeParameterData(CtBehavior behavior)
+			throws NotFoundException {
+		// TODO Auto-generated method stub
+		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
+		LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
+				.getAttribute(LocalVariableAttribute.tag);
+
+		if (localVarAttr.tableLength() == 0)
+			return;
+
+		int behaviorParamAmount = behavior.getParameterTypes().length;
 
 	}
 
@@ -286,6 +304,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.DataMatcher.printLocationOnMatch");
 		sb.append("(");
 		sb.append("\"" + MainProjectModifier.csvPath + "\"");
+		// sb.append("\"" + "C:\\\\Users\\\\Lina Tran\\\\Desktop\\\\VarData.csv"
+		// + "\""); // testLine
 		sb.append(",");
 		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.getLocalVarMap()");
 		sb.append(",");
@@ -298,6 +318,9 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		sb.append("stElem[0].getMethodName()");
 		sb.append(");");
 
+		// sb.append("System.out.println(stElem[0].getClassName());");
+		// sb.append("System.out.println(stElem[0].getLineNumber());");
+		// sb.append("System.out.println(stElem[0].getMethodName());");
 		sb.append("System.out.println($e); throw $e;");
 
 		sb.append("}");

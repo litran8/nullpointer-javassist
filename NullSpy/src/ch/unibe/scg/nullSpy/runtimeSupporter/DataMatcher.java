@@ -35,10 +35,15 @@ public class DataMatcher {
 		storeReceiverDataToMap(csvPath);
 		ArrayList<Integer> npeReceiverIndexList = getNPEReceiverIndex(
 				className, lineNr, behaviorName);
+		// System.out.println("npeReceiverIndexListSize: "
+		// + npeReceiverIndexList.size());
 		ArrayList<ArrayList<Integer>> npeReceiverGroupList = getNPEReceiverGroupList(npeReceiverIndexList);
+		// System.out.println("npeReceiverGroupListSize: "
+		// + npeReceiverGroupList.size());
 
 		ArrayList<Key> keyList = getVariableKey(npeReceiverIndexList,
 				npeReceiverGroupList);
+		// System.out.println("keyListSize: " + keyList.size());
 		printNPELocation(keyList);
 
 	}
@@ -180,11 +185,13 @@ public class DataMatcher {
 			ArrayList<Integer> npeReceiverIndexList) {
 		ArrayList<ArrayList<Integer>> npeReceiverGroupList = new ArrayList<>();
 		for (int i = 0; i < npeReceiverIndexList.size(); i++) {
+
 			ArrayList<Integer> npeReceiverGroup = new ArrayList<>();
 			int npeReceiverIndex = npeReceiverIndexList.get(i);
 			npeReceiverGroup.add(npeReceiverIndex);
 			int nr = getNrAsInteger(npeReceiverIndex);
 			int checkIndex = npeReceiverIndex - 1;
+
 			while (checkIndex >= 0) {
 				int checkNr = getNrAsInteger(checkIndex);
 				if (checkNr == nr) {
@@ -198,6 +205,7 @@ public class DataMatcher {
 			while (checkIndex < receiverList.size()) {
 				int checkNr = getNrAsInteger(checkIndex);
 				if (checkNr == nr) {
+					i++;
 					npeReceiverGroup.add(checkIndex);
 					checkIndex++;
 					continue;
@@ -273,6 +281,7 @@ public class DataMatcher {
 	}
 
 	private static String getVariableDeclaringClassName(int npeReceiverIndex) {
+		ArrayList<String> list = receiverList.get(npeReceiverIndex);
 		return receiverList.get(npeReceiverIndex).get(10);
 	}
 
