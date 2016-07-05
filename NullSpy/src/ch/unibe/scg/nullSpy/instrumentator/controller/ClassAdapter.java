@@ -30,7 +30,6 @@ public class ClassAdapter {
 
 	private static ClassAdapter instance;
 
-	private HashMap<String, HashMap<Integer, Variable>> methodInvokationVarMap;
 	private ArrayList<Variable> fieldIsWritterInfoList = new ArrayList<Variable>();
 	private HashMap<FieldKey, Field> fieldMap = new HashMap<>();
 	private ArrayList<Variable> localVarList = new ArrayList<>();
@@ -72,13 +71,13 @@ public class ClassAdapter {
 
 		MethodInvocationAnalyzer methodInvokationAnalyzer = new MethodInvocationAnalyzer(
 				cc);
-		// methodInvokationAnalyzer.getMethodReceiver();
+		methodInvokationAnalyzer.getMethodReceiver();
 
 		System.out.println("\n------------- FIELD -------------\n");
 
 		FieldAnalyzer fieldAnalyzer = new FieldAnalyzer(cc,
 				fieldIsWritterInfoList, fieldMap);
-		// fieldAnalyzer.instrumentAfterFieldAssignment();
+		fieldAnalyzer.instrumentAfterFieldAssignment();
 
 		System.out.println("\n------------- LOCAL VAR -------------\n");
 

@@ -181,10 +181,6 @@ public class MainProjectModifier {
 		try {
 			// modify class
 			ClassAdapter classAdapter = ClassAdapter.getInstance();
-			// if (!cc.isInterface()
-			// && cc.getName()
-			// .equals("org.jhotdraw.contrib.html.DisposableResourceManagerFactory"))
-			// {
 			if (!cc.isInterface()) {
 				classAdapter.adaptProject(cc);
 			}

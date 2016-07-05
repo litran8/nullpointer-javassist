@@ -52,10 +52,8 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	public void instrumentAfterLocVarAssignment() throws BadBytecode,
 			CannotCompileException, NotFoundException {
 
-		// if (method.getName().equals("elementStarted"))
 		instrumentAfterLocVarObject(cc.getDeclaredConstructors());
 		instrumentAfterLocVarObject(cc.getDeclaredMethods());
-		// }
 	}
 
 	/**
@@ -74,7 +72,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			throws BadBytecode, CannotCompileException, NotFoundException {
 
 		for (CtBehavior behavior : behaviorList) {
-			// if (method.getName().equals("initManager")) {
 			CodeAttribute codeAttr = behavior.getMethodInfo()
 					.getCodeAttribute();
 
@@ -118,9 +115,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 					int localVarAttrIndex = getLocalVarAttrIndex(codeIter,
 							localVarAttrAsList, pos, "astore.*");
-
-					// Printer p = new Printer();
-					// p.printMethod(method, 0);
 
 					int localVarSlot = localVarAttrAsList
 							.get(localVarAttrIndex).index;
@@ -183,15 +177,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					lineNrAttr = (LineNumberAttribute) codeAttr
 							.getAttribute(LineNumberAttribute.tag);
 					localVarAttrAsList = getLocalVarAttrAsList(localVarAttr);
-
-					// Printer p = new Printer();
-					// System.out.println("Method: " +
-					// method.getName());
-					// System.out
-					// .println("MethodParams: " +
-					// method.getSignature());
-					// p.printMethod(method, 0);
-					// System.out.println();
 				}
 			}
 
@@ -199,21 +184,12 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			if (behavior.getName().equals("main"))
 				addTimeToModifiedProject(behavior);
 
-			// Printer p = new Printer();
-			// System.out.println("Method: " + method.getName());
-			// System.out.println("MethodParams: " +
-			// method.getSignature());
-			// p.printMethod(method, 0);
-			// System.out.println();
-
-			// }
 		}
 
 	}
 
 	private void storeParameterData(CtBehavior behavior)
 			throws NotFoundException, BadBytecode, CannotCompileException {
-		// TODO Auto-generated method stub
 
 		if (cc.getName().equals("org.jhotdraw.util.JDOStorageFormat"))
 			System.out.println();
@@ -226,7 +202,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		if (behaviorName.equals("retrieveAll"))
 			System.out.println();
 
-		// FIXME: notfoundexception
 		String behaviorSignature = behavior.getSignature();
 		int behaviorParamAmount = Descriptor.numOfParameters(behaviorSignature);
 		if (localVarAttr.tableLength() == 0 || behaviorParamAmount == 0
@@ -264,38 +239,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			// change byteCode
 			adaptByteCode(localVar);
-
-			// StringBuilder sb = new StringBuilder();
-			// sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer(");
-			// sb.append("\"" + cc.getName() + "\"");
-			// sb.append(",");
-			// sb.append("\"" + behavior.getName() + "\"");
-			// sb.append(",");
-			// sb.append("\"" + behavior.getSignature() + "\"");
-			// sb.append(",");
-			// sb.append("\"" + varID + "\"");
-			// sb.append(",");
-			// sb.append("\"" + varName + "\"");
-			// sb.append(",");
-			// sb.append("\"" + varType + "\"");
-			// sb.append(",");
-			// sb.append(varName);
-			// sb.append(",");
-			// sb.append(varSlot);
-			// sb.append(",");
-			// sb.append(varLineNr);
-			// sb.append(",");
-			// sb.append(0);
-			// sb.append(",");
-			// sb.append(0);
-			// sb.append(",");
-			// sb.append(0);
-			// sb.append(");");
-			// String s = sb.toString();
-			// behavior.insertBefore(s);
-
 		}
-
 	}
 
 	/**
@@ -306,8 +250,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	 */
 	private static boolean isLocVarObject(int op) {
 		return Mnemonic.OPCODE[op].matches("astore.*");
-		// return Mnemonic.OPCODE[op].matches("a{1,2}store.*");
-
 	}
 
 	private int getStartPos(CtBehavior behavior, int pos) throws BadBytecode {
@@ -393,9 +335,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		sb.append("stElem[0].getMethodName()");
 		sb.append(");");
 
-		// sb.append("System.out.println(stElem[0].getClassName());");
-		// sb.append("System.out.println(stElem[0].getLineNumber());");
-		// sb.append("System.out.println(stElem[0].getMethodName());");
 		sb.append("System.out.println($e); throw $e;");
 
 		sb.append("}");

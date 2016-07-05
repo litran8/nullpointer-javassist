@@ -33,10 +33,6 @@ public class ByteCodeAdapter {
 
 		byte[] byteCode = getInsertCodeByteArray(var);
 
-		// Printer p = new Printer();
-		// System.out.println("\nBefore:");
-		// p.printMethod(behavior, var.getStartPos());
-
 		if (insertInExpectedLineNr) {
 			iter.move(var.getStorePos());
 			iter.next();
@@ -47,22 +43,12 @@ public class ByteCodeAdapter {
 			iter.insertEx(var.getAfterPos(), byteCode);
 		}
 
-		// Printer p = new Printer();
-		// System.out.println("\nBefore:");
-		// p.printMethod(behavior, var.getStartPos());
-
 		codeAttribute.computeMaxStack();
 
 		behavior.getMethodInfo().doPreverify = true;
 		behavior.getMethodInfo().rebuildStackMapIf6(
 				behavior.getDeclaringClass().getClassPool(),
 				behavior.getDeclaringClass().getClassFile2());
-
-		// System.out.println("\n\nAfter:");
-		// p.printMethod(behavior, var.getStorePos());
-		//
-		// System.out.println();
-
 	}
 
 	private byte[] getInsertCodeByteArray(Variable var)
@@ -77,12 +63,8 @@ public class ByteCodeAdapter {
 		ConstPool cp = behavior.getMethodInfo2().getConstPool();
 		Bytecode testMethodByteCode = new Bytecode(cp);
 
-		// testMethod params
-		testMethodByteCode.addLdc(behavior.getDeclaringClass().getName()); // class
-																			// where
-																			// var
-																			// is
-																			// used
+		// testMethod params; param = class where var is used
+		testMethodByteCode.addLdc(behavior.getDeclaringClass().getName());
 		testMethodByteCode.addLdc(behavior.getName());
 		testMethodByteCode.addLdc(behavior.getSignature());
 		testMethodByteCode.addLdc(varID);
@@ -287,11 +269,7 @@ public class ByteCodeAdapter {
 	public void insertTestLineAfterFieldInstantiatedOutSideMethod(
 			CtBehavior constructor, Variable var)
 			throws CannotCompileException, BadBytecode {
-		// insert before or after ????
 		constructor.insertBefore(getTestMethodAsString(constructor, var));
-		// Printer p = new Printer();
-		// p.printMethod(var.getBehavior(), 0);
-		// System.out.println();
 	}
 
 	private String getTestMethodAsString(CtBehavior behavior, Variable var) {
