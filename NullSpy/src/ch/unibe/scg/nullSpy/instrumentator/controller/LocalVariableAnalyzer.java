@@ -12,6 +12,7 @@ import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
+import javassist.bytecode.Descriptor;
 import javassist.bytecode.InstructionPrinter;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
@@ -213,12 +214,21 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	private void storeParameterData(CtBehavior behavior)
 			throws NotFoundException, BadBytecode, CannotCompileException {
 		// TODO Auto-generated method stub
+
+		if (cc.getName().equals("org.jhotdraw.util.JDOStorageFormat"))
+			System.out.println();
+
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
 				.getAttribute(LocalVariableAttribute.tag);
 		String behaviorName = behavior.getName();
 
-		int behaviorParamAmount = behavior.getParameterTypes().length;
+		if (behaviorName.equals("retrieveAll"))
+			System.out.println();
+
+		// FIXME: notfoundexception
+		String behaviorSignature = behavior.getSignature();
+		int behaviorParamAmount = Descriptor.numOfParameters(behaviorSignature);
 		if (localVarAttr.tableLength() == 0 || behaviorParamAmount == 0
 				|| behaviorName.equals("<clinit>")
 				|| behaviorName.contains("$"))
