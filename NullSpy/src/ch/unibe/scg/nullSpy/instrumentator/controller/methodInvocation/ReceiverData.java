@@ -37,9 +37,9 @@ public class ReceiverData {
 		String isStatic;
 		int op = codeIter.byteAt(pos);
 		if (op == Opcode.GETFIELD)
-			isStatic = Boolean.toString(true);
-		else
 			isStatic = Boolean.toString(false);
+		else
+			isStatic = Boolean.toString(true);
 
 		String className = this.behavior.getDeclaringClass().getName();
 		String declaringClassName = constPool.getFieldrefClassName(index);

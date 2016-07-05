@@ -58,21 +58,26 @@ public class DataMatcher {
 				Field field = (Field) var;
 
 				String varName = field.getVarName();
+				linkVarName = "this." + varName;
 				IndirectFieldObject indirectVarObj = field
 						.getIndirectFieldObject();
 
-				String indirectVarName = indirectVarObj.getIndirectVarName();
-				linkVarName = indirectVarName + "." + varName;
-				String indirectVarDeclaringClassName = indirectVarObj
-						.getIndirectVarDeclaringClassName();
-				String indirectVarType = indirectVarObj.getIndirectVarType();
+				if (indirectVarObj != null) {
 
-				if (!indirectVarDeclaringClassName.equals("")
-						&& !indirectVarType.equals("")) {
-					linkVarName = indirectVarDeclaringClassName + "."
-							+ indirectVarName + "." + varName;
+					String indirectVarName = indirectVarObj
+							.getIndirectVarName();
+					linkVarName = indirectVarName + "." + varName;
+					String indirectVarDeclaringClassName = indirectVarObj
+							.getIndirectVarDeclaringClassName();
+					String indirectVarType = indirectVarObj
+							.getIndirectVarType();
+
+					if (!indirectVarDeclaringClassName.equals("")
+							&& !indirectVarType.equals("")) {
+						linkVarName = indirectVarDeclaringClassName + "."
+								+ indirectVarName + "." + varName;
+					}
 				}
-
 				System.out.print("Field ");
 			} else if (localVarMap.containsKey(key)) {
 				var = localVarMap.get(key);
@@ -142,6 +147,7 @@ public class DataMatcher {
 		for (int i = 0; i < npeReceiverGroupList.size(); i++) {
 			ArrayList<Integer> npeReceiverGroup = npeReceiverGroupList.get(i);
 			int index_1 = npeReceiverGroup.get(0);
+			System.out.println(getVariableName(index_1));
 			String varID = getVarID(index_1);
 
 			if (!varID.equals("field") && npeReceiverGroup.size() == 1) {
@@ -161,16 +167,29 @@ public class DataMatcher {
 				} else if (npeReceiverGroup.size() == 2) {
 					// this.field; aload.field; staticField.field
 					int index_2 = npeReceiverGroup.get(1);
-					keyList.add(new FieldKey(
-							getClassNameWhereVariableIsUsed(index_2),
-							getVariableName(index_2), getVariableType(index_2),
-							getVariableDeclaringClassName(index_2),
-							isVariableStatic(index_2),
-							getVariableName(index_1), getVariableType(index_1),
-							getVariableDeclaringClassName(index_1),
-							isVariableStatic(index_1),
-							getBehaviorName(index_2),
-							getBehaviorSignature(index_2)));
+					System.out.println(getVariableName(index_2));
+					if (getVariableName(index_1).equals("this"))
+						keyList.add(new FieldKey(
+								getClassNameWhereVariableIsUsed(index_2),
+								getVariableName(index_2),
+								getVariableType(index_2),
+								getVariableDeclaringClassName(index_2),
+								isVariableStatic(index_2), "", "", "", false,
+								getBehaviorName(index_2),
+								getBehaviorSignature(index_2)));
+					else
+						keyList.add(new FieldKey(
+								getClassNameWhereVariableIsUsed(index_2),
+								getVariableName(index_2),
+								getVariableType(index_2),
+								getVariableDeclaringClassName(index_2),
+								isVariableStatic(index_2),
+								getVariableName(index_1),
+								getVariableType(index_1),
+								getVariableDeclaringClassName(index_1),
+								isVariableStatic(index_1),
+								getBehaviorName(index_2),
+								getBehaviorSignature(index_2)));
 				} else if (npeReceiverGroup.size() == 3) {
 					// indirectField.field
 					System.out.println("HHHHEEEEEEEEEEELLLLLLLLLLPPPPPPPPPP");
