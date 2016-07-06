@@ -53,6 +53,7 @@ public class DataMatcher {
 			Key key = keyList.get(i);
 			Variable var = null;
 			String linkVarName = "";
+			String varID = "";
 			if (fieldMap.containsKey(key)) {
 				var = fieldMap.get(key);
 				Field field = (Field) var;
@@ -82,7 +83,11 @@ public class DataMatcher {
 			} else if (localVarMap.containsKey(key)) {
 				var = localVarMap.get(key);
 				linkVarName = var.getVarName();
-				System.out.print("LocalVariable ");
+				varID = var.getVarID();
+				if (varID.startsWith("p"))
+					System.out.print("Parameter ");
+				else
+					System.out.print("LocalVariable ");
 			} else {
 				return;
 			}
@@ -91,14 +96,18 @@ public class DataMatcher {
 					.getClassNameInWhichVarIsUsed();
 			int varLineNr = var.getVarLineNr();
 
-			printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName);
+			printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName,
+					varID);
 		}
 
 	}
 
 	private static void printNullLink(String className, int lineNr,
-			String linkVarName) {
-		System.out.print(linkVarName + " at line " + lineNr + " is null: ");
+			String linkVarName, String varID) {
+		if (varID.startsWith("p"))
+			System.out.print(linkVarName + " is null: ");
+		else
+			System.out.print(linkVarName + " at line " + lineNr + " is null: ");
 		System.out.println(getNullLink(className, lineNr));
 	}
 
@@ -147,7 +156,6 @@ public class DataMatcher {
 		for (int i = 0; i < npeReceiverGroupList.size(); i++) {
 			ArrayList<Integer> npeReceiverGroup = npeReceiverGroupList.get(i);
 			int index_1 = npeReceiverGroup.get(0);
-			System.out.println(getVariableName(index_1));
 			String varID = getVarID(index_1);
 
 			if (!varID.equals("field") && npeReceiverGroup.size() == 1) {
@@ -167,7 +175,6 @@ public class DataMatcher {
 				} else if (npeReceiverGroup.size() == 2) {
 					// this.field; aload.field; staticField.field
 					int index_2 = npeReceiverGroup.get(1);
-					System.out.println(getVariableName(index_2));
 					if (getVariableName(index_1).equals("this"))
 						keyList.add(new FieldKey(
 								getClassNameWhereVariableIsUsed(index_2),
@@ -300,7 +307,6 @@ public class DataMatcher {
 	}
 
 	private static String getVariableDeclaringClassName(int npeReceiverIndex) {
-		ArrayList<String> list = receiverList.get(npeReceiverIndex);
 		return receiverList.get(npeReceiverIndex).get(10);
 	}
 

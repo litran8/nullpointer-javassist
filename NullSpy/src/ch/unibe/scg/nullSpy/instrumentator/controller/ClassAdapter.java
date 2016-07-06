@@ -85,6 +85,8 @@ public class ClassAdapter {
 				localVarList, localVarMap);
 		localVarAnalyzer.instrumentAfterLocVarAssignment();
 
+		MainBehaviorModifier.addTryCatchToMainMethod(cc);
+
 		System.out.println();
 	}
 }

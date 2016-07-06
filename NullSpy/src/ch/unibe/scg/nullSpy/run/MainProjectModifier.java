@@ -9,7 +9,6 @@ import java.nio.file.Files;
 
 import javassist.ClassPool;
 import javassist.CtClass;
-import javassist.CtMethod;
 import javassist.NotFoundException;
 import javassist.bytecode.ClassFile;
 import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
@@ -18,8 +17,7 @@ import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.CsvFileCr
 public class MainProjectModifier {
 
 	private static String originalProjectBinPath;
-	private static String modifiedProjectDestDirPath;
-	private static String mainClassNameOfProject;
+	private static String modifiedProjectPath;
 	public static String csvPath;
 	public static CsvFileCreator csv;
 
@@ -28,7 +26,7 @@ public class MainProjectModifier {
 		if (args.length == 2) {
 			originalProjectBinPath = args[0]; // "C:\Users\Lina
 												// Tran\Desktop\bachelor\jhotdraw60b1\bin"
-			modifiedProjectDestDirPath = args[1]; // "C:\\Users\\Lina Tran\\Desktop\\modifiedProject"
+			modifiedProjectPath = args[1]; // "C:\\Users\\Lina Tran\\Desktop\\modifiedProject"
 		} else {
 			System.out.println("Amount of args is not enough or too big.");
 			System.exit(0);
@@ -42,18 +40,20 @@ public class MainProjectModifier {
 		// automatically
 		// add a bin dir
 		// in destDir
-		String modifiedProjectDestPath = modifiedProjectDestDirPath;
 
 		File srcDir = new File(originalProjectBinPath);
-		File modifiedProjectDestDir = new File(modifiedProjectDestPath);
-		File runTimeSupporterDestDir = new File(modifiedProjectDestDirPath);
+		File modifiedProject = new File(modifiedProjectPath);
+		File modifiedProjectRunTimeSupporter = new File(modifiedProjectPath);
+
+		if (!isDirectoryEmpty(modifiedProject)) {
+			deleteDirectoryContent(modifiedProject);
+		}
 
 		// get path to get the runtimeSupportFile
 		String currentWorkingDirPath = new java.io.File(".").getCanonicalPath();
-		File runtimeSupporterFile = new File(currentWorkingDirPath + "\\bin");
+		File nullSpyRuntimeSupporter = new File(currentWorkingDirPath + "\\bin");
 
-		MainProjectModifier.csvPath = modifiedProjectDestDirPath
-				+ "\\\\VarData.csv";
+		MainProjectModifier.csvPath = modifiedProjectPath + "\\\\VarData.csv";
 		csv = new CsvFileCreator(MainProjectModifier.csvPath);
 
 		// make sure source exists
@@ -67,12 +67,11 @@ public class MainProjectModifier {
 
 			try {
 				// modifies project by instrumenting code
-				modifyProjectAndStoreToDestDir(srcDir, modifiedProjectDestDir,
-						false);
+				modifyProjectAndStoreToDestDir(srcDir, modifiedProject, false);
 				csv.closeCsvFile();
 				// modifies project by adding runtime supporter class file
-				modifyProjectAndStoreToDestDir(runtimeSupporterFile,
-						runTimeSupporterDestDir, true);
+				modifyProjectAndStoreToDestDir(nullSpyRuntimeSupporter,
+						modifiedProjectRunTimeSupporter, true);
 			} catch (IOException e) {
 				e.printStackTrace();
 				// error, just exit
@@ -86,6 +85,31 @@ public class MainProjectModifier {
 		// ExecutableJarCreator jar = new ExecutableJarCreator();
 		// jar.createExecJar(modifiedProjectDestBinDirPath,
 		// modifiedProjectDestDirPath, mainClassNameOfProject);
+	}
+
+	private static void deleteDirectoryContent(File file) {
+		File[] files = file.listFiles();
+		if (files != null) {
+			for (File f : files) {
+				if (f.isDirectory())
+					deleteDirectoryContent(f);
+				else
+					f.delete();
+
+			}
+		}
+		if (!file.getName().equals("modifiedProject"))
+			file.delete();
+	}
+
+	private static boolean isDirectoryEmpty(File file) {
+		if (file.isDirectory()) {
+			if (file.list().length > 0)
+				return false;
+			else
+				return true;
+		}
+		return false;
 	}
 
 	/**
@@ -170,13 +194,6 @@ public class MainProjectModifier {
 
 		CtClass cc = pool.get(packageName_ClassName);
 		cc.stopPruning(true);
-
-		// get the main-className for manifest of executable jar
-		for (CtMethod m : cc.getDeclaredMethods()) {
-			if (m.getName().equals("main")) {
-				mainClassNameOfProject = m.getDeclaringClass().getName();
-			}
-		}
 
 		try {
 			// modify class

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import javassist.CannotCompileException;
-import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.Modifier;
@@ -21,7 +20,6 @@ import javassist.bytecode.Opcode;
 import ch.unibe.scg.nullSpy.instrumentator.model.LocalVar;
 import ch.unibe.scg.nullSpy.instrumentator.model.LocalVarKey;
 import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
-import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
 /**
  * Instruments test-code after locVars.
@@ -52,8 +50,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	public void instrumentAfterLocVarAssignment() throws BadBytecode,
 			CannotCompileException, NotFoundException {
 
-		instrumentAfterLocVarObject(cc.getDeclaredConstructors());
-		instrumentAfterLocVarObject(cc.getDeclaredMethods());
+		instrumentAfterLocVarObject(cc.getDeclaredBehaviors());
 	}
 
 	/**
@@ -179,11 +176,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					localVarAttrAsList = getLocalVarAttrAsList(localVarAttr);
 				}
 			}
-
-			// calculates the time modified project uses
-			if (behavior.getName().equals("main"))
-				addTimeToModifiedProject(behavior);
-
 		}
 
 	}
@@ -191,16 +183,10 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 	private void storeParameterData(CtBehavior behavior)
 			throws NotFoundException, BadBytecode, CannotCompileException {
 
-		if (cc.getName().equals("org.jhotdraw.util.JDOStorageFormat"))
-			System.out.println();
-
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
 				.getAttribute(LocalVariableAttribute.tag);
 		String behaviorName = behavior.getName();
-
-		if (behaviorName.equals("retrieveAll"))
-			System.out.println();
 
 		String behaviorSignature = behavior.getSignature();
 		int behaviorParamAmount = Descriptor.numOfParameters(behaviorSignature);
@@ -220,9 +206,9 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			int varSlot = localVarAttr.index(i);
 			String varName = localVarAttr.variableName(i);
 			String varType = localVarAttr.signature(i);
-			if (!(varType.startsWith("[L") && varType.startsWith("L")))
+			if (!(varType.startsWith("[L") || varType.startsWith("L")))
 				return;
-			String varID = "localVariable_" + varSlot;
+			String varID = "parameter_" + varSlot;
 			int varLineNr = behavior.getMethodInfo().getLineNumber(0);
 
 			// create localVar
@@ -308,40 +294,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 							lastBehavior.getSignature());
 		}
 		return inSameBehavior;
-	}
-
-	private void addTimeToModifiedProject(CtBehavior method)
-			throws CannotCompileException, NotFoundException {
-
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("{");
-
-		sb.append("StackTraceElement[] stElem = $e.getStackTrace();");
-		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.DataMatcher.printLocationOnMatch");
-		sb.append("(");
-		sb.append("\"" + MainProjectModifier.csvPath + "\"");
-		// sb.append("\"" + "C:\\\\Users\\\\Lina Tran\\\\Desktop\\\\VarData.csv"
-		// + "\""); // testLine
-		sb.append(",");
-		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.getLocalVarMap()");
-		sb.append(",");
-		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.getFieldMap()");
-		sb.append(",");
-		sb.append("stElem[0].getClassName()");
-		sb.append(",");
-		sb.append("stElem[0].getLineNumber()");
-		sb.append(",");
-		sb.append("stElem[0].getMethodName()");
-		sb.append(");");
-
-		sb.append("System.out.println($e); throw $e;");
-
-		sb.append("}");
-
-		CtClass etype = ClassPool.getDefault().get("java.lang.Throwable");
-		method.addCatch(sb.toString(), etype);
-
 	}
 
 }
