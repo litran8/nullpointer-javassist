@@ -23,7 +23,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
 	private ConstPool constPool;
 	private static int count = 0;
-	private CtBehavior behavior;
 
 	public MethodInvocationAnalyzer(CtClass cc) {
 		super(cc);
@@ -63,7 +62,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 		// return;
 
 		for (CtBehavior behavior : behaviorList) {
-			this.behavior = behavior;
 			// System.out.println(behavior.getName());
 
 			// FIXME: method choice

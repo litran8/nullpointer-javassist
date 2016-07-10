@@ -32,15 +32,6 @@ public class MainProjectModifier {
 			System.exit(0);
 		}
 
-		// String modifiedProjectDestPath = modifiedProjectDestDirPath +
-		// "\\org"; // same
-		// as
-		// destDirPath,
-		// but used for
-		// automatically
-		// add a bin dir
-		// in destDir
-
 		File srcDir = new File(originalProjectBinPath);
 		File modifiedProject = new File(modifiedProjectPath);
 		File modifiedProjectRunTimeSupporter = new File(modifiedProjectPath);

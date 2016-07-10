@@ -263,12 +263,10 @@ public class DataMatcher {
 				j++;
 			}
 		}
-
 	}
 
 	private static ArrayList<Integer> getNPEReceiverIndex(String className,
 			int lineNr, String behaviorName) {
-		// FIXME: list empty
 		receiverList.remove(0);
 		ArrayList<Integer> receiverElementIndexList = new ArrayList<>();
 		for (int i = 0; i < receiverList.size(); i++) {
@@ -280,12 +278,6 @@ public class DataMatcher {
 					&& receiverElement.get(7).equals(behaviorName)) {
 				receiverElementIndexList.add(i);
 			}
-			// if (i > checkIndex
-			// && getLineNumberAsInteger(receiverElement) != lineNr
-			// && !receiverElement.get(6).equals(className)
-			// && !receiverElement.get(7).equals(behaviorName)) {
-			// break;
-			// }
 		}
 		return receiverElementIndexList;
 	}
