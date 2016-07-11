@@ -33,15 +33,10 @@ public class NullDisplayer {
 		storeReceiverDataToMap(csvPath);
 		ArrayList<Integer> npeReceiverIndexList = getNPEReceiverIndex(
 				className, lineNr, behaviorName);
-		// System.out.println("npeReceiverIndexListSize: "
-		// + npeReceiverIndexList.size());
 		ArrayList<ArrayList<Integer>> npeReceiverGroupList = getNPEReceiverGroupList(npeReceiverIndexList);
-		// System.out.println("npeReceiverGroupListSize: "
-		// + npeReceiverGroupList.size());
 
 		ArrayList<Key> keyList = getVariableKey(npeReceiverIndexList,
 				npeReceiverGroupList);
-		// System.out.println("keyListSize: " + keyList.size());
 		printNPELocation(keyList);
 
 	}
@@ -197,6 +192,7 @@ public class NullDisplayer {
 								getBehaviorSignature(index_2)));
 				} else if (npeReceiverGroup.size() == 3) {
 					// indirectField.field
+					// FIXME: what to do..
 					System.out.println("HHHHEEEEEEEEEEELLLLLLLLLLPPPPPPPPPP");
 				}
 			}
