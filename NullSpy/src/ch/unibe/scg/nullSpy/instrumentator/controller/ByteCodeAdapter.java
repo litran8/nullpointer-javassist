@@ -214,8 +214,8 @@ public class ByteCodeAdapter {
 		addIntegerToBytecode(testMethodByteCode, var.getAfterPos());
 
 		// testMethod needs
-		CtClass nullDisplayer = ClassPool.getDefault().get(
-				"ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer");
+		CtClass variableTester = ClassPool.getDefault().get(
+				"ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester");
 		CtClass str = ClassPool.getDefault().get("java.lang.String");
 		CtClass object = ClassPool.getDefault().get("java.lang.Object");
 
@@ -225,14 +225,14 @@ public class ByteCodeAdapter {
 			IndirectVar indirectVar = ((Field) var).getIndirectVar();
 
 			if (indirectVar == null) {
-				testMethodByteCode.addInvokestatic(nullDisplayer,
+				testMethodByteCode.addInvokestatic(variableTester,
 						"testDirectField", CtClass.voidType, new CtClass[] {
 								str, str, str, str, str, str, str,
 								CtClass.intType, object, CtClass.intType,
 								CtClass.intType, CtClass.intType,
 								CtClass.intType });
 			} else {
-				testMethodByteCode.addInvokestatic(nullDisplayer,
+				testMethodByteCode.addInvokestatic(variableTester,
 						"testIndirectField", CtClass.voidType, new CtClass[] {
 								str, str, str, str, str, str, str,
 								CtClass.intType, str, str, str, str, object,
@@ -242,7 +242,7 @@ public class ByteCodeAdapter {
 
 		} else {
 			testMethodByteCode
-					.addInvokestatic(nullDisplayer, "testLocalVar",
+					.addInvokestatic(variableTester, "testLocalVar",
 							CtClass.voidType, new CtClass[] { str, str, str,
 									str, str, str, object, CtClass.intType,
 									CtClass.intType, CtClass.intType,
@@ -273,7 +273,7 @@ public class ByteCodeAdapter {
 	}
 
 	private String getTestMethodAsString(CtBehavior behavior, Variable var) {
-		String s = "ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.test(\""
+		String s = "ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester.test(\""
 				+ behavior.getDeclaringClass().getName()
 				+ "\",\""
 				+ behavior.getName()

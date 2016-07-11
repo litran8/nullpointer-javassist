@@ -20,16 +20,16 @@ public class MainBehaviorModifier {
 				sb.append("{");
 
 				sb.append("StackTraceElement[] stElem = $e.getStackTrace();");
-				sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.DataMatcher.printLocationOnMatch");
+				sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.printLocationOnMatch");
 				sb.append("(");
 				sb.append("\"" + MainProjectModifier.csvPath + "\"");
 				// sb.append("\"" +
 				// "C:\\\\Users\\\\Lina Tran\\\\Desktop\\\\VarData.csv"
 				// + "\""); // testLine
 				sb.append(",");
-				sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.getLocalVarMap()");
+				sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester.getLocalVarMap()");
 				sb.append(",");
-				sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.getFieldMap()");
+				sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester.getFieldMap()");
 				sb.append(",");
 				sb.append("stElem[0].getClassName()");
 				sb.append(",");
@@ -38,7 +38,7 @@ public class MainBehaviorModifier {
 				sb.append("stElem[0].getMethodName()");
 				sb.append(");");
 
-				sb.append("System.out.println($e); throw $e;");
+				sb.append("throw $e;");
 
 				sb.append("}");
 

@@ -83,7 +83,7 @@ public class Main2 {
 
 		// var
 		o = null;
-		ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.testLocalVar(
+		ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester.testLocalVar(
 				"Main2", "testStackMapTable", "signature...",
 				"localVariable_1", "o", "Lobject..", o, 1, 78, 0, 1, 2);
 		//

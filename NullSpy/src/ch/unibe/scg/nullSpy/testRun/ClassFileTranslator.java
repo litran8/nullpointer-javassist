@@ -46,9 +46,13 @@ public class ClassFileTranslator implements Translator {
 				&& !className
 						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.LocalVarKey")
 				&& !className
-						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.DataMatcher")
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.Key")
 				&& !className
-						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.ReceiverData")) {
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester")
+				&& !className
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.ReceiverData")
+				&& !className
+						.equalsIgnoreCase("ch.unibe.scg.nullSpy.runtimeSupporter.ModifiedProjectLauncher")) {
 
 			CtClass cc;
 			if (analyzedClasses.containsKey(className))
