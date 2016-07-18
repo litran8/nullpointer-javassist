@@ -54,15 +54,11 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 			throws CannotCompileException, BadBytecode, IOException,
 			NotFoundException {
 
-		// System.out.println(cc.getName());
-		// System.out.println();
-
 		// FIXME: class choice
 		// if (!cc.getName().equals("org.jhotdraw.applet.DrawApplet"))
 		// return;
 
 		for (CtBehavior behavior : behaviorList) {
-			// System.out.println(behavior.getName());
 
 			// FIXME: method choice
 			// if (!behavior.getName().equals("createFontChoice"))
@@ -118,9 +114,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
 					codeIter.move(lastInvocationPc);
 					codeIter.next();
-
-					// System.out.println();
-
 				}
 			}
 		}
@@ -168,7 +161,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
 				int nameAndType = getNameAndType(codeIter, pos);
 
-				// FIXME: paramCount
 				int paramCount = getParameterAmount(nameAndType);
 
 				// get receiver list
@@ -193,7 +185,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 						codeIter.move(startPos);
 					}
 					continue;
-
 				}
 
 				if (op != Opcode.INVOKESTATIC
@@ -204,7 +195,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 					return;
 				}
 
-				// FIXME: wrong index
 				// get right receiver list index
 				int possibleReceiverIndex = getMethodReceiverIndex(codeIter,
 						receiverIntervalList, op, paramCount);
@@ -229,18 +219,6 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 				}
 
 				int possibleReceiverStartPc = possibleReceiverInterval.startPc;
-
-				// print possible receiver just for testing
-				// LineNumberAttribute lineNrAttr = (LineNumberAttribute)
-				// codeAttr
-				// .getAttribute(LineNumberAttribute.tag);
-				// int lineNr = lineNrAttr.toLineNumber(pos);
-				// System.out.println("LineNr: " + lineNr + ", StartPc: "
-				// + possibleReceiverStartPc);
-				// end testing
-
-				// if (lineNr == 214)
-				// System.out.println();
 
 				// actually storing data in csv file
 				storeMethodreceiverData(behavior, possibleReceiverStartPc);
@@ -558,9 +536,7 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
 		}
 
-		String opString = Mnemonic.OPCODE[op];
-		if (!(opString.matches(".*store.*") || opString.matches(".*ret.*")
-				|| op == Opcode.GOTO || op == Opcode.GOTO_W || op == Opcode.IINC))
+		if (isReceiverCandidate(op))
 			possibleReceiverIntervalList.add(new MethodReceiverInterval(
 					startPos, pos2));
 
@@ -570,6 +546,12 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 		else
 			return;
 
+	}
+
+	private boolean isReceiverCandidate(int op) {
+		String opString = Mnemonic.OPCODE[op];
+		return !((opString.matches(".*store.*") || opString.matches(".*ret.*")
+				|| op == Opcode.GOTO || op == Opcode.GOTO_W || op == Opcode.IINC));
 	}
 
 	private void removeReceiverFromList(
@@ -641,43 +623,3 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 	}
 
 }
-
-// /**
-// * Returns the class name of the target object, which the method is called
-// * on.
-// */
-// public String getClassName(CodeIterator codeIter, int pos) {
-// String cname;
-//
-// int op = codeIter.byteAt(pos);
-// int index = codeIter.u16bitAt(pos + 1);
-//
-// if (op == Opcode.INVOKEINTERFACE)
-// cname = constPool.getInterfaceMethodrefClassName(index);
-// else
-// cname = constPool.getMethodrefClassName(index);
-//
-// if (cname.charAt(0) == '[')
-// cname = Descriptor.toClassName(cname);
-//
-// return cname;
-// }
-//
-// /**
-// * Returns the name of the called method.
-// */
-// public String getMethodName(int nameAndType) {
-// return constPool.getUtf8Info(constPool.getNameAndTypeName(nameAndType));
-// }
-//
-// /**
-// * Returns true if the called method is of a superclass of the current
-// * class.
-// */
-// public boolean isSuper(CtBehavior behavior, int pos) {
-// CodeIterator codeIter = behavior.getMethodInfo().getCodeAttribute()
-// .iterator();
-// return codeIter.byteAt(pos) == Opcode.INVOKESPECIAL
-// && !behavior.getDeclaringClass().getName()
-// .equals(getClassName(codeIter, pos));
-// }

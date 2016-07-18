@@ -42,6 +42,11 @@ public class NullDisplayer {
 	}
 
 	private static void printNPELocation(ArrayList<Key> keyList) {
+		if (keyList.size() == 0) {
+			System.out
+					.println("Null: Collection || Value of a Collection || return value of a method");
+		}
+
 		for (int i = 0; i < keyList.size(); i++) {
 			Key key = keyList.get(i);
 			Variable var = null;

@@ -31,6 +31,7 @@ public class MainAssignToNull {
 			o = null;
 		} else {
 			Object k = null;
+			System.out.println(k);
 		}
 		a = null;
 		Object d = null;

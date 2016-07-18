@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.runtimeSupporter;
+package ch.unibe.scg.nullSpy.run;
 
 import java.io.BufferedReader;
 import java.io.IOException;

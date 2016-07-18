@@ -122,8 +122,9 @@ public class MainProjectModifier {
 		if (isOwnProject
 				&& (srcName.equals("run") || srcName.equals("instrumentator")
 						|| srcName.equals("model") || srcName.equals("testRun")
-						|| srcName.equals("tests") || srcName
-							.equals("isFieldOrLocalVariableNullExample")))
+						|| srcName.equals("tests")
+						|| srcName.equals("isFieldOrLocalVariableNullExample") || srcName
+							.equals("timeMeasurement")))
 			return;
 
 		if (src.isDirectory()) {

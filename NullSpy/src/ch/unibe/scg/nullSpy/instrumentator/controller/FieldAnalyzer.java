@@ -67,10 +67,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 					try {
 						Variable var = null;
 
-						// Printer p = new Printer();
-						// System.out.println("\nBefore:");
-						// p.printMethod(field.where(), 0);
-
 						// fieldType is an object -> starts with L.*
 						if (isFieldNotPrimitive(field)
 								&& !isInnerClassSuperCall(field)) {
@@ -84,9 +80,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 								var = storeFieldOfAnotherClass(field);
 							}
 
-							// System.out.println("Method: "
-							// + var.getBehavior().getName());
-
 							// insert code after assignment
 							adaptByteCode(var);
 						}
@@ -95,34 +88,68 @@ public class FieldAnalyzer extends VariableAnalyzer {
 					}
 				}
 			}
-
 		});
+	}
 
-		// Printer p = new Printer();
-		//
-		// CtBehavior classInit = cc.getClassInitializer();
-		// if (classInit != null) {
-		// System.out.println("\n" + classInit.getName());
-		// p.printMethod(classInit, 0);
-		// }
-		//
-		// for (CtBehavior b : cc.getDeclaredConstructors()) {
-		//
-		// if (b.getMethodInfo().getCodeAttribute() != null) {
-		// System.out.println("\n" + b.getName());
-		// System.out.println(b.getSignature());
-		// p.printMethod(b, 0);
-		// }
-		// }
-		//
-		// for (CtBehavior b : cc.getDeclaredMethods()) {
-		// if (b.getMethodInfo().getCodeAttribute() != null) {
-		// System.out.println("\n" + b.getName());
-		// p.printMethod(b, 0);
-		// }
-		// }
-		//
-		// System.out.println();
+	private boolean isAnotherClassAnInnerClass(FieldAccess field)
+			throws NotFoundException {
+		for (CtClass c : cc.getNestedClasses()) {
+			if (c.getName().equals(field.getClassName())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * If the field is of the current analyzed class.
+	 * 
+	 * @param field
+	 * @throws NotFoundException
+	 * @throws BadBytecode
+	 */
+	private Variable storeFieldOfCurrentClass(FieldAccess field)
+			throws NotFoundException, BadBytecode {
+
+		CtBehavior behavior = field.where();
+		int fieldLineNr = field.getLineNumber();
+		int pos = 0;
+		int startPos = 0;
+		int posAfterAssignment = 0;
+
+		CodeAttribute codeAttribute = behavior.getMethodInfo()
+				.getCodeAttribute();
+		CodeIterator codeIterator = codeAttribute.iterator();
+
+		pos = getPos(field);
+		startPos = getStartPos(field, pos);
+		codeIterator.move(pos);
+		codeIterator.next();
+
+		if (codeIterator.hasNext()) {
+			posAfterAssignment = codeIterator.next();
+		}
+
+		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttribute
+				.getAttribute(LineNumberAttribute.tag);
+		fieldLineNr = lineNrAttr.toLineNumber(pos);
+
+		String fieldName = field.getFieldName();
+		String fieldType = field.getSignature();
+		String fieldDeclaringClassName = cc.getName();
+
+		Field var = new Field("field", fieldName, fieldType,
+				fieldDeclaringClassName, fieldLineNr, pos, startPos,
+				posAfterAssignment, cc, behavior, field.isStatic(), null);
+		fieldIsWritterInfoList.add(var);
+
+		FieldKey fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
+				fieldDeclaringClassName, field.isStatic(), "", "", "", false,
+				behavior.getName(), behavior.getSignature());
+
+		fieldMap.put(fieldKey, var);
+
+		return var;
 	}
 
 	/**
@@ -300,67 +327,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 						behavior.getSignature());
 			}
 		}
-
-		fieldMap.put(fieldKey, var);
-
-		return var;
-	}
-
-	private boolean isAnotherClassAnInnerClass(FieldAccess field)
-			throws NotFoundException {
-		for (CtClass c : cc.getNestedClasses()) {
-			if (c.getName().equals(field.getClassName())) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * If the field is of the current analyzed class.
-	 * 
-	 * @param field
-	 * @throws NotFoundException
-	 * @throws BadBytecode
-	 */
-	private Variable storeFieldOfCurrentClass(FieldAccess field)
-			throws NotFoundException, BadBytecode {
-
-		CtBehavior behavior = field.where();
-		int fieldLineNr = field.getLineNumber();
-		int pos = 0;
-		int startPos = 0;
-		int posAfterAssignment = 0;
-
-		CodeAttribute codeAttribute = behavior.getMethodInfo()
-				.getCodeAttribute();
-		CodeIterator codeIterator = codeAttribute.iterator();
-
-		pos = getPos(field);
-		startPos = getStartPos(field, pos);
-		codeIterator.move(pos);
-		codeIterator.next();
-
-		if (codeIterator.hasNext()) {
-			posAfterAssignment = codeIterator.next();
-		}
-
-		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttribute
-				.getAttribute(LineNumberAttribute.tag);
-		fieldLineNr = lineNrAttr.toLineNumber(pos);
-
-		String fieldName = field.getFieldName();
-		String fieldType = field.getSignature();
-		String fieldDeclaringClassName = cc.getName();
-
-		Field var = new Field("field", fieldName, fieldType,
-				fieldDeclaringClassName, fieldLineNr, pos, startPos,
-				posAfterAssignment, cc, behavior, field.isStatic(), null);
-		fieldIsWritterInfoList.add(var);
-
-		FieldKey fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
-				fieldDeclaringClassName, field.isStatic(), "", "", "", false,
-				behavior.getName(), behavior.getSignature());
 
 		fieldMap.put(fieldKey, var);
 
