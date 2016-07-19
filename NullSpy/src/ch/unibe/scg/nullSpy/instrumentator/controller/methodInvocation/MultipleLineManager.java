@@ -1,5 +1,8 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation;
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 import javassist.CtBehavior;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
@@ -29,12 +32,20 @@ public class MultipleLineManager {
 		for (int i = lineNrAttrIndex + 1; i < lineAttrSize; i++) {
 			int provLineNr = this.lineNrAttr.lineNumber(i);
 			if (provLineNr <= lineNr) {
+
+				int[] alternatingInterval = getAlternatingInterval(
+						lineNrAttrIndex, i);
+
+				if (alternatingInterval != null)
+					return alternatingInterval;
+
 				// 2: second index, e.g. 127...!127!
 				int provLineNrIndex_2 = getSmallestWrapLineNrIndex(i);
 				// 1: first index, e.g. !127!...127
 				int provLineNrIndex_1 = getCorrespondingLineNrIndex(provLineNrIndex_2);
 
-				return getInterval(provLineNrIndex_2, provLineNrIndex_1, pos);
+				return getNonAlternatingInterval(provLineNrIndex_1,
+						provLineNrIndex_2, pos);
 			}
 		}
 
@@ -44,61 +55,86 @@ public class MultipleLineManager {
 				int provLineNrIndex_1 = i;
 				int provLineNrIndex_2 = lineNrAttrIndex;
 
-				return getInterval(provLineNrIndex_2, provLineNrIndex_1, pos);
-
+				return getNonAlternatingInterval(provLineNrIndex_1,
+						provLineNrIndex_2, pos);
 			}
 		}
 		return null;
 	}
 
-	private int[] getInterval(int provLineNrIndex_2, int provLineNrIndex_1,
-			int pos) throws BadBytecode {
-		boolean isAlternating = isAlternating(provLineNrIndex_2);
-		if (!isAlternating) { // 127...127
-			return getNonAlternatingMultipleInterval(provLineNrIndex_1,
-					provLineNrIndex_2, pos);
-		} else { // 127,128,127,128
-			return getAlternatingMultipleLineInterval(provLineNrIndex_2);
+	private int[] getAlternatingInterval(int lineNrAttrIndex, int index)
+			throws BadBytecode {
+		int lineNrAttrIndexLineNr = this.lineNrAttr.lineNumber(lineNrAttrIndex);
+		int indexLineNr = this.lineNrAttr.lineNumber(index);
+
+		if (indexLineNr == lineNrAttrIndexLineNr) {
+			index = lineNrAttrIndex + 1;
+			indexLineNr = this.lineNrAttr.lineNumber(index);
+		}
+
+		boolean isAlternating = isAlternating(lineNrAttrIndex,
+				lineNrAttrIndexLineNr) && isAlternating(index, indexLineNr);
+
+		if (isAlternating) {
+			ArrayList<Integer> interval_1 = new ArrayList<>();
+
+			interval_1.add(lineNrAttrIndex);
+			interval_1.add(index);
+
+			getPrevInterval(lineNrAttrIndex, lineNrAttrIndexLineNr, 2,
+					interval_1);
+			getPrevInterval(lineNrAttrIndex, lineNrAttrIndexLineNr, -2,
+					interval_1);
+
+			getPrevInterval(index, indexLineNr, 2, interval_1);
+			getPrevInterval(index, indexLineNr, -2, interval_1);
+
+			Collections.sort(interval_1);
+
+			int startPc = this.lineNrAttr.startPc(interval_1.get(0));
+			int endPc = getAlternatingEndPc(interval_1
+					.get(interval_1.size() - 1));
+
+			return new int[] { startPc, endPc };
+		}
+		return null;
+	}
+
+	private void getPrevInterval(int index, int lineNr, int i,
+			ArrayList<Integer> interval) {
+		if (isInLineNrAttrBound(index + i)
+				&& this.lineNrAttr.lineNumber(index + i) == lineNr) {
+			interval.add(index + i);
+			getPrevInterval(index + i, lineNr, i, interval);
 		}
 	}
 
-	private int[] getNonAlternatingMultipleInterval(int provLineNrIndex_1,
+	private boolean isAlternating(int index, int lineNr) {
+		return (isInLineNrAttrBound(index + 2) && this.lineNrAttr
+				.lineNumber(index + 2) == lineNr)
+				|| (isInLineNrAttrBound(index - 2) && this.lineNrAttr
+						.lineNumber(index - 2) == lineNr);
+	}
+
+	private boolean isInLineNrAttrBound(int i) {
+		return i >= 0 && i < this.lineNrAttr.tableLength();
+	}
+
+	private int[] getNonAlternatingInterval(int provLineNrIndex_1,
 			int provLineNrIndex_2, int pos) throws BadBytecode {
 		int maxLineNrIndex = getMaxLineNrIndex(provLineNrIndex_2);
-		int nextLineNrStartPc = getNextBiggerLineNrPcThanMaxLineNrPc(maxLineNrIndex);
+		int nextLineNrStartPc = getNextLineNumberStartPcAfterMaxLineNr(maxLineNrIndex);
 		int endPc = 0;
 
 		while (this.codeIter.hasNext() && pos < nextLineNrStartPc) {
 			endPc = pos;
-			pos = this.codeIter.next();
+			pos = this.codeIter.next(); // excluding nextLineNrStartPc
 		}
 
 		int startLineNr = this.lineNrAttr.lineNumber(provLineNrIndex_1);
 		int startPc = this.lineNrAttr.toStartPc(startLineNr);
 
 		return new int[] { startPc, endPc };
-	}
-
-	private int[] getAlternatingMultipleLineInterval(int provLineNrIndex_2)
-			throws BadBytecode {
-		int provLineNr = this.lineNrAttr.lineNumber(provLineNrIndex_2);
-		int checkLineNr_1 = this.lineNrAttr.lineNumber(provLineNrIndex_2 - 1);
-		int smallerLineNrIndex = 0;
-		int biggestIndex = provLineNrIndex_2;
-
-		if (checkLineNr_1 > provLineNr
-				&& (provLineNrIndex_2 + 1) < this.lineNrAttr.tableLength()) { // 127(1),128(2),127(1),!128!
-			smallerLineNrIndex = provLineNrIndex_2;
-			biggestIndex = provLineNrIndex_2 + 1;
-		} else if (checkLineNr_1 < provLineNr && (provLineNrIndex_2 - 3) >= 0) { // !127!,128(1),127(2),128(1)
-			smallerLineNrIndex = provLineNrIndex_2 - 3;
-		}
-
-		int alternatingEndPc = getAlternatingEndPc(biggestIndex);
-		int smallerLineNr = this.lineNrAttr.lineNumber(smallerLineNrIndex);
-		int alternatingStartPc = this.lineNrAttr.toStartPc(smallerLineNr);
-
-		return new int[] { alternatingStartPc, alternatingEndPc };
 	}
 
 	private int getAlternatingEndPc(int biggestIndex) throws BadBytecode {
@@ -128,31 +164,6 @@ public class MultipleLineManager {
 		return pos;
 	}
 
-	/**
-	 * E.g. 127,128,127,128
-	 * 
-	 * @param provLineNrIndex_2
-	 * @return
-	 */
-	private boolean isAlternating(int provLineNrIndex_2) {
-		int provLineNr = this.lineNrAttr.lineNumber(provLineNrIndex_2);
-		int checkLineNr = this.lineNrAttr.lineNumber(provLineNrIndex_2 - 1);
-		int checkLineNr_2 = 0;
-		if (checkLineNr > provLineNr
-				&& (provLineNrIndex_2 + 1) < this.lineNrAttr.tableLength()) { // 127,128,127,!128!
-			checkLineNr_2 = this.lineNrAttr.lineNumber(provLineNrIndex_2 + 1);
-		} else if (checkLineNr < provLineNr && (provLineNrIndex_2 - 3) >= 0) { // !127!,128,127,128
-			checkLineNr_2 = this.lineNrAttr.lineNumber(provLineNrIndex_2 - 3);
-		} else {
-			return false;
-		}
-
-		if (checkLineNr == checkLineNr_2)
-			return true;
-		else
-			return false;
-	}
-
 	private int getCorrespondingLineNrIndex(int provLineNrIndex) {
 		int provLineNr = this.lineNrAttr.lineNumber(provLineNrIndex);
 		for (int i = provLineNrIndex; i >= 0; i--) {
@@ -175,10 +186,8 @@ public class MultipleLineManager {
 
 	private int getLineNrIndex(int lineNr) {
 		for (int i = 0; i < this.lineNrAttr.tableLength(); i++) {
-
-			if (this.lineNrAttr.lineNumber(i) == lineNr) {
+			if (this.lineNrAttr.lineNumber(i) == lineNr)
 				return i;
-			}
 		}
 		return 0;
 	}
@@ -194,12 +203,11 @@ public class MultipleLineManager {
 				maxLineNr = this.lineNrAttr.lineNumber(maxLineNrIndex);
 			} else if (provLineNr == startLineNr)
 				break;
-
 		}
 		return maxLineNrIndex;
 	}
 
-	private int getNextBiggerLineNrPcThanMaxLineNrPc(int maxLineNrIndex) {
+	private int getNextLineNumberStartPcAfterMaxLineNr(int maxLineNrIndex) {
 		int maxLineNr = lineNrAttr.lineNumber(maxLineNrIndex);
 
 		for (int i = maxLineNrIndex + 1; i < this.lineNrAttr.tableLength(); i++) {

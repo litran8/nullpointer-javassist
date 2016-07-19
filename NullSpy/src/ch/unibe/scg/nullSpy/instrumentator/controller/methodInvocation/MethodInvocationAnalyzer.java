@@ -55,13 +55,14 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 			NotFoundException {
 
 		// FIXME: class choice
-		// if (!cc.getName().equals("org.jhotdraw.applet.DrawApplet"))
+		// if (!cc.getName()
+		// .equals("org.jhotdraw.standard.ChangeConnectionHandle"))
 		// return;
 
 		for (CtBehavior behavior : behaviorList) {
 
 			// FIXME: method choice
-			// if (!behavior.getName().equals("createFontChoice"))
+			// if (!behavior.getName().equals("invokeEnd"))
 			// continue;
 
 			MethodInfo methodInfo = behavior.getMethodInfo2();
