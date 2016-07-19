@@ -34,7 +34,7 @@ public class MultipleLineManager {
 			if (provLineNr <= lineNr) {
 
 				int[] alternatingInterval = getAlternatingInterval(
-						lineNrAttrIndex, i);
+						lineNrAttrIndex, i, pos);
 
 				if (alternatingInterval != null)
 					return alternatingInterval;
@@ -62,7 +62,7 @@ public class MultipleLineManager {
 		return null;
 	}
 
-	private int[] getAlternatingInterval(int lineNrAttrIndex, int index)
+	private int[] getAlternatingInterval(int lineNrAttrIndex, int index, int pos)
 			throws BadBytecode {
 		int lineNrAttrIndexLineNr = this.lineNrAttr.lineNumber(lineNrAttrIndex);
 		int indexLineNr = this.lineNrAttr.lineNumber(index);
@@ -92,8 +92,7 @@ public class MultipleLineManager {
 			Collections.sort(interval_1);
 
 			int startPc = this.lineNrAttr.startPc(interval_1.get(0));
-			int endPc = getAlternatingEndPc(interval_1
-					.get(interval_1.size() - 1));
+			int endPc = getEndPc(interval_1.get(interval_1.size() - 1), pos);
 
 			return new int[] { startPc, endPc };
 		}
@@ -122,14 +121,7 @@ public class MultipleLineManager {
 
 	private int[] getNonAlternatingInterval(int provLineNrIndex_1,
 			int provLineNrIndex_2, int pos) throws BadBytecode {
-		int maxLineNrIndex = getMaxLineNrIndex(provLineNrIndex_2);
-		int nextLineNrStartPc = getNextLineNumberStartPcAfterMaxLineNr(maxLineNrIndex);
-		int endPc = 0;
-
-		while (this.codeIter.hasNext() && pos < nextLineNrStartPc) {
-			endPc = pos;
-			pos = this.codeIter.next(); // excluding nextLineNrStartPc
-		}
+		int endPc = getEndPc(provLineNrIndex_2, pos);
 
 		int startLineNr = this.lineNrAttr.lineNumber(provLineNrIndex_1);
 		int startPc = this.lineNrAttr.toStartPc(startLineNr);
@@ -137,31 +129,22 @@ public class MultipleLineManager {
 		return new int[] { startPc, endPc };
 	}
 
-	private int getAlternatingEndPc(int biggestIndex) throws BadBytecode {
-		int biggestIndexLineNr = this.lineNrAttr.lineNumber(biggestIndex);
-		int pos = this.lineNrAttr.toStartPc(biggestIndexLineNr);
-		this.codeIter.move(pos);
-		int nextLineNrStartPc = 0;
-		int nextLineNrIndex = biggestIndex + 1;
+	private int getEndPc(int provLineNrIndex_2, int pos) throws BadBytecode {
+		int nextLineNrStartPc = getNextLineNumberStartPcAfterMaxLineNr(provLineNrIndex_2);
+		int endPc = 0;
 
-		if (nextLineNrIndex < this.lineNrAttr.tableLength()) {
-			int nextLineNr = this.lineNrAttr.lineNumber(nextLineNrIndex);
-			nextLineNrStartPc = this.lineNrAttr.toStartPc(nextLineNr);
-
-			int provPos = pos;
-			while (this.codeIter.hasNext() && provPos < nextLineNrStartPc) {
-				pos = provPos;
-				provPos = this.codeIter.next();
+		if (nextLineNrStartPc != 0) {
+			while (this.codeIter.hasNext() && pos < nextLineNrStartPc) {
+				endPc = pos;
+				pos = this.codeIter.next(); // excluding nextLineNrStartPc
 			}
-
 		} else {
-			int provPos = pos;
 			while (this.codeIter.hasNext()) {
-				pos = provPos;
-				provPos = this.codeIter.next();
+				endPc = pos;
+				pos = this.codeIter.next(); // excluding nextLineNrStartPc
 			}
 		}
-		return pos;
+		return endPc;
 	}
 
 	private int getCorrespondingLineNrIndex(int provLineNrIndex) {
@@ -192,29 +175,10 @@ public class MultipleLineManager {
 		return 0;
 	}
 
-	private int getMaxLineNrIndex(int possibleStartLineNrIndex) {
-		int startLineNr = this.lineNrAttr.lineNumber(possibleStartLineNrIndex);
-		int maxLineNrIndex = 0;
-		int maxLineNr = startLineNr;
-		for (int i = possibleStartLineNrIndex - 1; i >= 0; i--) {
-			int provLineNr = this.lineNrAttr.lineNumber(i);
-			if (provLineNr > maxLineNr) {
-				maxLineNrIndex = i;
-				maxLineNr = this.lineNrAttr.lineNumber(maxLineNrIndex);
-			} else if (provLineNr == startLineNr)
-				break;
-		}
-		return maxLineNrIndex;
-	}
+	private int getNextLineNumberStartPcAfterMaxLineNr(int index) {
+		if (isInLineNrAttrBound(index + 1))
+			return this.lineNrAttr.startPc(index + 1);
 
-	private int getNextLineNumberStartPcAfterMaxLineNr(int maxLineNrIndex) {
-		int maxLineNr = lineNrAttr.lineNumber(maxLineNrIndex);
-
-		for (int i = maxLineNrIndex + 1; i < this.lineNrAttr.tableLength(); i++) {
-			int provLineNr = this.lineNrAttr.lineNumber(i);
-			if (provLineNr > maxLineNr)
-				return this.lineNrAttr.startPc(i);
-		}
 		return 0;
 	}
 
