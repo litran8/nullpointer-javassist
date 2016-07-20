@@ -157,22 +157,14 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	private Variable storeFieldOfAnotherClass(FieldAccess field)
 			throws NotFoundException, BadBytecode {
 
-		CtBehavior behavior = field.where();
-		boolean isAnotherClassAnInnerClass = isAnotherClassAnInnerClass(field);
+		int pos = getPos(field);
+		int startPos = getStartPos(field, pos);
 
+		CtBehavior behavior = field.where();
 		CodeAttribute codeAttribute = behavior.getMethodInfo()
 				.getCodeAttribute();
 		CodeIterator codeIterator = codeAttribute.iterator();
 
-		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttribute
-				.getAttribute(LineNumberAttribute.tag);
-
-		LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttribute
-				.getAttribute(LocalVariableAttribute.tag);
-		ArrayList<LocalVarAttrEntry> localVarAttrAsList = getLocalVarAttrAsList(localVarAttr);
-
-		int pos = getPos(field);
-		int startPos = getStartPos(field, pos);
 		int startPosOp = codeIterator.byteAt(startPos);
 		codeIterator.move(startPos);
 		codeIterator.next();
@@ -190,19 +182,15 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			afterPos = codeIterator.next();
 		}
 
+		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttribute
+				.getAttribute(LineNumberAttribute.tag);
 		int fieldLineNr = lineNrAttr.toLineNumber(pos);
-
-		// innerclass
-		String innerClassFieldName = "";
 
 		String fieldName = field.getFieldName();
 
 		// object_FIELD
 		int op = codeIterator.byteAt(startPos);
 		String indirectVarOpCode = Mnemonic.OPCODE[op];
-
-		// OBJECT_field
-		IndirectVar indirectFieldObject = null;
 
 		String indirectVarName = "";
 		String indirectVarType = "";
@@ -215,6 +203,10 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				// localVar.field
 				// store locVar e.g. p.a -> get p
 				int localVarAttrIndex = 0;
+
+				LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttribute
+						.getAttribute(LocalVariableAttribute.tag);
+				ArrayList<LocalVarAttrEntry> localVarAttrAsList = getLocalVarAttrAsList(localVarAttr);
 
 				localVarAttrIndex = getLocalVarAttrIndex(codeIterator,
 						localVarAttrAsList, startPos, "aload.*");
@@ -243,10 +235,12 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				indirectVarType = ctField_field.getSignature();
 				isIndirectVarStatic = op == Opcode.GETSTATIC;
 			}
-
 		}
 
-		if (isAnotherClassAnInnerClass && indirectVarName.equals("this")) {
+		// innerclass
+		String innerClassFieldName = "";
+
+		if (isAnotherClassAnInnerClass(field) && indirectVarName.equals("this")) {
 			// innerClass: this.innerClassField.field
 			codeIterator.move(startPos);
 			codeIterator.next();
@@ -271,6 +265,9 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			indirectVarName = indirectVarName.substring(1);
 		}
 
+		// OBJECT_field
+		IndirectVar indirectFieldObject = null;
+
 		if (!field.isStatic()) {
 			indirectFieldObject = new IndirectVar(indirectVarName,
 					indirectVarType, indirectVarDeclaringClassName,
@@ -288,6 +285,21 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		// hashMap
 
+		FieldKey fieldKey = getFieldKey(field, behavior, fieldName,
+				indirectVarName, indirectVarType,
+				indirectVarDeclaringClassName, fieldType,
+				fieldDeclaringClassName);
+
+		fieldMap.put(fieldKey, var);
+
+		return var;
+	}
+
+	private FieldKey getFieldKey(FieldAccess field, CtBehavior behavior,
+			String fieldName, String indirectVarName, String indirectVarType,
+			String indirectVarDeclaringClassName, String fieldType,
+			String fieldDeclaringClassName) {
+		boolean isIndirectVarStatic;
 		FieldKey fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
 				fieldDeclaringClassName, field.isStatic(), "", "", "", false,
 				behavior.getName(), behavior.getSignature());
@@ -321,36 +333,32 @@ public class FieldAnalyzer extends VariableAnalyzer {
 						behavior.getSignature());
 			}
 		}
-
-		fieldMap.put(fieldKey, var);
-
-		return var;
+		return fieldKey;
 	}
 
 	private int getStartPos(FieldAccess field, int pos) throws BadBytecode {
 		CtBehavior behavior = field.where();
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
-		ArrayList<Integer> posList = new ArrayList<>();
 
+		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+				.getAttribute(LineNumberAttribute.tag);
+
+		int line = lineNrAttr.toLineNumber(pos);
+		int startPc = lineNrAttr.toStartPc(line);
+		int op = codeIter.byteAt(startPc);
+
+		ArrayList<Integer> posList = new ArrayList<>();
 		int i = 0;
 		while (codeIter.hasNext() && i <= pos) {
 			i = codeIter.next();
 			posList.add(i);
 		}
 
-		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-				.getAttribute(LineNumberAttribute.tag);
-
-		int line = lineNrAttr.toLineNumber(pos);
-		int startPos = lineNrAttr.toStartPc(line);
-
-		int op = codeIter.byteAt(startPos);
-
 		int nextPosAfterLastVar = 0;
-
+		Variable lastVar = null;
 		if (fieldIsWritterInfoList.size() != 0) {
-			Variable lastVar = fieldIsWritterInfoList
+			lastVar = fieldIsWritterInfoList
 					.get(fieldIsWritterInfoList.size() - 1);
 
 			if (isSameBehavior(field, lastVar)) {
@@ -359,49 +367,44 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			}
 		}
 
-		// get right startPos if field assignment needs more than 1 line
+		// get right startPc if nont-static field assignment needs more than 1
+		// line
+		// check if non-static field assignment starts with the right opcode
+		// FIXME: for static fields ???
 		if (!field.isStatic()) {
-			if (nextPosAfterLastVar != startPos) {
+			if (nextPosAfterLastVar != startPc) {
+				// field assignment starts with (this, (getfield)* || getstatic,
+				// (getfield)* || aload,
+				// (getfield)*) putfield
 				while (op != Opcode.GETSTATIC
-						&& !Mnemonic.OPCODE[op].matches("aload.*")
-						&& op != Opcode.ALOAD_0) {
-					startPos = posList.get(posList.indexOf(startPos) - 1);
-					op = codeIter.byteAt(startPos);
+						&& !Mnemonic.OPCODE[op].matches("aload.*")) {
+					startPc = posList.get(posList.indexOf(startPc) - 1);
+					op = codeIter.byteAt(startPc);
 				}
 			}
 		}
 
 		// fieldAssignment after fieldAssignment:
-		// startPos of later will be set to pos of inserted byte code of the
-		// first one
-		// iterate to pos after byte code and set startPos to it
-		if (fieldIsWritterInfoList.size() != 0) {
-			Variable lastVar = fieldIsWritterInfoList
-					.get(fieldIsWritterInfoList.size() - 1);
+		// wrong: startPos of later will be set to pc of first instruction of
+		// inserted bytecode
+		// iterate to pc after added bytecode and set startPc to it
+		if (fieldIsWritterInfoList.size() != 0
+				&& isSameBehavior(field, lastVar) && codeIter.hasNext()
+				&& nextPosAfterLastVar == startPc) {
+			op = codeIter.byteAt(startPc);
+			String instr = Mnemonic.OPCODE[op];
 
-			if (isSameBehavior(field, lastVar)) {
-				codeIter.move(lastVar.getStorePos());
-				codeIter.next();
-				nextPosAfterLastVar = codeIter.next();
-
-				if (codeIter.hasNext() && nextPosAfterLastVar == startPos) {
-					op = codeIter.byteAt(startPos);
-					String instr = Mnemonic.OPCODE[op];
-					if (instr.matches("ldc.*")) {
-
-						while (codeIter.hasNext()
-								&& !instr.matches("invokestatic.*")) {
-							nextPosAfterLastVar = codeIter.next();
-							op = codeIter.byteAt(nextPosAfterLastVar);
-							instr = Mnemonic.OPCODE[op];
-						}
-						startPos = codeIter.next();
-					}
+			if (instr.matches("ldc.*")) {
+				while (codeIter.hasNext() && op != Opcode.INVOKESTATIC) {
+					nextPosAfterLastVar = codeIter.next();
+					op = codeIter.byteAt(nextPosAfterLastVar);
+					instr = Mnemonic.OPCODE[op];
 				}
+				startPc = codeIter.next();
 			}
 		}
 
-		return startPos;
+		return startPc;
 	}
 
 	private int getPos(FieldAccess field) throws BadBytecode {
@@ -413,24 +416,16 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		int fieldListSize = fieldIsWritterInfoList.size();
 
-		int pos = 0;
+		int pos = field.indexOfBytecode();
 
-		if (fieldListSize == 0) {
-			// list is empty, read pos from original codeAttr
-			pos = field.indexOfBytecode();
-		} else if (fieldListSize != 0) {
+		if (fieldListSize != 0) {
 			// list is not empty
 			Variable lastVar = fieldIsWritterInfoList.get(fieldListSize - 1);
-			CtBehavior lastFieldBehavior = lastVar.getBehavior();
 
-			if (isSameBehavior(behavior, lastFieldBehavior)) {
+			if (isSameBehavior(field, lastVar)) {
 				// last field is in same behavior -> set pos to last field's pos
 				// because codeAttr has changed, not the original anymore
 				pos = lastVar.getAfterPos();
-			} else {
-				// last field not from same behavior -> codeAttr of the current
-				// behavior is still the original one
-				field.indexOfBytecode();
 			}
 		}
 
@@ -439,7 +434,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		int op = codeIter.byteAt(codeIter.next());
 
 		// iterate until opcode put.*
-		while ((op != Opcode.PUTFIELD) && (op != Opcode.PUTSTATIC)) {
+		while (!(op == Opcode.PUTFIELD || op == Opcode.PUTSTATIC)) {
 			pos = codeIter.next();
 			op = codeIter.byteAt(pos);
 		}
@@ -469,28 +464,17 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 	}
 
-	private boolean isSameBehavior(CtBehavior behavior,
-			CtBehavior lastFieldBehavior) {
-		return behavior.getName().equals(lastFieldBehavior.getName())
-				&& behavior.getSignature().equals(
-						lastFieldBehavior.getSignature())
-				&& behavior
-						.getDeclaringClass()
-						.getName()
-						.equals(lastFieldBehavior.getDeclaringClass().getName());
-	}
-
 	private boolean isSameBehavior(FieldAccess field, Variable lastVar) {
 		boolean inSameBehavior = false;
 		CtBehavior currentBehavior = field.where();
-		CtBehavior lastBehavior = lastVar.getBehavior();
-		if (lastBehavior != null) {
+		CtBehavior lastFieldBehavior = lastVar.getBehavior();
+		if (lastFieldBehavior != null) {
 			inSameBehavior = currentBehavior.getName().equals(
-					lastBehavior.getName())
+					lastFieldBehavior.getName())
 					&& currentBehavior.getDeclaringClass().getName()
 							.equals(lastVar.getClassWhereVarIsUsed().getName())
 					&& currentBehavior.getSignature().equals(
-							lastBehavior.getSignature());
+							lastFieldBehavior.getSignature());
 		}
 		return inSameBehavior;
 	}
