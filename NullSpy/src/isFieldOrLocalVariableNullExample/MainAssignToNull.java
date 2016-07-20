@@ -23,6 +23,8 @@ public class MainAssignToNull {
 	}
 
 	public static void main(String[] args) {
+		a = null;
+		b = null;
 		// long startTime = System.nanoTime();
 		System.out.println("\nMethod main starts.");
 		MainAssignToNull m = new MainAssignToNull();

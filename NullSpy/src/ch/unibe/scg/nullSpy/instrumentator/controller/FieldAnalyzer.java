@@ -112,28 +112,22 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			throws NotFoundException, BadBytecode {
 
 		CtBehavior behavior = field.where();
-		int fieldLineNr = field.getLineNumber();
-		int pos = 0;
-		int startPos = 0;
-		int posAfterAssignment = 0;
 
 		CodeAttribute codeAttribute = behavior.getMethodInfo()
 				.getCodeAttribute();
 		CodeIterator codeIterator = codeAttribute.iterator();
 
-		pos = getPos(field);
-		startPos = getStartPos(field, pos);
+		int pos = getPos(field);
+		int startPos = getStartPos(field, pos);
 		codeIterator.move(pos);
 		codeIterator.next();
 
+		int posAfterAssignment = 0;
 		if (codeIterator.hasNext()) {
 			posAfterAssignment = codeIterator.next();
 		}
 
-		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttribute
-				.getAttribute(LineNumberAttribute.tag);
-		fieldLineNr = lineNrAttr.toLineNumber(pos);
-
+		int fieldLineNr = field.getLineNumber();
 		String fieldName = field.getFieldName();
 		String fieldType = field.getSignature();
 		String fieldDeclaringClassName = cc.getName();
@@ -334,7 +328,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	}
 
 	private int getStartPos(FieldAccess field, int pos) throws BadBytecode {
-		int startPos = 0;
 		CtBehavior behavior = field.where();
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
@@ -350,7 +343,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				.getAttribute(LineNumberAttribute.tag);
 
 		int line = lineNrAttr.toLineNumber(pos);
-		startPos = lineNrAttr.toStartPc(line);
+		int startPos = lineNrAttr.toStartPc(line);
 
 		int op = codeIter.byteAt(startPos);
 
@@ -361,7 +354,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 					.get(fieldIsWritterInfoList.size() - 1);
 
 			if (isSameBehavior(field, lastVar)) {
-
 				codeIter.move(lastVar.getAfterPos());
 				nextPosAfterLastVar = codeIter.next();
 			}
@@ -369,7 +361,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		// get right startPos if field assignment needs more than 1 line
 		if (!field.isStatic()) {
-
 			if (nextPosAfterLastVar != startPos) {
 				while (op != Opcode.GETSTATIC
 						&& !Mnemonic.OPCODE[op].matches("aload.*")
@@ -378,7 +369,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 					op = codeIter.byteAt(startPos);
 				}
 			}
-
 		}
 
 		// fieldAssignment after fieldAssignment:
@@ -390,7 +380,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 					.get(fieldIsWritterInfoList.size() - 1);
 
 			if (isSameBehavior(field, lastVar)) {
-
 				codeIter.move(lastVar.getStorePos());
 				codeIter.next();
 				nextPosAfterLastVar = codeIter.next();
@@ -495,7 +484,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		boolean inSameBehavior = false;
 		CtBehavior currentBehavior = field.where();
 		CtBehavior lastBehavior = lastVar.getBehavior();
-		if (!(lastBehavior == null)) {
+		if (lastBehavior != null) {
 			inSameBehavior = currentBehavior.getName().equals(
 					lastBehavior.getName())
 					&& currentBehavior.getDeclaringClass().getName()
