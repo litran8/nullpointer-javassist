@@ -104,6 +104,20 @@ public class MainAssignToNull {
 		nO = (NullObject) Person.say(); // p.say() works too, but not a
 		// goodway
 		Object u = nullObject.setToNullMethod(a, p);
+
+		String fName = "Calibri";
+
+		Object fontName;
+		if (fName.startsWith("A")) {
+			fontName = new Arial();
+		} else {
+			// ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester.testLocalVar(
+			// "", "", "", "", "", "", fontName, 0, 0, 0, 0, 0);
+			fontName = new Calibri();
+		}
+
+		System.out.println(fontName.toString());
+
 		System.out.println("Method main ends.\n");
 		// System.out.println("Original time: "
 		// + ((System.nanoTime() - startTime) / 1000000) + "ms");

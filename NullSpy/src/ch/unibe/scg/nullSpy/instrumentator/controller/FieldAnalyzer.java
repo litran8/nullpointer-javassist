@@ -53,9 +53,15 @@ public class FieldAnalyzer extends VariableAnalyzer {
 	public void instrumentAfterFieldAssignment() throws CannotCompileException,
 			BadBytecode, NotFoundException {
 
+		// if (!cc.getName().equals("org.jhotdraw.application.DrawApplication"))
+		// return;
+
 		cc.instrument(new ExprEditor() {
 			public void edit(FieldAccess field) throws CannotCompileException {
 				CtBehavior behavior = field.where();
+				// if (!behavior.getName().equals("DrawApplication"))
+				// return;
+				// String sign = behavior.getSignature();
 				CodeAttribute codeAttr = behavior.getMethodInfo()
 						.getCodeAttribute();
 				LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
@@ -66,7 +72,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				if (field.isWriter() && codeAttr != null) {
 					try {
 						Variable var = null;
-
+						int pc = field.indexOfBytecode();
 						// fieldType is an object -> starts with L.*
 						if (isFieldNotPrimitive(field)
 								&& !isInnerClassSuperCall(field)) {
@@ -412,11 +418,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
 
-		ConstPool constPool = behavior.getMethodInfo2().getConstPool();
-
-		int fieldListSize = fieldIsWritterInfoList.size();
-
 		int pos = field.indexOfBytecode();
+		int fieldListSize = fieldIsWritterInfoList.size();
 
 		if (fieldListSize != 0) {
 			// list is not empty
@@ -441,6 +444,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		// get signature of the field at pos
 		// this is for skipping every primitive field
+		ConstPool constPool = behavior.getMethodInfo2().getConstPool();
 		int index = codeIter.u16bitAt(pos + 1);
 		String signatureOfTestPos = constPool.getFieldrefType(index);
 		String signature = field.getSignature();
@@ -461,7 +465,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		}
 
 		return pos;
-
 	}
 
 	private boolean isSameBehavior(FieldAccess field, Variable lastVar) {
@@ -519,17 +522,21 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		CodeIterator codeIter = codeAttr.iterator();
 
-		int checkSuperCallPos = 0;
-		int checkSuperCallOp = codeIter.byteAt(0);
+		int storePc = getPos(field);
+		int startPc = getStartPos(field, storePc);
 
-		codeIter.move(checkSuperCallPos);
+		int checkSuperCallPc = startPc;
+		int checkSuperCallOp = codeIter.byteAt(startPc);
+
+		codeIter.move(checkSuperCallPc);
 		codeIter.next();
 
 		boolean isThereAnInvokeSpecial = false;
 
-		while (checkSuperCallOp != Opcode.INVOKESPECIAL && codeIter.hasNext()) {
-			checkSuperCallPos = codeIter.next();
-			checkSuperCallOp = codeIter.byteAt(checkSuperCallPos);
+		while (checkSuperCallOp != Opcode.INVOKESPECIAL
+				&& checkSuperCallPc < storePc) {
+			checkSuperCallPc = codeIter.next();
+			checkSuperCallOp = codeIter.byteAt(checkSuperCallPc);
 			if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
 				isThereAnInvokeSpecial = true;
 				break;
