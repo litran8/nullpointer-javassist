@@ -16,6 +16,7 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
+import ch.unibe.scg.nullSpy.instrumentator.controller.Printer;
 import ch.unibe.scg.nullSpy.instrumentator.controller.VariableAnalyzer;
 import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
@@ -55,14 +56,13 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 			NotFoundException {
 
 		// FIXME: class choice
-		// if (!cc.getName()
-		// .equals("org.jhotdraw.standard.ChangeConnectionHandle"))
+		// if (!cc.getName().equals("org.jhotdraw.application.DrawApplication"))
 		// return;
 
 		for (CtBehavior behavior : behaviorList) {
 
 			// FIXME: method choice
-			// if (!behavior.getName().equals("invokeEnd"))
+			// if (!behavior.getName().equals("setTool"))
 			// continue;
 
 			MethodInfo methodInfo = behavior.getMethodInfo2();
@@ -74,7 +74,7 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 			}
 
 			// FIXME: just printer mark
-			// Printer p = new Printer();
+			Printer p = new Printer();
 			// p.printBehavior(behavior, 0);
 			// LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 			// .getAttribute(LineNumberAttribute.tag);

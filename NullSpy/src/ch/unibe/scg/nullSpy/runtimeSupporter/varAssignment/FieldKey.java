@@ -12,7 +12,7 @@ public class FieldKey extends Key {
 	private boolean isIndirectVarStatic;
 
 	public FieldKey(String classNameInWhichVarIsUsed, String varName,
-			String varType, String verDeclaringClasName, boolean isVarStatic,
+			String varType, String varDeclaringClassName, boolean isVarStatic,
 			String indirectVarName, String indirectVarType,
 			String indirectVarDeclaringClassName, boolean isIndirectVarStatic,
 			String behaviorName, String behaviorSignature) {
@@ -24,6 +24,7 @@ public class FieldKey extends Key {
 
 		this.indirectVarName = indirectVarName;
 		this.indirectVarType = indirectVarType;
+		this.indirectVarDeclaringClassName = indirectVarDeclaringClassName;
 		this.isIndirectVarStatic = isIndirectVarStatic;
 	}
 
@@ -146,6 +147,26 @@ public class FieldKey extends Key {
 		} else if (!varType.equals(other.varType))
 			return false;
 		return true;
+	}
+
+	@Override
+	public String toString() {
+		return super.toString() + "\nFieldKey [varType=" + varType
+				+ ",\nvarDeclaringClassName=" + varDeclaringClassName
+				+ ",\nisVarStatic=" + isVarStatic + ",\nindirectVarName="
+				+ indirectVarName + ", \nindirectVarType=" + indirectVarType
+				+ ", \nindirectVarDeclaringClassName="
+				+ indirectVarDeclaringClassName + ", \nisIndirectVarStatic="
+				+ isIndirectVarStatic + ", \ngetVarType()=" + getVarType()
+				+ ", \ngetVarDeclaringClassName()="
+				+ getVarDeclaringClassName() + ", \nisVarStatic()="
+				+ isVarStatic() + ", \ngetIndirectVarName()="
+				+ getIndirectVarName() + ", \ngetIndirectVarType()="
+				+ getIndirectVarType()
+				+ ", \ngetIndirectVarDeclaringClassName()="
+				+ getIndirectVarDeclaringClassName()
+				+ ", \nisIndirectVarStatic()=" + isIndirectVarStatic()
+				+ ", \nhashCode()=" + hashCode() + "]";
 	}
 
 }

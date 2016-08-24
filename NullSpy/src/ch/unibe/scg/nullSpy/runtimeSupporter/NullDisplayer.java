@@ -24,7 +24,7 @@ public class NullDisplayer {
 			HashMap<LocalVarKey, LocalVariable> localVarMap,
 			HashMap<FieldKey, Field> fieldMap, String className, int lineNr,
 			String behaviorName) throws FileNotFoundException {
-
+		// System.out.println("NullDisplayer");
 		NullDisplayer.localVarMap = localVarMap;
 		NullDisplayer.fieldMap = fieldMap;
 
@@ -33,7 +33,26 @@ public class NullDisplayer {
 		storeReceiverDataToMap(csvPath);
 		ArrayList<Integer> npeReceiverIndexList = getNPEReceiverIndex(
 				className, lineNr, behaviorName);
+		// System.out.println("NpeReceiverIndexList:");
+		// for (int i = 0; i < npeReceiverIndexList.size(); i++) {
+		// System.out.print(npeReceiverIndexList.get(i));
+		// System.out.print("\t");
+		// }
+		// System.out.println();
+
 		ArrayList<ArrayList<Integer>> npeReceiverGroupList = getNPEReceiverGroupList(npeReceiverIndexList);
+		// System.out.println("NpeReceiverGroupList:");
+		// for (int i = 0; i < npeReceiverGroupList.size(); i++) {
+		// ArrayList<Integer> arrayList = npeReceiverGroupList.get(i);
+		// System.out.println("NpeReceiverGroupList " + 1 + ":");
+		// int size = arrayList.size();
+		// for (int j = 0; j < size; j++) {
+		// System.out.print(arrayList.get(j));
+		// System.out.print("\t");
+		// }
+		// System.out.println();
+		// }
+		// System.out.println();
 
 		ArrayList<Key> keyList = getVariableKey(npeReceiverIndexList,
 				npeReceiverGroupList);
@@ -42,9 +61,12 @@ public class NullDisplayer {
 	}
 
 	private static void printNPELocation(ArrayList<Key> keyList) {
+		// System.out.println("keyListSize: " + keyList.size());
+
 		if (keyList.size() == 0) {
 			System.out
 					.println("Null: Collection || Value of a Collection || return value of a method");
+			return;
 		}
 
 		for (int i = 0; i < keyList.size(); i++) {
@@ -52,33 +74,41 @@ public class NullDisplayer {
 			Variable var = null;
 			String linkVarName = "";
 			String varID = "";
-			if (fieldMap.containsKey(key)) {
-				var = fieldMap.get(key);
-				Field field = (Field) var;
 
-				String varName = field.getVarName();
-				linkVarName = "this." + varName;
-				IndirectFieldObject indirectVarObj = field
-						.getIndirectFieldObject();
+			for (FieldKey k : fieldMap.keySet()) {
+				if (key.equals(k)) {
 
-				if (indirectVarObj != null) {
+					// System.out.println("contains field key");
+					var = fieldMap.get(k);
+					Field field = (Field) var;
 
-					String indirectVarName = indirectVarObj
-							.getIndirectVarName();
-					linkVarName = indirectVarName + "." + varName;
-					String indirectVarDeclaringClassName = indirectVarObj
-							.getIndirectVarDeclaringClassName();
-					String indirectVarType = indirectVarObj
-							.getIndirectVarType();
+					String varName = field.getVarName();
+					linkVarName = "this." + varName;
+					IndirectFieldObject indirectVarObj = field
+							.getIndirectFieldObject();
 
-					if (!indirectVarDeclaringClassName.equals("")
-							&& !indirectVarType.equals("")) {
-						linkVarName = indirectVarDeclaringClassName + "."
-								+ indirectVarName + "." + varName;
+					if (indirectVarObj != null) {
+
+						String indirectVarName = indirectVarObj
+								.getIndirectVarName();
+						linkVarName = indirectVarName + "." + varName;
+						String indirectVarDeclaringClassName = indirectVarObj
+								.getIndirectVarDeclaringClassName();
+						String indirectVarType = indirectVarObj
+								.getIndirectVarType();
+
+						if (!indirectVarDeclaringClassName.equals("")
+								&& !indirectVarType.equals("")) {
+							linkVarName = indirectVarDeclaringClassName + "."
+									+ indirectVarName + "." + varName;
+						}
 					}
+					System.out.print("Field ");
 				}
-				System.out.print("Field ");
-			} else if (localVarMap.containsKey(key)) {
+			}
+
+			if (localVarMap.containsKey(key)) {
+				System.out.println("contains locVar key");
 				var = localVarMap.get(key);
 				linkVarName = var.getVarName();
 				varID = var.getVarID();
@@ -86,7 +116,7 @@ public class NullDisplayer {
 					System.out.print("Parameter ");
 				else
 					System.out.print("LocalVariable ");
-			} else {
+			} else if (var == null) {
 				return;
 			}
 
@@ -154,13 +184,18 @@ public class NullDisplayer {
 		for (int i = 0; i < npeReceiverGroupList.size(); i++) {
 			ArrayList<Integer> npeReceiverGroup = npeReceiverGroupList.get(i);
 			int index_1 = npeReceiverGroup.get(0);
+
 			String varID = getVarID(index_1);
+
+			// System.out.println(index_1);
+			// System.out.println(varID);
+			// System.out.println(npeReceiverGroup.size());
 
 			if (!varID.equals("field") && npeReceiverGroup.size() == 1) {
 				keyList.add(new LocalVarKey(getVariableName(index_1),
 						getClassNameWhereVariableIsUsed(index_1),
 						getBehaviorName(index_1), getBehaviorSignature(index_1)));
-
+				// System.out.println("localVar");
 			} else {
 				if (npeReceiverGroup.size() == 1) { // staticField
 					keyList.add(new FieldKey(
@@ -170,19 +205,24 @@ public class NullDisplayer {
 							isVariableStatic(index_1), "", "", "", false,
 							getBehaviorName(index_1),
 							getBehaviorSignature(index_1)));
+					// System.out.println("staticField");
 				} else if (npeReceiverGroup.size() == 2) {
 					// this.field; aload.field; staticField.field
 					int index_2 = npeReceiverGroup.get(1);
-					if (getVariableName(index_1).equals("this"))
-						keyList.add(new FieldKey(
+					if (getVariableName(index_1).equals("this")) {
+						FieldKey k = new FieldKey(
 								getClassNameWhereVariableIsUsed(index_2),
 								getVariableName(index_2),
 								getVariableType(index_2),
 								getVariableDeclaringClassName(index_2),
 								isVariableStatic(index_2), "", "", "", false,
 								getBehaviorName(index_2),
-								getBehaviorSignature(index_2)));
-					else
+								getBehaviorSignature(index_2));
+						keyList.add(k);
+						// System.out.println("this.field");
+						// System.out.println(k.toString());
+						// System.out.println();
+					} else {
 						keyList.add(new FieldKey(
 								getClassNameWhereVariableIsUsed(index_2),
 								getVariableName(index_2),
@@ -195,10 +235,12 @@ public class NullDisplayer {
 								isVariableStatic(index_1),
 								getBehaviorName(index_2),
 								getBehaviorSignature(index_2)));
+						// System.out.println("bla.field");
+					}
 				} else if (npeReceiverGroup.size() == 3) {
 					// indirectField.field
 					// FIXME: what to do..
-					System.out.println("HHHHEEEEEEEEEEELLLLLLLLLLPPPPPPPPPP");
+					System.out.println("Future Work");
 				}
 			}
 		}
@@ -266,6 +308,9 @@ public class NullDisplayer {
 
 	private static ArrayList<Integer> getNPEReceiverIndex(String className,
 			int lineNr, String behaviorName) {
+		// System.out.println(className);
+		// System.out.println(lineNr);
+		// System.out.println(behaviorName);
 		receiverList.remove(0);
 		ArrayList<Integer> receiverElementIndexList = new ArrayList<>();
 		for (int i = 0; i < receiverList.size(); i++) {

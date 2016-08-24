@@ -57,16 +57,16 @@ public class Key {
 		if (getClass() != obj.getClass())
 			return false;
 		Key other = (Key) obj;
-		if (behaviorName == null) {
-			if (other.behaviorName != null)
-				return false;
-		} else if (!behaviorName.equals(other.behaviorName))
-			return false;
-		if (behaviorSignature == null) {
-			if (other.behaviorSignature != null)
-				return false;
-		} else if (!behaviorSignature.equals(other.behaviorSignature))
-			return false;
+		// if (behaviorName == null) {
+		// if (other.behaviorName != null)
+		// return false;
+		// } else if (!behaviorName.equals(other.behaviorName))
+		// return false;
+		// if (behaviorSignature == null) {
+		// if (other.behaviorSignature != null)
+		// return false;
+		// } else if (!behaviorSignature.equals(other.behaviorSignature))
+		// return false;
 		if (classNameInWhichVarIsUsed == null) {
 			if (other.classNameInWhichVarIsUsed != null)
 				return false;
@@ -79,6 +79,18 @@ public class Key {
 		} else if (!varName.equals(other.varName))
 			return false;
 		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "Key [varName=" + varName + ", \nclassNameInWhichVarIsUsed="
+				+ classNameInWhichVarIsUsed + ", \nbehaviorName="
+				+ behaviorName + ", \nbehaviorSignature=" + behaviorSignature
+				+ ", \ngetVarName()=" + getVarName()
+				+ ", \ngetClassNameInWhichVarIsUsed()="
+				+ getClassNameInWhichVarIsUsed() + ", \ngetBehaviorName()="
+				+ getBehaviorName() + ", \ngetBehaviorSignature()="
+				+ getBehaviorSignature() + "]";
 	}
 
 }

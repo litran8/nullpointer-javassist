@@ -72,7 +72,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				if (field.isWriter() && codeAttr != null) {
 					try {
 						Variable var = null;
-						int pc = field.indexOfBytecode();
 						// fieldType is an object -> starts with L.*
 						if (isFieldNotPrimitive(field)
 								&& !isInnerClassSuperCall(field)) {
@@ -418,6 +417,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
 
+		// int fieldListSize = fieldIsWritterInfoList.size();
+
 		int pos = field.indexOfBytecode();
 		int fieldListSize = fieldIsWritterInfoList.size();
 
@@ -444,8 +445,9 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		// get signature of the field at pos
 		// this is for skipping every primitive field
-		ConstPool constPool = behavior.getMethodInfo2().getConstPool();
+		// ConstPool constPool = behavior.getMethodInfo2().getConstPool();
 		int index = codeIter.u16bitAt(pos + 1);
+		ConstPool constPool = behavior.getMethodInfo2().getConstPool();
 		String signatureOfTestPos = constPool.getFieldrefType(index);
 		String signature = field.getSignature();
 
@@ -512,6 +514,13 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			return false;
 	}
 
+	/**
+	 * Makes sure that nothing is entered before the super() call.
+	 * 
+	 * @param field
+	 * @return
+	 * @throws BadBytecode
+	 */
 	private boolean isInnerClassSuperCall(FieldAccess field) throws BadBytecode {
 
 		CtBehavior behavior = field.where();
@@ -533,8 +542,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		boolean isThereAnInvokeSpecial = false;
 
-		while (checkSuperCallOp != Opcode.INVOKESPECIAL
-				&& checkSuperCallPc < storePc) {
+		while (checkSuperCallOp != Opcode.INVOKESPECIAL && codeIter.hasNext()) {
 			checkSuperCallPc = codeIter.next();
 			checkSuperCallOp = codeIter.byteAt(checkSuperCallPc);
 			if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
