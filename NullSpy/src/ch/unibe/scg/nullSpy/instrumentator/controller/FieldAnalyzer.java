@@ -29,15 +29,17 @@ import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
  */
 public class FieldAnalyzer extends VariableAnalyzer {
 
-	private ArrayList<Variable> fieldIsWritterInfoList;
+	private ArrayList<Variable> fieldIsWriterList;
 	private HashMap<FieldKey, Field> fieldMap;
 
-	public FieldAnalyzer(CtClass cc,
-			ArrayList<Variable> fieldIsWritterInfoList,
+	// private ArrayList<Variable> fieldIsReaderList;
+
+	public FieldAnalyzer(CtClass cc, ArrayList<Variable> fieldIsWriterList,
 			HashMap<FieldKey, Field> fieldMap) {
 		super(cc);
-		this.fieldIsWritterInfoList = fieldIsWritterInfoList;
+		this.fieldIsWriterList = fieldIsWriterList;
 		this.fieldMap = fieldMap;
+		// this.fieldIsReaderList = new ArrayList<>();
 	}
 
 	/**
@@ -59,42 +61,97 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		cc.instrument(new ExprEditor() {
 			public void edit(FieldAccess field) throws CannotCompileException {
 				CtBehavior behavior = field.where();
-				// if (!behavior.getName().equals("DrawApplication"))
+				// if (!behavior.getName().equals("displayBox"))
 				// return;
 				// String sign = behavior.getSignature();
 				CodeAttribute codeAttr = behavior.getMethodInfo()
 						.getCodeAttribute();
+
+				if (codeAttr == null)
+					return;
+
 				LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 						.getAttribute(LineNumberAttribute.tag);
 				if (lineNrAttr == null) {
 					return;
 				}
-				if (field.isWriter() && codeAttr != null) {
-					try {
-						Variable var = null;
-						// fieldType is an object -> starts with L.*
-						if (isFieldNotPrimitive(field)
-								&& !isInnerClassSuperCall(field)) {
+				Variable var = null;
+				try {
+					if (isFieldNotPrimitive(field)) {
+						if (field.isWriter() && !isInnerClassSuperCall(field)) {
 
+							// fieldType is an object -> starts with L.*
 							if (isFieldFromCurrentCtClass(field)) {
 								// direct fields
 								var = storeFieldOfCurrentClass(field);
-
 							} else {
 								// indirect fields
 								var = storeFieldOfAnotherClass(field);
 							}
-
-							// insert code after assignment
 							adaptByteCode(var);
 						}
-					} catch (NotFoundException | BadBytecode e) {
-						e.printStackTrace();
+						// else {
+						// checkFieldIsReader(field);
+						// }
+						// insert code after assignment
+
 					}
+
+				} catch (NotFoundException | BadBytecode e) {
+					e.printStackTrace();
 				}
 			}
+
 		});
 	}
+
+	// private void checkFieldIsReader(FieldAccess field) {
+	//
+	// CtBehavior behavior = field.where();
+	// CodeAttribute codeAttribute = behavior.getMethodInfo()
+	// .getCodeAttribute();
+	// CodeIterator codeIterator = codeAttribute.iterator();
+	//
+	// int pc = field.indexOfBytecode();
+	// if (this.fieldIsReaderList.size() > 0) {
+	// pc = getActualPc();
+	// }
+	//
+	// int pcAfter = getPcAfter(codeIterator, pc);
+	//
+	// codeIterator.begin();
+	//
+	// ArrayList<Integer> pcList = new ArrayList<>();
+	//
+	// int fieldIsWriterListIndex =
+	// getIndexOfFieldIsWriterListEntryWithSameFieldName(field);
+	//
+	// }
+
+	// private int getPcAfter(CodeIterator codeIterator, int pc) {
+	// // codeIterator.move(pc);
+	// codeIterator.next();
+	//
+	// int pcAfter
+	// if(codeIterator.hasNext()) Auto-generated method stub
+	// return 0;
+	// }
+
+	// private int getActualPc() {
+	// // TODO Auto-generated method stub
+	// return 0;
+	// }
+
+	// private int getIndexOfFieldIsWriterListEntryWithSameFieldName(
+	// FieldAccess field) {
+	// for (int i = 0; i < this.fieldIsWriterList.size(); i++) {
+	// String listFieldName = this.fieldIsWriterList.get(i).getVarName();
+	// if (field.getFileName().equals(listFieldName)) {
+	// return i;
+	// }
+	// }
+	// return -1;
+	// }
 
 	private boolean isAnotherClassAnInnerClass(FieldAccess field)
 			throws NotFoundException {
@@ -140,7 +197,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		Field var = new Field("field", fieldName, fieldType,
 				fieldDeclaringClassName, fieldLineNr, pos, startPos,
 				posAfterAssignment, cc, behavior, field.isStatic(), null);
-		fieldIsWritterInfoList.add(var);
+		fieldIsWriterList.add(var);
 
 		FieldKey fieldKey = new FieldKey(cc.getName(), fieldName, fieldType,
 				fieldDeclaringClassName, field.isStatic(), "", "", "", false,
@@ -286,7 +343,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				fieldDeclaringClassName, fieldLineNr, pos, startPos, afterPos,
 				cc, behavior, field.isStatic(), indirectFieldObject);
 
-		fieldIsWritterInfoList.add(var);
+		fieldIsWriterList.add(var);
 
 		// hashMap
 
@@ -362,9 +419,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		int nextPosAfterLastVar = 0;
 		Variable lastVar = null;
-		if (fieldIsWritterInfoList.size() != 0) {
-			lastVar = fieldIsWritterInfoList
-					.get(fieldIsWritterInfoList.size() - 1);
+		if (fieldIsWriterList.size() != 0) {
+			lastVar = fieldIsWriterList.get(fieldIsWriterList.size() - 1);
 
 			if (isSameBehavior(field, lastVar)) {
 				codeIter.move(lastVar.getAfterPos());
@@ -393,9 +449,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// wrong: startPos of later will be set to pc of first instruction of
 		// inserted bytecode
 		// iterate to pc after added bytecode and set startPc to it
-		if (fieldIsWritterInfoList.size() != 0
-				&& isSameBehavior(field, lastVar) && codeIter.hasNext()
-				&& nextPosAfterLastVar == startPc) {
+		if (fieldIsWriterList.size() != 0 && isSameBehavior(field, lastVar)
+				&& codeIter.hasNext() && nextPosAfterLastVar == startPc) {
 			op = codeIter.byteAt(startPc);
 			String instr = Mnemonic.OPCODE[op];
 
@@ -420,11 +475,11 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// int fieldListSize = fieldIsWritterInfoList.size();
 
 		int pos = field.indexOfBytecode();
-		int fieldListSize = fieldIsWritterInfoList.size();
+		int fieldListSize = fieldIsWriterList.size();
 
 		if (fieldListSize != 0) {
 			// list is not empty
-			Variable lastVar = fieldIsWritterInfoList.get(fieldListSize - 1);
+			Variable lastVar = fieldIsWriterList.get(fieldListSize - 1);
 
 			if (isSameBehavior(field, lastVar)) {
 				// last field is in same behavior -> set pos to last field's pos
