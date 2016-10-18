@@ -21,8 +21,7 @@ public class ReceiverData {
 		this.behavior = behavior;
 	}
 
-	public ArrayList<String> getFieldData(ArrayList<String> varData,
-			int lineNr, int pos, int count) {
+	public ArrayList<String> getFieldData(int lineNr, int pos, int count) {
 
 		MethodInfo methodInfo = this.behavior.getMethodInfo2();
 		ConstPool constPool = methodInfo.getConstPool();
@@ -44,6 +43,8 @@ public class ReceiverData {
 		String className = this.behavior.getDeclaringClass().getName();
 		String declaringClassName = constPool.getFieldrefClassName(index);
 
+		ArrayList<String> varData = new ArrayList<>();
+
 		// #9
 		varData.add(Integer.toString(count));
 		varData.add(Integer.toString(lineNr));
@@ -64,8 +65,9 @@ public class ReceiverData {
 		return varData;
 	}
 
-	public ArrayList<String> getLocalVarData(ArrayList<String> varData,
-			int lineNr, int pos, int count) throws IOException, BadBytecode {
+	public ArrayList<String> getLocalVarData(int lineNr, int pos, int count)
+			throws IOException, BadBytecode {
+
 		CodeAttribute codeAttr = this.behavior.getMethodInfo()
 				.getCodeAttribute();
 		CodeIterator codeIter = codeAttr.iterator();
@@ -82,11 +84,15 @@ public class ReceiverData {
 
 		LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
 				.getAttribute(LocalVariableAttribute.tag);
+
+		ArrayList<String> varData = new ArrayList<>();
+
 		for (int i = 0; i < localVarAttr.tableLength(); i++) {
 			if (localVarAttr.index(i) == slot) {
 				int startPc = localVarAttr.startPc(i);
 				int length = localVarAttr.codeLength(i);
 				int endPc = startPc + length;
+
 				if (pos >= startPc && pos <= endPc) {
 					String varID = "aload_" + slot;
 					String varName = localVarAttr.variableName(i);

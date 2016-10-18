@@ -23,7 +23,7 @@ import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
 	private ConstPool constPool;
-	private static int count = 0;
+	private static int counter = 0;
 
 	public MethodInvocationAnalyzer(CtClass cc) {
 		super(cc);
@@ -383,34 +383,35 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 		possibleReceiverIntervalList.set(possibleReceiverIndex, replace);
 	}
 
-	private void storeMethodreceiverData(CtBehavior behavior,
+	public void storeMethodreceiverData(CtBehavior behavior,
 			int possibleReceiverStartPc) throws BadBytecode, IOException {
+
 		MethodInfo methodInfo = behavior.getMethodInfo2();
 		CodeAttribute codeAttr = methodInfo.getCodeAttribute();
-		CodeIterator codeIter = codeAttr.iterator();
 		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 				.getAttribute(LineNumberAttribute.tag);
-		int lineNr = lineNrAttr.toLineNumber(possibleReceiverStartPc);
 
-		ArrayList<String> varData = new ArrayList<>();
-
+		CodeIterator codeIter = codeAttr.iterator();
 		codeIter.move(possibleReceiverStartPc);
 		int pos = codeIter.next();
 		int op = codeIter.byteAt(pos);
 		int op2 = 0;
 
+		int lineNr = lineNrAttr.toLineNumber(possibleReceiverStartPc);
+
+		ArrayList<String> varData = new ArrayList<>();
 		ReceiverData receiverData = new ReceiverData(behavior);
 
 		if (isField(op)) {
 			// field
-			varData = receiverData.getFieldData(varData, lineNr, pos,
-					MethodInvocationAnalyzer.count);
+			varData = receiverData.getFieldData(lineNr, pos,
+					MethodInvocationAnalyzer.counter);
 			op2 = op;
 
 		} else if (isLocalVar(op)) {
 			// localVar
-			varData = receiverData.getLocalVarData(varData, lineNr, pos,
-					MethodInvocationAnalyzer.count);
+			varData = receiverData.getLocalVarData(lineNr, pos,
+					MethodInvocationAnalyzer.counter);
 			op2 = op;
 		}
 
@@ -427,7 +428,7 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 		}
 
 		if (shouldCountBeIncremented(op2, op) || !codeIter.hasNext()) {
-			count++;
+			counter++;
 		}
 
 	}
@@ -435,6 +436,14 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 	private boolean shouldCountBeIncremented(int currentOp, int nextOp) {
 		return (isLocalVar(currentOp) && nextOp != Opcode.GETFIELD)
 				|| (isField(currentOp) && nextOp != Opcode.GETFIELD);
+	}
+
+	public static int getCounter() {
+		return counter;
+	}
+
+	public static void setCounter(int count) {
+		MethodInvocationAnalyzer.counter = count;
 	}
 
 	private boolean isLocalVar(int op) {

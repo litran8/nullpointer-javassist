@@ -1,5 +1,6 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -9,6 +10,7 @@ import javassist.CtClass;
 import javassist.CtField;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
+import javassist.bytecode.Bytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
@@ -19,6 +21,8 @@ import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
+import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.MethodInvocationAnalyzer;
+import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.ReceiverData;
 import ch.unibe.scg.nullSpy.instrumentator.model.Field;
 import ch.unibe.scg.nullSpy.instrumentator.model.FieldKey;
 import ch.unibe.scg.nullSpy.instrumentator.model.IndirectVar;
@@ -58,15 +62,105 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// if (!cc.getName().equals("org.jhotdraw.application.DrawApplication"))
 		// return;
 
+		checkForFieldIsReader();
+		checkForFielIsWriter();
+	}
+
+	private void checkForFieldIsReader() throws CannotCompileException {
 		cc.instrument(new ExprEditor() {
 			public void edit(FieldAccess field) throws CannotCompileException {
+				CtBehavior behavior = field.where();
+
+				if (!behavior.getName().equals("displayBox"))
+					return;
+
+				try {
+					if (!isFieldPrimitive(field) && field.isReader()
+							&& !isInnerClassSuperCall(field)) {
+						storeInfoAboutFieldIsReader(field);
+					}
+				} catch (BadBytecode | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
+
+	}
+
+	private void storeInfoAboutFieldIsReader(FieldAccess field)
+			throws BadBytecode, IOException {
+
+		CtBehavior behavior = field.where();
+		CodeAttribute codeAttr = behavior.getMethodInfo2().getCodeAttribute();
+		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
+				.getAttribute(LineNumberAttribute.tag);
+
+		int pc = field.indexOfBytecode();
+		int startPc = getStartPc(codeAttr, pc);
+		int lineNr = lineNrAttr.toLineNumber(pc);
+
+		ArrayList<String> varData = new ArrayList<>();
+		ReceiverData receiverData = new ReceiverData(field.where());
+
+		varData = receiverData.getFieldData(lineNr, pc,
+				MethodInvocationAnalyzer.getCounter());
+
+		MethodInvocationAnalyzer methodInvocationAnalyzer = new MethodInvocationAnalyzer(
+				this.cc);
+		methodInvocationAnalyzer.storeMethodreceiverData(behavior, startPc);
+	}
+
+	private int getStartPc(CodeAttribute codeAttr, int pc) {
+		CodeIterator codeIter = codeAttr.iterator();
+
+		ArrayList<Integer> pcListUntilParameterPc = getPcListUntilParameterPc(
+				codeIter, pc);
+
+		int op = 0;
+		int checkPc = 0;
+		for (int i = pcListUntilParameterPc.size() - 2; i >= 0; i--) {
+			checkPc = pcListUntilParameterPc.get(i);
+			op = codeIter.byteAt(checkPc);
+			if (op == Bytecode.ALOAD_0) {
+				return checkPc;
+			}
+		}
+
+		return -1;
+	}
+
+	private ArrayList<Integer> getPcListUntilParameterPc(CodeIterator codeIter,
+			int pc) {
+		ArrayList<Integer> res = new ArrayList<>();
+
+		codeIter.begin();
+		int checkPc = 0;
+
+		while (codeIter.hasNext() && checkPc < pc) {
+			try {
+				checkPc = codeIter.next();
+				res.add(checkPc);
+
+			} catch (BadBytecode e) {
+				e.printStackTrace();
+			}
+		}
+
+		return res;
+	}
+
+	private void checkForFielIsWriter() throws CannotCompileException {
+		cc.instrument(new ExprEditor() {
+			public void edit(FieldAccess field) throws CannotCompileException {
+
 				CtBehavior behavior = field.where();
 				// if (!behavior.getName().equals("displayBox"))
 				// return;
 				// String sign = behavior.getSignature();
+
 				CodeAttribute codeAttr = behavior.getMethodInfo()
 						.getCodeAttribute();
-
 				if (codeAttr == null)
 					return;
 
@@ -75,26 +169,21 @@ public class FieldAnalyzer extends VariableAnalyzer {
 				if (lineNrAttr == null) {
 					return;
 				}
+
 				Variable var = null;
 				try {
-					if (isFieldNotPrimitive(field)) {
-						if (field.isWriter() && !isInnerClassSuperCall(field)) {
+					if (field.isWriter() && !isFieldPrimitive(field)
+							&& !isInnerClassSuperCall(field)) {
 
-							// fieldType is an object -> starts with L.*
-							if (isFieldFromCurrentCtClass(field)) {
-								// direct fields
-								var = storeFieldOfCurrentClass(field);
-							} else {
-								// indirect fields
-								var = storeFieldOfAnotherClass(field);
-							}
-							adaptByteCode(var);
+						// fieldType is an object -> starts with L.*
+						if (isFieldFromCurrentCtClass(field)) {
+							// direct fields
+							var = storeFieldOfCurrentClass(field);
+						} else {
+							// indirect fields
+							var = storeFieldOfAnotherClass(field);
 						}
-						// else {
-						// checkFieldIsReader(field);
-						// }
-						// insert code after assignment
-
+						adaptByteCode(var);
 					}
 
 				} catch (NotFoundException | BadBytecode e) {
@@ -104,54 +193,6 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 		});
 	}
-
-	// private void checkFieldIsReader(FieldAccess field) {
-	//
-	// CtBehavior behavior = field.where();
-	// CodeAttribute codeAttribute = behavior.getMethodInfo()
-	// .getCodeAttribute();
-	// CodeIterator codeIterator = codeAttribute.iterator();
-	//
-	// int pc = field.indexOfBytecode();
-	// if (this.fieldIsReaderList.size() > 0) {
-	// pc = getActualPc();
-	// }
-	//
-	// int pcAfter = getPcAfter(codeIterator, pc);
-	//
-	// codeIterator.begin();
-	//
-	// ArrayList<Integer> pcList = new ArrayList<>();
-	//
-	// int fieldIsWriterListIndex =
-	// getIndexOfFieldIsWriterListEntryWithSameFieldName(field);
-	//
-	// }
-
-	// private int getPcAfter(CodeIterator codeIterator, int pc) {
-	// // codeIterator.move(pc);
-	// codeIterator.next();
-	//
-	// int pcAfter
-	// if(codeIterator.hasNext()) Auto-generated method stub
-	// return 0;
-	// }
-
-	// private int getActualPc() {
-	// // TODO Auto-generated method stub
-	// return 0;
-	// }
-
-	// private int getIndexOfFieldIsWriterListEntryWithSameFieldName(
-	// FieldAccess field) {
-	// for (int i = 0; i < this.fieldIsWriterList.size(); i++) {
-	// String listFieldName = this.fieldIsWriterList.get(i).getVarName();
-	// if (field.getFileName().equals(listFieldName)) {
-	// return i;
-	// }
-	// }
-	// return -1;
-	// }
 
 	private boolean isAnotherClassAnInnerClass(FieldAccess field)
 			throws NotFoundException {
@@ -562,11 +603,12 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		}
 	}
 
-	private boolean isFieldNotPrimitive(FieldAccess field) {
-		if (field.getSignature().matches("L.*"))
-			return true;
-		else
+	private boolean isFieldPrimitive(FieldAccess field) {
+		if (field.getSignature().matches("L.*")) {
 			return false;
+		} else {
+			return true;
+		}
 	}
 
 	/**
@@ -581,36 +623,44 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		CtBehavior behavior = field.where();
 		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
 
-		if (behavior.getMethodInfo().isMethod() || codeAttr == null)
-			return false;
-
 		CodeIterator codeIter = codeAttr.iterator();
+		int i = codeIter.skipConstructor();
 
-		int storePc = getPos(field);
-		int startPc = getStartPos(field, storePc);
-
-		int checkSuperCallPc = startPc;
-		int checkSuperCallOp = codeIter.byteAt(startPc);
-
-		codeIter.move(checkSuperCallPc);
-		codeIter.next();
-
-		boolean isThereAnInvokeSpecial = false;
-
-		while (checkSuperCallOp != Opcode.INVOKESPECIAL && codeIter.hasNext()) {
-			checkSuperCallPc = codeIter.next();
-			checkSuperCallOp = codeIter.byteAt(checkSuperCallPc);
-			if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
-				isThereAnInvokeSpecial = true;
-				break;
-			}
-		}
-
-		if (isThereAnInvokeSpecial) {
-			return true;
-		} else {
+		if (i == -1) {
 			return false;
+		} else {
+			return true;
 		}
+
+		// if (behavior.getMethodInfo().isMethod() || codeAttr == null)
+		// return false;
+		//
+		// int storePc = getPos(field);
+		// int startPc = getStartPos(field, storePc);
+		//
+		// int checkSuperCallPc = startPc;
+		// int checkSuperCallOp = codeIter.byteAt(startPc);
+		//
+		// codeIter.move(checkSuperCallPc);
+		// codeIter.next();
+		//
+		// boolean isThereAnInvokeSpecial = false;
+		//
+		// while (checkSuperCallOp != Opcode.INVOKESPECIAL &&
+		// codeIter.hasNext()) {
+		// checkSuperCallPc = codeIter.next();
+		// checkSuperCallOp = codeIter.byteAt(checkSuperCallPc);
+		// if (checkSuperCallOp == Opcode.INVOKESPECIAL) {
+		// isThereAnInvokeSpecial = true;
+		// break;
+		// }
+		// }
+		//
+		// if (isThereAnInvokeSpecial) {
+		// return true;
+		// } else {
+		// return false;
+		// }
 	}
 
 }
