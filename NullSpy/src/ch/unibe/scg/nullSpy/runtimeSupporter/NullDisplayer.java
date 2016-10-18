@@ -24,7 +24,9 @@ public class NullDisplayer {
 			HashMap<LocalVarKey, LocalVariable> localVarMap,
 			HashMap<FieldKey, Field> fieldMap, String className, int lineNr,
 			String behaviorName) throws FileNotFoundException {
+
 		// System.out.println("NullDisplayer");
+
 		NullDisplayer.localVarMap = localVarMap;
 		NullDisplayer.fieldMap = fieldMap;
 
@@ -69,6 +71,8 @@ public class NullDisplayer {
 			return;
 		}
 
+		boolean matched = false;
+
 		for (int i = 0; i < keyList.size(); i++) {
 			Key key = keyList.get(i);
 			Variable var = null;
@@ -77,6 +81,7 @@ public class NullDisplayer {
 
 			for (FieldKey k : fieldMap.keySet()) {
 				if (key.equals(k)) {
+					matched = true;
 
 					// System.out.println("contains field key");
 					var = fieldMap.get(k);
@@ -105,10 +110,14 @@ public class NullDisplayer {
 					}
 					System.out.print("Field ");
 				}
+
+				if (matched) {
+					break;
+				}
 			}
 
 			if (localVarMap.containsKey(key)) {
-				System.out.println("contains locVar key");
+				// System.out.println("contains locVar key");
 				var = localVarMap.get(key);
 				linkVarName = var.getVarName();
 				varID = var.getVarID();
@@ -126,6 +135,10 @@ public class NullDisplayer {
 
 			printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName,
 					varID);
+
+			if (matched) {
+				return;
+			}
 		}
 
 	}
@@ -240,7 +253,38 @@ public class NullDisplayer {
 				} else if (npeReceiverGroup.size() == 3) {
 					// indirectField.field
 					// FIXME: what to do..
-					System.out.println("Future Work");
+
+					int index_2 = npeReceiverGroup.get(1);
+					if (getVariableName(index_1).equals("this")) {
+						FieldKey k = new FieldKey(
+								getClassNameWhereVariableIsUsed(index_2),
+								getVariableName(index_2),
+								getVariableType(index_2),
+								getVariableDeclaringClassName(index_2),
+								isVariableStatic(index_2), "", "", "", false,
+								getBehaviorName(index_2),
+								getBehaviorSignature(index_2));
+						keyList.add(k);
+						// System.out.println("this.field");
+						// System.out.println(k.toString());
+						// System.out.println();
+					} else {
+						keyList.add(new FieldKey(
+								getClassNameWhereVariableIsUsed(index_2),
+								getVariableName(index_2),
+								getVariableType(index_2),
+								getVariableDeclaringClassName(index_2),
+								isVariableStatic(index_2),
+								getVariableName(index_1),
+								getVariableType(index_1),
+								getVariableDeclaringClassName(index_1),
+								isVariableStatic(index_1),
+								getBehaviorName(index_2),
+								getBehaviorSignature(index_2)));
+						// System.out.println("bla.field");
+					}
+
+					// System.out.println("Future Work");
 				}
 			}
 		}

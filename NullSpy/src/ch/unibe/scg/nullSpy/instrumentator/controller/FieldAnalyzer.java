@@ -10,7 +10,6 @@ import javassist.CtClass;
 import javassist.CtField;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
-import javassist.bytecode.Bytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
@@ -71,8 +70,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			public void edit(FieldAccess field) throws CannotCompileException {
 				CtBehavior behavior = field.where();
 
-				if (!behavior.getName().equals("displayBox"))
-					return;
+				// if (!behavior.getName().equals("name"))
+				// return;
 
 				try {
 					if (!isFieldPrimitive(field) && field.isReader()
@@ -92,12 +91,23 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			throws BadBytecode, IOException {
 
 		CtBehavior behavior = field.where();
+		// System.out.println(behavior.getName());
 		CodeAttribute codeAttr = behavior.getMethodInfo2().getCodeAttribute();
 		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 				.getAttribute(LineNumberAttribute.tag);
 
 		int pc = field.indexOfBytecode();
-		int startPc = getStartPc(codeAttr, pc);
+
+		int startPc = pc;
+		if (!field.isStatic()) {
+			startPc = getStartPc(codeAttr, pc);
+		}
+
+		// startPc would be aaload.*
+		if (startPc == -1) {
+			return;
+		}
+
 		int lineNr = lineNrAttr.toLineNumber(pc);
 
 		ArrayList<String> varData = new ArrayList<>();
@@ -122,7 +132,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		for (int i = pcListUntilParameterPc.size() - 2; i >= 0; i--) {
 			checkPc = pcListUntilParameterPc.get(i);
 			op = codeIter.byteAt(checkPc);
-			if (op == Bytecode.ALOAD_0) {
+			if (Mnemonic.OPCODE[op].matches("aload.*")) {
 				return checkPc;
 			}
 		}
@@ -155,9 +165,8 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			public void edit(FieldAccess field) throws CannotCompileException {
 
 				CtBehavior behavior = field.where();
-				// if (!behavior.getName().equals("displayBox"))
+				// if (!behavior.getName().equals("basicDisplayBox"))
 				// return;
-				// String sign = behavior.getSignature();
 
 				CodeAttribute codeAttr = behavior.getMethodInfo()
 						.getCodeAttribute();
@@ -172,6 +181,9 @@ public class FieldAnalyzer extends VariableAnalyzer {
 
 				Variable var = null;
 				try {
+					boolean isWriter = field.isWriter();
+					boolean isPrimitive = !isFieldPrimitive(field);
+					boolean isSuperCall = !isInnerClassSuperCall(field);
 					if (field.isWriter() && !isFieldPrimitive(field)
 							&& !isInnerClassSuperCall(field)) {
 
@@ -230,7 +242,12 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			posAfterAssignment = codeIterator.next();
 		}
 
-		int fieldLineNr = field.getLineNumber();
+		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttribute
+				.getAttribute(LineNumberAttribute.tag);
+		// Printer p = new Printer();
+		// p.printLineNumberAttribute(lineNrAttr);
+
+		int fieldLineNr = lineNrAttr.toLineNumber(pos);
 		String fieldName = field.getFieldName();
 		String fieldType = field.getSignature();
 		String fieldDeclaringClassName = cc.getName();

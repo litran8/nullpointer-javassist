@@ -6,6 +6,7 @@ import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.InstructionPrinter;
+import javassist.bytecode.LineNumberAttribute;
 
 public class Printer {
 
@@ -30,5 +31,12 @@ public class Printer {
 		ConstPool pool = behavior.getMethodInfo2().getConstPool();
 
 		return InstructionPrinter.instructionString(iter, pos, pool);
+	}
+
+	public static void printLineNumberAttribute(LineNumberAttribute lineNrAttr) {
+		for (int i = 0; i < lineNrAttr.tableLength(); i++) {
+			System.out.println("Pc: " + lineNrAttr.startPc(i) + ", LineNr: "
+					+ lineNrAttr.lineNumber(i));
+		}
 	}
 }

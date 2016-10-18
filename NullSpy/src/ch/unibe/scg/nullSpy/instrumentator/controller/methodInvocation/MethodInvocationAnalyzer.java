@@ -393,6 +393,11 @@ public class MethodInvocationAnalyzer extends VariableAnalyzer {
 
 		CodeIterator codeIter = codeAttr.iterator();
 		codeIter.move(possibleReceiverStartPc);
+		//
+		// if (!codeIter.hasNext()) {
+		// return;
+		// }
+
 		int pos = codeIter.next();
 		int op = codeIter.byteAt(pos);
 		int op2 = 0;

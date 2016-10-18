@@ -5,6 +5,7 @@ import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
 import javassist.NotFoundException;
+import javassist.bytecode.CodeAttribute;
 import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
 public class MainBehaviorModifier {
@@ -13,39 +14,57 @@ public class MainBehaviorModifier {
 			throws NotFoundException, CannotCompileException {
 		CtBehavior[] behaviors = cc.getDeclaredBehaviors();
 
+		if (behaviors.length == 0) {
+			return;
+		}
+
 		for (CtBehavior behavior : behaviors) {
-			if (behavior.getName().equals("main")) {
-				StringBuilder sb = new StringBuilder();
-
-				sb.append("{");
-
-				sb.append("StackTraceElement[] stElem = $e.getStackTrace();");
-				sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.printLocationOnMatch");
-				sb.append("(");
-				sb.append("\"" + MainProjectModifier.csvPath + "\"");
-				// sb.append("\"" +
-				// "C:\\\\Users\\\\Lina Tran\\\\Desktop\\\\VarData.csv"
-				// + "\""); // testLine
-				sb.append(",");
-				sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester.getLocalVarMap()");
-				sb.append(",");
-				sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester.getFieldMap()");
-				sb.append(",");
-				sb.append("stElem[0].getClassName()");
-				sb.append(",");
-				sb.append("stElem[0].getLineNumber()");
-				sb.append(",");
-				sb.append("stElem[0].getMethodName()");
-				sb.append(");");
-
-				sb.append("throw $e;");
-
-				sb.append("}");
+			CodeAttribute codeAttr = behavior.getMethodInfo2()
+					.getCodeAttribute();
+			// if (codeAttr != null && behavior.getName().equals("retrieveAll"))
+			// {
+			if (codeAttr != null) {
+				StringBuilder sb = getCatchBlockAsString();
 
 				CtClass etype = ClassPool.getDefault().get(
 						"java.lang.Throwable");
-				behavior.addCatch(sb.toString(), etype);
+				try {
+					behavior.addCatch(sb.toString(), etype);
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
+
 			}
 		}
+	}
+
+	private static StringBuilder getCatchBlockAsString() {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("{");
+
+		sb.append("StackTraceElement[] stElem = $e.getStackTrace();");
+		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.NullDisplayer.printLocationOnMatch");
+		sb.append("(");
+		sb.append("\"" + MainProjectModifier.csvPath + "\"");
+		// sb.append("\"" +
+		// "C:\\\\Users\\\\Lina Tran\\\\Desktop\\\\VarData.csv"
+		// + "\""); // testLine
+		sb.append(",");
+		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester.getLocalVarMap()");
+		sb.append(",");
+		sb.append("ch.unibe.scg.nullSpy.runtimeSupporter.VariableTester.getFieldMap()");
+		sb.append(",");
+		sb.append("stElem[0].getClassName()");
+		sb.append(",");
+		sb.append("stElem[0].getLineNumber()");
+		sb.append(",");
+		sb.append("stElem[0].getMethodName()");
+		sb.append(");");
+
+		sb.append("throw $e;");
+
+		sb.append("}");
+		return sb;
 	}
 }

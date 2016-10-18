@@ -65,7 +65,7 @@ public class ClassAdapter {
 
 		}
 
-		// if (!cc.getName().equals("org.jhotdraw.figures.EllipseFigure"))
+		// if (!cc.getName().equals("org.jhotdraw.util.ColorMap"))
 		// return;
 
 		System.out.println("\n\nCLASS: " + cc.getName());
