@@ -21,9 +21,8 @@ public class MainBehaviorModifier {
 		for (CtBehavior behavior : behaviors) {
 			CodeAttribute codeAttr = behavior.getMethodInfo2()
 					.getCodeAttribute();
-			// if (codeAttr != null && behavior.getName().equals("retrieveAll"))
-			// {
-			if (codeAttr != null) {
+			if (codeAttr != null && behavior.getName().equals("main")) {
+				// if (codeAttr != null) {
 				StringBuilder sb = getCatchBlockAsString();
 
 				CtClass etype = ClassPool.getDefault().get(
