@@ -13,7 +13,6 @@ import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.Descriptor;
 import javassist.bytecode.LineNumberAttribute;
-import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
 import ch.unibe.scg.nullSpy.instrumentator.controller.Analyzer;
@@ -30,11 +29,6 @@ public class MethodInvocationAnalyzer extends Analyzer {
 
 	/**
 	 * Get method receiver data of constructor and normal methods.
-	 * 
-	 * @throws CannotCompileException
-	 * @throws BadBytecode
-	 * @throws IOException
-	 * @throws NotFoundException
 	 */
 	public void getMethodReceiver() throws CannotCompileException, BadBytecode,
 			IOException, NotFoundException {
@@ -43,36 +37,29 @@ public class MethodInvocationAnalyzer extends Analyzer {
 
 	/**
 	 * Starts to collect data of method receiver
-	 * 
-	 * @param behaviorList
-	 * @throws CannotCompileException
-	 * @throws BadBytecode
-	 * @throws IOException
-	 * @throws NotFoundException
 	 */
 	private void getMethodReceiverData(CtBehavior[] behaviorList)
 			throws CannotCompileException, BadBytecode, IOException,
 			NotFoundException {
 
-		// FIXME: class choice
+		// TODO: class choice debug
 		// if (!cc.getName().equals("org.jhotdraw.application.DrawApplication"))
 		// return;
 
 		for (CtBehavior behavior : behaviorList) {
 
-			// FIXME: method choice
+			// TODO: method choice debug
 			// if (!behavior.getName().equals("setTool"))
 			// continue;
 
-			MethodInfo methodInfo = behavior.getMethodInfo2();
-			constPool = methodInfo.getConstPool();
-			CodeAttribute codeAttr = methodInfo.getCodeAttribute();
+			constPool = getConstPool(behavior);
+			CodeAttribute codeAttr = getCodeAttribute(behavior);
 
 			if (codeAttr == null) {
 				continue;
 			}
 
-			// FIXME: just printer mark
+			// TODO: just printer mark debug
 			// Printer p = new Printer();
 			// p.printBehavior(behavior, 0);
 			// LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
@@ -122,19 +109,10 @@ public class MethodInvocationAnalyzer extends Analyzer {
 	/**
 	 * Store receiver data by only checking the received interval (whole and
 	 * subintervals)
-	 * 
-	 * @param behavior
-	 * @param invocationInterval
-	 * @throws BadBytecode
-	 * @throws IOException
-	 * @throws NotFoundException
 	 */
 	private void checkInvocationInterval(CtBehavior behavior,
 			ArrayList<Integer> invocationInterval) throws BadBytecode,
 			IOException, NotFoundException {
-
-		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
-		CodeIterator codeIter = codeAttr.iterator();
 
 		int startPos = invocationInterval.get(0);
 		int endPos = getIntervalEndPos(invocationInterval);
@@ -142,7 +120,9 @@ public class MethodInvocationAnalyzer extends Analyzer {
 		if (startPos == endPos)
 			return;
 
+		CodeIterator codeIter = getCodeIterator(behavior);
 		codeIter.move(startPos);
+
 		int pos = startPos;
 
 		ArrayList<Integer> invocationPcList = new ArrayList<>();
@@ -356,13 +336,6 @@ public class MethodInvocationAnalyzer extends Analyzer {
 
 	/**
 	 * Wrap nested invocation into one receiverList entry
-	 * 
-	 * @param endPc
-	 * @param possibleReceiverIntervalList
-	 * @param paramCount
-	 * @param possibleReceiverListSize
-	 * @param possibleReceiverIndex
-	 * @param startPc
 	 */
 	private void updateReceiverList(
 			ArrayList<MethodReceiverInterval> possibleReceiverIntervalList,
@@ -384,13 +357,9 @@ public class MethodInvocationAnalyzer extends Analyzer {
 
 	public void storeMethodreceiverData(CtBehavior behavior,
 			int possibleReceiverStartPc) throws BadBytecode, IOException {
+		LineNumberAttribute lineNrAttr = getLineNumberAttribute(behavior);
 
-		MethodInfo methodInfo = behavior.getMethodInfo2();
-		CodeAttribute codeAttr = methodInfo.getCodeAttribute();
-		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-				.getAttribute(LineNumberAttribute.tag);
-
-		CodeIterator codeIter = codeAttr.iterator();
+		CodeIterator codeIter = getCodeIterator(behavior);
 		codeIter.move(possibleReceiverStartPc);
 		//
 		// if (!codeIter.hasNext()) {
@@ -419,7 +388,7 @@ public class MethodInvocationAnalyzer extends Analyzer {
 			op2 = op;
 		}
 
-		// FIXME: Main || Test
+		// TODO: Main || Test
 		MainProjectModifier.csv.addCsvLine(varData);
 		// TestInstrumentor.csv.addCsvLine(varData);
 
@@ -463,12 +432,6 @@ public class MethodInvocationAnalyzer extends Analyzer {
 	/**
 	 * Recursively checking the interval, subinterval and add possible receiver
 	 * to list
-	 * 
-	 * @param possibleReceiverIntervalList
-	 * @param codeIter
-	 * @param startPos
-	 * @param endPos
-	 * @throws BadBytecode
 	 */
 	private void filterPossibleReceiver(
 			ArrayList<MethodReceiverInterval> possibleReceiverIntervalList,
@@ -612,10 +575,6 @@ public class MethodInvocationAnalyzer extends Analyzer {
 	 * Returns the method signature (the parameter types and the return type).
 	 * The method signature is represented by a character string called method
 	 * descriptor, which is defined in the JVM specification.
-	 *
-	 * @see javassist.CtBehavior#getSignature()
-	 * @see javassist.bytecode.Descriptor
-	 * @since 3.1
 	 */
 	public String getSignature(int nameAndType) {
 		return constPool.getUtf8Info(constPool

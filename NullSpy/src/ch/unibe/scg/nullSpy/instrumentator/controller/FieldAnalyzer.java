@@ -70,17 +70,15 @@ public class FieldAnalyzer extends Analyzer {
 
 	private void storeInfoAboutFieldIsReader(FieldAccess field)
 			throws BadBytecode, IOException {
-
-		CtBehavior behavior = field.where();
-		CodeAttribute codeAttr = getCodeAttribute(behavior);
 		// LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 		// .getAttribute(LineNumberAttribute.tag);
 
 		int pc = field.indexOfBytecode();
-
 		int startPc = pc;
+
+		CtBehavior behavior = field.where();
 		if (!field.isStatic()) {
-			startPc = getStartPc(codeAttr, pc);
+			startPc = getStartPc(getCodeAttribute(behavior), pc);
 		}
 
 		// startPc would be aaload.*
@@ -103,7 +101,6 @@ public class FieldAnalyzer extends Analyzer {
 
 	private int getStartPc(CodeAttribute codeAttr, int pc) {
 		CodeIterator codeIter = codeAttr.iterator();
-
 		ArrayList<Integer> pcListUntilParameterPc = getPcListUntilParameterPc(
 				codeIter, pc);
 
