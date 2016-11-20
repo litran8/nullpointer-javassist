@@ -54,12 +54,11 @@ public class ByteCodeAdapter {
 	private byte[] getInsertCodeByteArray(Variable var)
 			throws NotFoundException {
 
-		CtBehavior behavior = var.getBehavior();
-
 		String varName = var.getVarName();
 		String varType = var.getVarType();
 		String varID = var.getVarID();
 
+		CtBehavior behavior = var.getBehavior();
 		ConstPool cp = behavior.getMethodInfo2().getConstPool();
 		Bytecode testMethodByteCode = new Bytecode(cp);
 
@@ -110,7 +109,6 @@ public class ByteCodeAdapter {
 								varType);
 					}
 				}
-
 			} else {
 
 				// indirect fields
@@ -133,7 +131,6 @@ public class ByteCodeAdapter {
 					testMethodByteCode.addAload(localVarSlot);
 
 					testMethodByteCode.addAload(localVarSlot);
-
 				} else {
 
 					if (indirectVar.isIndirectVarStatic()) {
