@@ -17,7 +17,6 @@ import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
 import ch.unibe.scg.nullSpy.instrumentator.controller.Analyzer;
-import ch.unibe.scg.nullSpy.instrumentator.controller.Printer;
 import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
 public class MethodInvocationAnalyzer extends Analyzer {
@@ -74,7 +73,7 @@ public class MethodInvocationAnalyzer extends Analyzer {
 			}
 
 			// FIXME: just printer mark
-			Printer p = new Printer();
+			// Printer p = new Printer();
 			// p.printBehavior(behavior, 0);
 			// LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 			// .getAttribute(LineNumberAttribute.tag);

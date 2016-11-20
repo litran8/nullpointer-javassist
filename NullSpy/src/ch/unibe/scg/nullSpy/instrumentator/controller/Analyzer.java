@@ -11,6 +11,7 @@ import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
+import javassist.bytecode.ConstPool;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
@@ -32,10 +33,8 @@ public abstract class Analyzer {
 		byteCodeAdapter.insertTestLineAfterVariableAssignment(var);
 	}
 
-	protected HashMap<Integer, Integer> getLineNumberMap(CtBehavior method) {
-		CodeAttribute codeAttribute = method.getMethodInfo().getCodeAttribute();
-		LineNumberAttribute lineNrTable = (LineNumberAttribute) codeAttribute
-				.getAttribute(LineNumberAttribute.tag);
+	protected HashMap<Integer, Integer> getLineNumberMap(CtBehavior behavior) {
+		LineNumberAttribute lineNrTable = getLineNumberAttribute(behavior);
 
 		HashMap<Integer, Integer> lineNumberMap = new HashMap<>();
 
@@ -56,9 +55,7 @@ public abstract class Analyzer {
 		for (int i = 0; i < keys.length; i++) {
 			res.add(new PcLine((int) keys[i], lineNumberMap.get(keys[i])));
 		}
-
 		return res;
-
 	}
 
 	protected int getLineNumber(HashMap<Integer, Integer> lineNumberMap, int pos) {
@@ -131,9 +128,6 @@ public abstract class Analyzer {
 	/**
 	 * Gets the index of locVar in the locVarTable (Byte code)
 	 * 
-	 * @param codeIterator
-	 * @param localVarAttrAsList
-	 * @param pos
 	 * @return index of locVar in locVarTable
 	 */
 	protected int getLocalVarAttrIndex(CodeIterator codeIterator,
@@ -166,8 +160,6 @@ public abstract class Analyzer {
 	/**
 	 * Gets the slot/index of locVar in locVarArray of frame.
 	 * 
-	 * @param codeIterator
-	 * @param pos
 	 * @return slot/index of locVar in locVarArray
 	 */
 	protected static int getLocVarArraySlot(CodeIterator codeIterator, int pos) {
@@ -281,6 +273,10 @@ public abstract class Analyzer {
 
 	protected CodeIterator getCodeIterator(CtBehavior behavior) {
 		return getCodeAttribute(behavior).iterator();
+	}
+
+	protected ConstPool getConstPool(CtBehavior behavior) {
+		return behavior.getMethodInfo2().getConstPool();
 	}
 
 	protected boolean isSameBehavior(CtBehavior behavior, Variable lastVar) {

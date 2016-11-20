@@ -2,8 +2,6 @@ package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
@@ -13,11 +11,6 @@ import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.LineNumberAttribute;
 import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.MethodInvocationAnalyzer;
-import ch.unibe.scg.nullSpy.instrumentator.model.Field;
-import ch.unibe.scg.nullSpy.instrumentator.model.FieldKey;
-import ch.unibe.scg.nullSpy.instrumentator.model.LocalVar;
-import ch.unibe.scg.nullSpy.instrumentator.model.LocalVarKey;
-import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 /**
  * Iterates through class file and instrument check method after assignment to a
@@ -29,11 +22,6 @@ import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 public class ClassAdapter {
 
 	private static ClassAdapter instance;
-
-	private ArrayList<Variable> fieldIsWritterInfoList = new ArrayList<Variable>();
-	private HashMap<FieldKey, Field> fieldMap = new HashMap<>();
-	private ArrayList<Variable> localVarList = new ArrayList<>();
-	private HashMap<LocalVarKey, LocalVar> localVarMap = new HashMap<>();
 
 	public static ClassAdapter getInstance() {
 		if (instance == null) {
@@ -77,14 +65,12 @@ public class ClassAdapter {
 
 		System.out.println("\n------------- FIELD -------------\n");
 
-		FieldAnalyzer fieldAnalyzer = new FieldAnalyzer(cc,
-				fieldIsWritterInfoList, fieldMap);
+		FieldAnalyzer fieldAnalyzer = new FieldAnalyzer(cc);
 		fieldAnalyzer.instrumentAfterFieldAssignment();
 
 		System.out.println("\n------------- LOCAL VAR -------------\n");
 
-		LocalVariableAnalyzer localVarAnalyzer = new LocalVariableAnalyzer(cc,
-				localVarList, localVarMap);
+		LocalVariableAnalyzer localVarAnalyzer = new LocalVariableAnalyzer(cc);
 		localVarAnalyzer.instrumentAfterLocVarAssignment();
 
 		MainBehaviorModifier.addTryCatchToMainMethod(cc);

@@ -1,7 +1,6 @@
 package ch.unibe.scg.nullSpy.instrumentator.controller;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
@@ -17,7 +16,6 @@ import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
 import ch.unibe.scg.nullSpy.instrumentator.model.LocalVar;
-import ch.unibe.scg.nullSpy.instrumentator.model.LocalVarKey;
 import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 /**
@@ -29,12 +27,10 @@ import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
  */
 public class LocalVariableAnalyzer extends Analyzer implements Opcode {
 
-	private ArrayList<Variable> localVarList;
+	private ArrayList<Variable> localVarList = new ArrayList<>();
 
-	public LocalVariableAnalyzer(CtClass cc, ArrayList<Variable> localVarList,
-			HashMap<LocalVarKey, LocalVar> localVarMap) {
+	public LocalVariableAnalyzer(CtClass cc) {
 		super(cc);
-		this.localVarList = localVarList;
 	}
 
 	/**
