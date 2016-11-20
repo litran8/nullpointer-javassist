@@ -16,11 +16,11 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
+import ch.unibe.scg.nullSpy.instrumentator.controller.Analyzer;
 import ch.unibe.scg.nullSpy.instrumentator.controller.Printer;
-import ch.unibe.scg.nullSpy.instrumentator.controller.VariableAnalyzer;
 import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
-public class MethodInvocationAnalyzer extends VariableAnalyzer {
+public class MethodInvocationAnalyzer extends Analyzer {
 
 	private ConstPool constPool;
 	private static int counter = 0;

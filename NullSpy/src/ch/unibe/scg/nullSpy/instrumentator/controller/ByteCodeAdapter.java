@@ -79,14 +79,14 @@ public class ByteCodeAdapter {
 			String classNameInWhichFieldIsInstantiated = field
 					.getFieldDeclaringClassName();
 
-			testMethodByteCode.addLdc(field.getFieldDeclaringClassName());
+			testMethodByteCode.addLdc(classNameInWhichFieldIsInstantiated);
 
 			// int 1 -> static, 0 -> nonStatic
-			testMethodByteCode.addOpcode(Opcode.BIPUSH);
+			// testMethodByteCode.addOpcode(Opcode.BIPUSH);
 			if (field.isStatic()) {
-				testMethodByteCode.add(1);
+				addIntegerToBytecode(testMethodByteCode, 1);
 			} else {
-				testMethodByteCode.add(0);
+				addIntegerToBytecode(testMethodByteCode, 0);
 			}
 
 			IndirectVar indirectVar = field.getIndirectVar();
@@ -98,7 +98,7 @@ public class ByteCodeAdapter {
 				if (field.isStatic()) {
 					// static field: getstatic
 					testMethodByteCode.addGetstatic(
-							field.getFieldDeclaringClassName(),
+							classNameInWhichFieldIsInstantiated,
 							var.getVarName(), var.getVarType());
 				} else {
 					// this.f: aload_0, getfield

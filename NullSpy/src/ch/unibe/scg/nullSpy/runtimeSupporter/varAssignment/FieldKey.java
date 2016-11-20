@@ -17,7 +17,7 @@ public class FieldKey extends Key {
 			String indirectVarDeclaringClassName, boolean isIndirectVarStatic,
 			String behaviorName, String behaviorSignature) {
 		super(varName, classNameInWhichVarIsUsed, behaviorName,
-				behaviorSignature);
+				behaviorSignature, "field");
 		this.varType = varType;
 		this.varDeclaringClassName = varDeclaringClassName;
 		this.isVarStatic = isVarStatic;

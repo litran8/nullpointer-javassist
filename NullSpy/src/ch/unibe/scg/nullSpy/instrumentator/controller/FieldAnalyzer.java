@@ -30,7 +30,7 @@ import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 /**
  * Instruments test-code after fields.
  */
-public class FieldAnalyzer extends VariableAnalyzer {
+public class FieldAnalyzer extends Analyzer {
 
 	private ArrayList<Variable> fieldIsWriterList;
 	private HashMap<FieldKey, Field> fieldMap;
@@ -480,7 +480,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		if (fieldIsWriterList.size() != 0) {
 			lastVar = fieldIsWriterList.get(fieldIsWriterList.size() - 1);
 
-			if (isSameBehavior(field, lastVar)) {
+			if (isSameBehavior(behavior, lastVar)) {
 				codeIter.move(lastVar.getAfterPos());
 				nextPosAfterLastVar = codeIter.next();
 			}
@@ -507,7 +507,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		// wrong: startPos of later will be set to pc of first instruction of
 		// inserted bytecode
 		// iterate to pc after added bytecode and set startPc to it
-		if (fieldIsWriterList.size() != 0 && isSameBehavior(field, lastVar)
+		if (fieldIsWriterList.size() != 0 && isSameBehavior(behavior, lastVar)
 				&& codeIter.hasNext() && nextPosAfterLastVar == startPc) {
 			op = codeIter.byteAt(startPc);
 			String instr = Mnemonic.OPCODE[op];
@@ -539,7 +539,7 @@ public class FieldAnalyzer extends VariableAnalyzer {
 			// list is not empty
 			Variable lastVar = fieldIsWriterList.get(fieldListSize - 1);
 
-			if (isSameBehavior(field, lastVar)) {
+			if (isSameBehavior(behavior, lastVar)) {
 				// last field is in same behavior -> set pos to last field's pos
 				// because codeAttr has changed, not the original anymore
 				pos = lastVar.getAfterPos();
@@ -582,20 +582,20 @@ public class FieldAnalyzer extends VariableAnalyzer {
 		return pos;
 	}
 
-	private boolean isSameBehavior(FieldAccess field, Variable lastVar) {
-		boolean inSameBehavior = false;
-		CtBehavior currentBehavior = field.where();
-		CtBehavior lastFieldBehavior = lastVar.getBehavior();
-		if (lastFieldBehavior != null) {
-			inSameBehavior = currentBehavior.getName().equals(
-					lastFieldBehavior.getName())
-					&& currentBehavior.getDeclaringClass().getName()
-							.equals(lastVar.getClassWhereVarIsUsed().getName())
-					&& currentBehavior.getSignature().equals(
-							lastFieldBehavior.getSignature());
-		}
-		return inSameBehavior;
-	}
+	// private boolean isSameBehavior(FieldAccess field, Variable lastVar) {
+	// boolean inSameBehavior = false;
+	// CtBehavior currentBehavior = field.where();
+	// CtBehavior lastFieldBehavior = lastVar.getBehavior();
+	// if (lastFieldBehavior != null) {
+	// inSameBehavior = currentBehavior.getName().equals(
+	// lastFieldBehavior.getName())
+	// && currentBehavior.getDeclaringClass().getName()
+	// .equals(lastVar.getClassWhereVarIsUsed().getName())
+	// && currentBehavior.getSignature().equals(
+	// lastFieldBehavior.getSignature());
+	// }
+	// return inSameBehavior;
+	// }
 
 	private boolean isFieldFromCurrentCtClass(FieldAccess field)
 			throws NotFoundException, BadBytecode {

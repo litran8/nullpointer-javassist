@@ -12,23 +12,36 @@ import java.util.jar.Manifest;
 
 public class ExecutableJarCreator {
 
-	public void createExecJar(String modifiedProjectBinSrcPath,
+	private static String packageName;
+	private static String modifiedProjectBinSrcPath;
+
+	public static void main(String[] args) {
+		String srcPath = args[0]; // "C:\\\\Users\\\\Lina Tran\\\\Desktop\\\\modifiedProject"
+		String jarDestPath = args[1]; // "C:\\\\Users\\\\Lina Tran\\\\Desktop\\\\modifiedProject"
+		String mainClassName = args[2]; // "testExample.Ideone"
+		createExecJar(srcPath, jarDestPath, mainClassName);
+	}
+
+	private static void createExecJar(String modifiedProjectBinSrcPath,
 			String jarDestPath, String mainClassName) {
 
+		// JarCreator.modifiedProjectBinSrcPath = modifiedProjectBinSrcPath;
+
 		File modifiedProject = new File(modifiedProjectBinSrcPath);
+		File jarDest = new File(jarDestPath);
 
 		try {
 			// create manifest for executable jar
 			Manifest manifest = new Manifest();
 			manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION,
 					"1.0");
-			// manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,
-			// mainClassName);
+			manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,
+					mainClassName);
 
 			JarOutputStream target = new JarOutputStream(new FileOutputStream(
-					jarDestPath + "\\JHotDraw.jar"), manifest);
+					jarDestPath + "\\test.jar"), manifest);
 
-			srcToJar(modifiedProject, "", target);
+			srcToJar(modifiedProject, jarDest, target);
 			target.close();
 
 		} catch (IOException e) {
@@ -48,16 +61,24 @@ public class ExecutableJarCreator {
 	 * @param target
 	 * @throws IOException
 	 */
-	public void srcToJar(File src, String packagePath, JarOutputStream target)
+	private static void srcToJar(File src, File dest, JarOutputStream target)
 			throws IOException {
 
 		if (src.isDirectory()) {
 
 			String dirName = src.getName();
-
+			if (dirName.equals("model") || dirName.equals("testRun")
+					|| dirName.equals("tests") || dirName.equals("test.jar")) {
+				return;
+			}
 			// to make sub-folders in jar
-			if (!dirName.equals("bin"))
-				packagePath += (dirName + "/");
+			if (!src.getName().equals("bin")
+					&& !src.getName().equals("modifiedProject")) {
+				if (packageName == null)
+					packageName = (src.getName() + "/");
+				else
+					packageName += (src.getName() + "/");
+			}
 
 			// list all the directory contents
 			String files[] = src.list();
@@ -66,17 +87,25 @@ public class ExecutableJarCreator {
 
 				// construct the src and dest file structure
 				File srcFile = new File(src, file);
+				File destFile = new File(dest, file);
 
 				// recursive copy
-				srcToJar(srcFile, packagePath, target);
+				srcToJar(srcFile, destFile, target);
+
+				// only if package is changed; for sub-folders in jar
+				if (srcFile.isDirectory()) {
+					setPackageNameToParentPackageName();
+				}
+
 			}
 		} else {
 			// if file, then copy it
 			InputStream in = new FileInputStream(src);
 
-			System.out.println(packagePath + src.getName());
+			if (src.getParent().equals(modifiedProjectBinSrcPath))
+				packageName = "";
 
-			target.putNextEntry(new JarEntry(packagePath + src.getName()));
+			target.putNextEntry(new JarEntry(packageName + src.getName()));
 
 			byte[] buffer = new byte[1024];
 
@@ -89,5 +118,12 @@ public class ExecutableJarCreator {
 			in.close();
 			target.closeEntry();
 		}
+	}
+
+	private static void setPackageNameToParentPackageName() {
+		packageName = packageName.substring(0, packageName.lastIndexOf("/"));
+		packageName = packageName
+				.substring(0, packageName.lastIndexOf("/") + 1);
+
 	}
 }

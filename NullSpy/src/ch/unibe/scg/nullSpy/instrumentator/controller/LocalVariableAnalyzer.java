@@ -12,7 +12,6 @@ import javassist.bytecode.BadBytecode;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.Descriptor;
-import javassist.bytecode.InstructionPrinter;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
@@ -22,55 +21,39 @@ import ch.unibe.scg.nullSpy.instrumentator.model.LocalVarKey;
 import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 /**
- * Instruments test-code after locVars.
+ * Looks for local variable assignments, extracts information about the
+ * variable, insert check method bytecode after assignment.
  * 
  * @author Lina Tran
  *
  */
-public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
+public class LocalVariableAnalyzer extends Analyzer implements Opcode {
 
 	private ArrayList<Variable> localVarList;
-	private HashMap<LocalVarKey, LocalVar> localVarMap;
 
 	public LocalVariableAnalyzer(CtClass cc, ArrayList<Variable> localVarList,
 			HashMap<LocalVarKey, LocalVar> localVarMap) {
 		super(cc);
 		this.localVarList = localVarList;
-		this.localVarMap = localVarMap;
 	}
 
 	/**
 	 * Checks all locVars in a class and instrument test-code after their
 	 * assignments.
-	 * 
-	 * @throws BadBytecode
-	 * @throws CannotCompileException
-	 * @throws NotFoundException
 	 */
 	public void instrumentAfterLocVarAssignment() throws BadBytecode,
 			CannotCompileException, NotFoundException {
-
-		instrumentAfterLocVarObject(cc.getDeclaredBehaviors());
+		instrumentAfterLocVarObject(getDeclaredBehaviors());
 	}
 
 	/**
 	 * Searches only locVar which are objects and directly instrument test-code.
-	 * 
-	 * @param method
-	 * @param codeIterator
-	 * @param localVariableList
-	 * @param lineNumberMap
-	 * @param exceptionTable
-	 * @throws BadBytecode
-	 * @throws CannotCompileException
-	 * @throws NotFoundException
 	 */
 	private void instrumentAfterLocVarObject(CtBehavior[] behaviorList)
 			throws BadBytecode, CannotCompileException, NotFoundException {
 
 		for (CtBehavior behavior : behaviorList) {
-			CodeAttribute codeAttr = behavior.getMethodInfo()
-					.getCodeAttribute();
+			CodeAttribute codeAttr = getCodeAttribute(behavior);
 
 			if (codeAttr == null) {
 				continue;
@@ -78,8 +61,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			storeParameterData(behavior);
 
-			LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
-					.getAttribute(LocalVariableAttribute.tag);
+			LocalVariableAttribute localVarAttr = getLocalVariableAttribute(behavior);
 
 			int localVarAttrLength = localVarAttr.tableLength();
 			if (localVarAttrLength == 0) {
@@ -88,8 +70,7 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 			ArrayList<LocalVarAttrEntry> localVarAttrAsList = getLocalVarAttrAsList(localVarAttr);
 
-			LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-					.getAttribute(LineNumberAttribute.tag);
+			LineNumberAttribute lineNrAttr = getLineNumberAttribute(behavior);
 
 			CodeIterator codeIter = codeAttr.iterator();
 			codeIter.begin();
@@ -112,37 +93,15 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 
 					int localVarAttrIndex = getLocalVarAttrIndex(codeIter,
 							localVarAttrAsList, pos, "astore.*");
-
 					int localVarSlot = localVarAttrAsList
 							.get(localVarAttrIndex).index;
 
-					String instr = InstructionPrinter.instructionString(
-							codeIter, pos, codeAttr.getConstPool());
-
-					if (instr.contains(" ")) {
-						instr = instr.substring(instr.indexOf(" ") + 1);
-					} else {
-						instr = instr.substring(instr.indexOf("_") + 1);
-					}
-
-					int instrSlot = Integer.parseInt(instr);
-
-					String localVarName = "";
-					String localVarType = "";
-					String varID = "localVariable_";
-
-					// lineNr
+					String localVarName = localVarAttrAsList
+							.get(localVarAttrIndex).varName;
+					String localVarType = localVarAttrAsList
+							.get(localVarAttrIndex).varType;
+					String varID = "astore_" + localVarSlot;
 					int localVarLineNr = lineNrAttr.toLineNumber(pos);
-
-					if (localVarSlot != instrSlot) {
-						varID += instrSlot;
-					} else {
-						localVarName = localVarAttrAsList
-								.get(localVarAttrIndex).varName;
-						localVarType = localVarAttrAsList
-								.get(localVarAttrIndex).varType;
-						varID += localVarSlot;
-					}
 
 					// create localVar
 					LocalVar localVar = new LocalVar(varID, localVarName,
@@ -153,17 +112,12 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					// save localVar into list
 					localVarList.add(localVar);
 
-					// hashMap
-					localVarMap.put(new LocalVarKey(localVarName, cc.getName(),
-							behavior.getName(), behavior.getSignature()),
-							localVar);
-
 					// change byteCode
 					adaptByteCode(localVar);
 
-					// update codeAttr, codeIter; set codeIter to last
-					// checked
-					// pos and iterate further
+					// update codeAttr, codeIter;
+					// set codeIter to last checked
+					// pos and iterate ...
 					codeAttr = behavior.getMethodInfo().getCodeAttribute();
 					codeIter = codeAttr.iterator();
 					codeIter.move(afterPos);
@@ -171,36 +125,35 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 					// update statement for if() and othe stuffs
 					methodMaxPc = lineNrAttr
 							.startPc(lineNrAttr.tableLength() - 1);
-					lineNrAttr = (LineNumberAttribute) codeAttr
-							.getAttribute(LineNumberAttribute.tag);
+					lineNrAttr = getLineNumberAttribute(codeAttr);
 					localVarAttrAsList = getLocalVarAttrAsList(localVarAttr);
 				}
 			}
 		}
-
 	}
 
 	private void storeParameterData(CtBehavior behavior)
 			throws NotFoundException, BadBytecode, CannotCompileException {
 
-		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
-		LocalVariableAttribute localVarAttr = (LocalVariableAttribute) codeAttr
-				.getAttribute(LocalVariableAttribute.tag);
-		String behaviorName = behavior.getName();
+		LocalVariableAttribute localVarAttr = getLocalVariableAttribute(behavior);
 
 		String behaviorSignature = behavior.getSignature();
 		int behaviorParamAmount = Descriptor.numOfParameters(behaviorSignature);
+		String behaviorName = behavior.getName();
+
 		if (localVarAttr.tableLength() == 0 || behaviorParamAmount == 0
 				|| behaviorName.equals("<clinit>")
-				|| behaviorName.contains("$"))
+				|| behaviorName.contains("$")) {
 			return;
+		}
 
 		boolean isBehaviorStatic = Modifier.isStatic(behavior.getModifiers());
 
-		int startIndex = isBehaviorStatic ? 0 : 1;
-		if (!isBehaviorStatic)
+		if (!isBehaviorStatic) {
 			behaviorParamAmount += 1;
+		}
 
+		int startIndex = isBehaviorStatic ? 0 : 1;
 		for (int i = startIndex; i < behaviorParamAmount; i++) {
 
 			int varSlot = localVarAttr.index(i);
@@ -218,36 +171,25 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 			// save localVar into list
 			localVarList.add(localVar);
 
-			// hashMap
-			localVarMap.put(
-					new LocalVarKey(varName, cc.getName(), behavior.getName(),
-							behavior.getSignature()), localVar);
-
 			// change byteCode
 			adaptByteCode(localVar);
 		}
 	}
 
 	/**
-	 * Checks if the locVar is an object, NOT a primitive one.
-	 * 
-	 * @param op
-	 * @return
+	 * Checks if the locVar is an object.
 	 */
 	private static boolean isLocVarObject(int op) {
 		return Mnemonic.OPCODE[op].matches("astore.*");
 	}
 
 	private int getStartPos(CtBehavior behavior, int pos) throws BadBytecode {
-		int res = 0;
 
-		CodeAttribute codeAttr = behavior.getMethodInfo().getCodeAttribute();
-		CodeIterator iter = codeAttr.iterator();
+		CodeIterator iter = getCodeIterator(behavior);
+		LineNumberAttribute lineNrAttr = getLineNumberAttribute(behavior);
 
-		LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
-				.getAttribute(LineNumberAttribute.tag);
 		int line = lineNrAttr.toLineNumber(pos);
-		res = lineNrAttr.toStartPc(line);
+		int res = lineNrAttr.toStartPc(line);
 
 		if (localVarList.size() != 0) {
 			Variable lastVar = localVarList.get(localVarList.size() - 1);
@@ -276,24 +218,6 @@ public class LocalVariableAnalyzer extends VariableAnalyzer implements Opcode {
 		}
 
 		return res;
-	}
-
-	private boolean isSameBehavior(CtBehavior currentBehavior, Variable lastVar) {
-		boolean inSameBehavior = false;
-
-		CtBehavior lastBehavior = lastVar.getBehavior();
-
-		if (!(lastBehavior == null)) {
-
-			// check class, methodName, methodParams
-			inSameBehavior = currentBehavior.getName().equals(
-					lastBehavior.getName())
-					&& currentBehavior.getDeclaringClass().getName()
-							.equals(lastVar.getClassWhereVarIsUsed().getName())
-					&& currentBehavior.getSignature().equals(
-							lastBehavior.getSignature());
-		}
-		return inSameBehavior;
 	}
 
 }

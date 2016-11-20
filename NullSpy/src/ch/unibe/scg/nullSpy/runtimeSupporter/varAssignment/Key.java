@@ -5,29 +5,35 @@ public class Key {
 	protected String classNameInWhichVarIsUsed;
 	protected String behaviorName;
 	protected String behaviorSignature;
+	protected String varID;
 
 	public Key(String varName, String classNameInWhichVarIsUsed,
-			String behaviorName, String behaviorSignature) {
+			String behaviorName, String behaviorSignature, String varID) {
 		this.varName = varName;
 		this.classNameInWhichVarIsUsed = classNameInWhichVarIsUsed;
 		this.behaviorName = behaviorName;
 		this.behaviorSignature = behaviorSignature;
+		this.varID = varID;
 	}
 
-	protected String getVarName() {
-		return varName;
+	public String getVarID() {
+		return this.varID;
 	}
 
-	protected String getClassNameInWhichVarIsUsed() {
-		return classNameInWhichVarIsUsed;
+	public String getVarName() {
+		return this.varName;
 	}
 
-	protected String getBehaviorName() {
-		return behaviorName;
+	public String getClassNameInWhichVarIsUsed() {
+		return this.classNameInWhichVarIsUsed;
 	}
 
-	protected String getBehaviorSignature() {
-		return behaviorSignature;
+	public String getBehaviorName() {
+		return this.behaviorName;
+	}
+
+	public String getBehaviorSignature() {
+		return this.behaviorSignature;
 	}
 
 	@Override
@@ -86,11 +92,12 @@ public class Key {
 		return "Key [varName=" + varName + ", \nclassNameInWhichVarIsUsed="
 				+ classNameInWhichVarIsUsed + ", \nbehaviorName="
 				+ behaviorName + ", \nbehaviorSignature=" + behaviorSignature
-				+ ", \ngetVarName()=" + getVarName()
-				+ ", \ngetClassNameInWhichVarIsUsed()="
-				+ getClassNameInWhichVarIsUsed() + ", \ngetBehaviorName()="
-				+ getBehaviorName() + ", \ngetBehaviorSignature()="
-				+ getBehaviorSignature() + "]";
+				+ "]";
+		// + ", \ngetVarName()=" + getVarName()
+		// + ", \ngetClassNameInWhichVarIsUsed()="
+		// + getClassNameInWhichVarIsUsed() + ", \ngetBehaviorName()="
+		// + getBehaviorName() + ", \ngetBehaviorSignature()="
+		// + getBehaviorSignature() + "]";
 	}
 
 }

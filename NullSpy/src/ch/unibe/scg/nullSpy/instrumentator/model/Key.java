@@ -5,13 +5,15 @@ public class Key {
 	protected String classNameInWhichVarIsUsed;
 	protected String behaviorName;
 	protected String behaviorSignature;
+	protected String varID;
 
 	public Key(String varName, String classNameInWhichVarIsUsed,
-			String behaviorName, String behaviorSignature) {
+			String behaviorName, String behaviorSignature, String varID) {
 		this.varName = varName;
 		this.classNameInWhichVarIsUsed = classNameInWhichVarIsUsed;
 		this.behaviorName = behaviorName;
 		this.behaviorSignature = behaviorSignature;
+		this.varID = varID;
 	}
 
 	protected String getVarName() {

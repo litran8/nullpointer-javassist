@@ -8,7 +8,6 @@ import java.util.Scanner;
 
 import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.Field;
 import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.FieldKey;
-import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.IndirectFieldObject;
 import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.Key;
 import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.LocalVarKey;
 import ch.unibe.scg.nullSpy.runtimeSupporter.varAssignment.LocalVariable;
@@ -26,6 +25,11 @@ public class NullDisplayer {
 			String behaviorName) throws FileNotFoundException {
 
 		// System.out.println("NullDisplayer");
+
+		// printFieldMap();
+
+		// System.out.println("className: " + className + ", lineNr: " + lineNr
+		// + ", behaviorName: " + behaviorName);
 
 		NullDisplayer.localVarMap = localVarMap;
 		NullDisplayer.fieldMap = fieldMap;
@@ -62,8 +66,15 @@ public class NullDisplayer {
 
 	}
 
+	// private static void printFieldMap() {
+	// System.out.println(fieldMap.size());
+	// for (Entry<FieldKey, Field> k : fieldMap.entrySet()) {
+	// System.out.println(k);
+	// }
+	//
+	// }
+
 	private static void printNPELocation(ArrayList<Key> keyList) {
-		// System.out.println("keyListSize: " + keyList.size());
 
 		if (keyList.size() == 0) {
 			System.out
@@ -76,7 +87,7 @@ public class NullDisplayer {
 		for (int i = 0; i < keyList.size(); i++) {
 			Key key = keyList.get(i);
 			Variable var = null;
-			String linkVarName = "";
+			String linkVarName = key.getVarName();
 			String varID = "";
 
 			for (FieldKey k : fieldMap.keySet()) {
@@ -84,30 +95,9 @@ public class NullDisplayer {
 					matched = true;
 
 					// System.out.println("contains field key");
-					var = fieldMap.get(k);
-					Field field = (Field) var;
+					var = (Field) fieldMap.get(k);
 
-					String varName = field.getVarName();
-					linkVarName = "this." + varName;
-					IndirectFieldObject indirectVarObj = field
-							.getIndirectFieldObject();
-
-					if (indirectVarObj != null) {
-
-						String indirectVarName = indirectVarObj
-								.getIndirectVarName();
-						linkVarName = indirectVarName + "." + varName;
-						String indirectVarDeclaringClassName = indirectVarObj
-								.getIndirectVarDeclaringClassName();
-						String indirectVarType = indirectVarObj
-								.getIndirectVarType();
-
-						if (!indirectVarDeclaringClassName.equals("")
-								&& !indirectVarType.equals("")) {
-							linkVarName = indirectVarDeclaringClassName + "."
-									+ indirectVarName + "." + varName;
-						}
-					}
+					linkVarName = getFieldFullName(k);
 					System.out.print("Field ");
 				}
 
@@ -117,30 +107,55 @@ public class NullDisplayer {
 			}
 
 			if (localVarMap.containsKey(key)) {
+				matched = true;
 				// System.out.println("contains locVar key");
 				var = localVarMap.get(key);
-				linkVarName = var.getVarName();
 				varID = var.getVarID();
-				if (varID.startsWith("p"))
+				if (varID.startsWith("p")) {
 					System.out.print("Parameter ");
-				else
+				} else {
 					System.out.print("LocalVariable ");
-			} else if (var == null) {
-				return;
+				}
 			}
 
-			String classNameInWhichVarIsUsed = var
-					.getClassNameInWhichVarIsUsed();
-			int varLineNr = var.getVarLineNr();
-
-			printNullLink(classNameInWhichVarIsUsed, varLineNr, linkVarName,
-					varID);
-
 			if (matched) {
+				String classNameInWhichVarIsUsed = var
+						.getClassNameInWhichVarIsUsed();
+				int varLineNr = var.getVarLineNr();
+
+				printNullLink(classNameInWhichVarIsUsed, varLineNr,
+						linkVarName, varID);
 				return;
 			}
 		}
 
+		printNodInitialized(keyList.get(0));
+	}
+
+	private static String getFieldFullName(FieldKey fieldKey) {
+		String memberObjectDeclaringClassName = fieldKey
+				.getIndirectVarDeclaringClassName();
+		// String memberObjectType = fieldKey.getIndirectVarType();
+
+		if (memberObjectDeclaringClassName.equals("")
+		// || memberObjectType.equals("")
+		) {
+			return "this." + fieldKey.getVarName();
+		}
+		return memberObjectDeclaringClassName + "."
+				+ fieldKey.getIndirectVarName() + "." + fieldKey.getVarName();
+	}
+
+	private static void printNodInitialized(Key key) {
+		String varName = key.getVarName();
+		if (key.getVarID().equals("field")) {
+			FieldKey fieldKey = (FieldKey) key;
+			varName = getFieldFullName(fieldKey);
+			System.out.println("Field " + varName + " is never initialized.");
+		} else {
+			System.out.println("Local variable  " + varName
+					+ "is never initialized.");
+		}
 	}
 
 	private static void printNullLink(String className, int lineNr,
@@ -380,10 +395,11 @@ public class NullDisplayer {
 
 	private static boolean isVariableStatic(int npeReceiverIndex) {
 		String b = receiverList.get(npeReceiverIndex).get(5);
-		if (b.equals("true"))
+		if (b.equals("true")) {
 			return true;
-		else
-			return false;
+		}
+
+		return false;
 	}
 
 	private static String getVariableDeclaringClassName(int npeReceiverIndex) {

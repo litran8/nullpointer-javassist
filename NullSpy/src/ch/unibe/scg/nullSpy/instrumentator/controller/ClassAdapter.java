@@ -20,8 +20,8 @@ import ch.unibe.scg.nullSpy.instrumentator.model.LocalVarKey;
 import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
 
 /**
- * Iterates through the whole class and instrument a test-code after each field
- * or locVar.
+ * Iterates through class file and instrument check method after assignment to a
+ * variable
  * 
  * @author Lina Tran
  *
@@ -34,9 +34,6 @@ public class ClassAdapter {
 	private HashMap<FieldKey, Field> fieldMap = new HashMap<>();
 	private ArrayList<Variable> localVarList = new ArrayList<>();
 	private HashMap<LocalVarKey, LocalVar> localVarMap = new HashMap<>();
-
-	private ClassAdapter() {
-	}
 
 	public static ClassAdapter getInstance() {
 		if (instance == null) {
@@ -59,12 +56,14 @@ public class ClassAdapter {
 			if (codeAttr != null) {
 				LineNumberAttribute lineNrAttr = (LineNumberAttribute) codeAttr
 						.getAttribute(LineNumberAttribute.tag);
-				if (lineNrAttr == null)
+				if (lineNrAttr == null) {
 					return;
+				}
 			}
 
 		}
 
+		// debugging used
 		// if (!cc.getName().equals("org.jhotdraw.util.ColorMap"))
 		// return;
 

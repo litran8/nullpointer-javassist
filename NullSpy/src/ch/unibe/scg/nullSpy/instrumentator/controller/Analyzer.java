@@ -109,8 +109,8 @@ public abstract class Analyzer {
 				int index = locVarTable.index(i);
 				String varType = locVarTable.descriptor(i);
 				String varName = locVarTable.variableName(i);
-				localVariableList.add(new LocalVarAttrEntry(startPc,
-						length, index, varName, varType));
+				localVariableList.add(new LocalVarAttrEntry(startPc, length,
+						index, varName, varType));
 			}
 		}
 
@@ -252,6 +252,48 @@ public abstract class Analyzer {
 			}
 		}
 		return 0;
+	}
+
+	protected CtBehavior[] getDeclaredBehaviors() {
+		return this.cc.getDeclaredBehaviors();
+	}
+
+	protected CodeAttribute getCodeAttribute(CtBehavior behavior) {
+		return behavior.getMethodInfo().getCodeAttribute();
+	}
+
+	protected LineNumberAttribute getLineNumberAttribute(CtBehavior behavior) {
+		return (LineNumberAttribute) getCodeAttribute(behavior).getAttribute(
+				LineNumberAttribute.tag);
+	}
+
+	protected LineNumberAttribute getLineNumberAttribute(
+			CodeAttribute codeAttribute) {
+		return (LineNumberAttribute) codeAttribute
+				.getAttribute(LineNumberAttribute.tag);
+	}
+
+	protected LocalVariableAttribute getLocalVariableAttribute(
+			CtBehavior behavior) {
+		return (LocalVariableAttribute) getCodeAttribute(behavior)
+				.getAttribute(LocalVariableAttribute.tag);
+	}
+
+	protected CodeIterator getCodeIterator(CtBehavior behavior) {
+		return getCodeAttribute(behavior).iterator();
+	}
+
+	protected boolean isSameBehavior(CtBehavior behavior, Variable lastVar) {
+		boolean inSameBehavior = false;
+		CtBehavior lastBehavior = lastVar.getBehavior();
+		if (lastBehavior != null) {
+			inSameBehavior = behavior.getName().equals(lastBehavior.getName())
+					&& behavior.getDeclaringClass().getName()
+							.equals(lastVar.getClassWhereVarIsUsed().getName())
+					&& behavior.getSignature().equals(
+							lastBehavior.getSignature());
+		}
+		return inSameBehavior;
 	}
 
 }

@@ -23,7 +23,7 @@ public class MainProjectModifier {
 
 	public static void main(String[] args) throws Throwable {
 
-		if (args.length == 2) {
+		if (args.length >= 2) {
 			originalProjectBinPath = args[0]; // "C:\Users\Lina
 												// Tran\Desktop\bachelor\jhotdraw60b1\bin"
 			modifiedProjectPath = args[1]; // "C:\\Users\\Lina Tran\\Desktop\\modifiedProject"
@@ -73,45 +73,38 @@ public class MainProjectModifier {
 		System.out.println("Project modification done.");
 
 		// create executable jar out of modified project
-		// ExecutableJarCreator jar = new ExecutableJarCreator();
-		// jar.createExecJar(modifiedProjectDestBinDirPath,
-		// modifiedProjectDestDirPath, mainClassNameOfProject);
+		// optional
 	}
 
 	private static void deleteDirectoryContent(File file) {
 		File[] files = file.listFiles();
 		if (files != null) {
 			for (File f : files) {
-				if (f.isDirectory())
+				if (f.isDirectory()) {
 					deleteDirectoryContent(f);
-				else
+				} else {
 					f.delete();
-
+				}
 			}
 		}
-		if (!file.getName().equals("modifiedProject"))
+		if (!file.getName().equals("modifiedProject")) {
 			file.delete();
+		}
 	}
 
 	private static boolean isDirectoryEmpty(File file) {
 		if (file.isDirectory()) {
-			if (file.list().length > 0)
+			if (file.list().length > 0) {
 				return false;
-			else
-				return true;
+			}
+			return true;
 		}
 		return false;
 	}
 
 	/**
 	 * Modifies the classFile of the given project and stores the modified
-	 * project in the destination directory.
-	 * 
-	 * @param src
-	 * @param dest
-	 * @throws IOException
-	 * @throws NotFoundException
-	 * @throws FileNotFoundException
+	 * project in the destination folder.
 	 */
 	public static void modifyProjectAndStoreToDestDir(File src, File dest,
 			boolean isOwnProject) throws NotFoundException,
@@ -124,8 +117,9 @@ public class MainProjectModifier {
 						|| srcName.equals("model") || srcName.equals("testRun")
 						|| srcName.equals("tests")
 						|| srcName.equals("isFieldOrLocalVariableNullExample") || srcName
-							.equals("timeMeasurement")))
+							.equals("timeMeasurement"))) {
 			return;
+		}
 
 		if (src.isDirectory()) {
 
@@ -160,15 +154,8 @@ public class MainProjectModifier {
 	}
 
 	/**
-	 * Modify a class file of a project with Javassist, by instrumenting a check
-	 * after each assignments of fields and locVars.
-	 * 
-	 * @param src
-	 * @param dest
-	 *            modified class file is stored here
-	 * @throws NotFoundException
-	 * @throws IOException
-	 * @throws FileNotFoundException
+	 * Modifies a class file of a project with Javassist, by instrumenting a
+	 * check after each assignments to a variable.
 	 */
 	private static void analyzeFileAndStoreToDestinationFolder(File src,
 			File dest) throws NotFoundException, IOException,
