@@ -52,7 +52,7 @@ public class ClassAdapter {
 		}
 
 		// debugging used
-		// if (!cc.getName().equals("org.jhotdraw.util.ColorMap"))
+		// if (!cc.getName().equals("org.jhotdraw.applet.DrawApplet"))
 		// return;
 
 		System.out.println("\n\nCLASS: " + cc.getName());

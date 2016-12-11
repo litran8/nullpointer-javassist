@@ -49,7 +49,7 @@ public class MethodInvocationAnalyzer extends Analyzer {
 		for (CtBehavior behavior : behaviorList) {
 
 			// TODO: method choice debug
-			// if (!behavior.getName().equals("setTool"))
+			// if (!behavior.getName().equals("createColorChoice"))
 			// continue;
 
 			constPool = getConstPool(behavior);
@@ -78,6 +78,11 @@ public class MethodInvocationAnalyzer extends Analyzer {
 				int pos = codeIter.next();
 				int op = codeIter.byteAt(pos);
 
+				// TODO: debug
+				// if (pos != 31) {
+				// continue;
+				// }
+
 				if (isInvoke(op)) {
 
 					MultipleLineManager multipleLineManager = new MultipleLineManager(
@@ -87,6 +92,8 @@ public class MethodInvocationAnalyzer extends Analyzer {
 
 					IntervalManager intervalManager = new IntervalManager(
 							behavior);
+					// ArrayList<Integer> invocationInterval = intervalManager
+					// .getInvocationInterval(null, pos);
 					ArrayList<Integer> invocationInterval = intervalManager
 							.getInvocationInterval(multipleLineInterval, pos);
 
