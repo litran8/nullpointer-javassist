@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.model;
+package ch.unibe.scg.nullSpy.instrumentor.model;
 
 /**
  * Info about OBJECT_field

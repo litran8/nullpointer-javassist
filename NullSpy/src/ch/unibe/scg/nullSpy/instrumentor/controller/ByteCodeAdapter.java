@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.controller;
+package ch.unibe.scg.nullSpy.instrumentor.controller;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -12,9 +12,9 @@ import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.Opcode;
-import ch.unibe.scg.nullSpy.instrumentator.model.Field;
-import ch.unibe.scg.nullSpy.instrumentator.model.IndirectVar;
-import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentor.model.Field;
+import ch.unibe.scg.nullSpy.instrumentor.model.IndirectVar;
+import ch.unibe.scg.nullSpy.instrumentor.model.Variable;
 
 public class ByteCodeAdapter {
 

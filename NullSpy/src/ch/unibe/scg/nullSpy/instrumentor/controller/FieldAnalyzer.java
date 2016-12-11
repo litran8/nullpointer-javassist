@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.controller;
+package ch.unibe.scg.nullSpy.instrumentor.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,10 +18,10 @@ import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
-import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.MethodInvocationAnalyzer;
-import ch.unibe.scg.nullSpy.instrumentator.model.Field;
-import ch.unibe.scg.nullSpy.instrumentator.model.IndirectVar;
-import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentor.controller.methodInvocation.MethodInvocationAnalyzer;
+import ch.unibe.scg.nullSpy.instrumentor.model.Field;
+import ch.unibe.scg.nullSpy.instrumentor.model.IndirectVar;
+import ch.unibe.scg.nullSpy.instrumentor.model.Variable;
 
 /**
  * Instruments test-code after fields.

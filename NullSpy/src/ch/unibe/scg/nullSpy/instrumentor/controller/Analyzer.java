@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.controller;
+package ch.unibe.scg.nullSpy.instrumentor.controller;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,8 +16,8 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.analysis.ControlFlow.Block;
-import ch.unibe.scg.nullSpy.instrumentator.model.PcLine;
-import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentor.model.PcLine;
+import ch.unibe.scg.nullSpy.instrumentor.model.Variable;
 
 public abstract class Analyzer {
 	protected CtClass cc;

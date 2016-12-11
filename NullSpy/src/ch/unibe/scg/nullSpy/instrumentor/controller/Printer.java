@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.controller;
+package ch.unibe.scg.nullSpy.instrumentor.controller;
 
 import javassist.CtBehavior;
 import javassist.bytecode.BadBytecode;

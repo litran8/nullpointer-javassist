@@ -9,8 +9,8 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.Translator;
-import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
-import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentor.controller.ClassAdapter;
+import ch.unibe.scg.nullSpy.instrumentor.model.Variable;
 
 public class ClassFileTranslator implements Translator {
 

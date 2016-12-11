@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.controller;
+package ch.unibe.scg.nullSpy.instrumentor.controller;
 
 import java.util.ArrayList;
 
@@ -15,8 +15,8 @@ import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
-import ch.unibe.scg.nullSpy.instrumentator.model.LocalVar;
-import ch.unibe.scg.nullSpy.instrumentator.model.Variable;
+import ch.unibe.scg.nullSpy.instrumentor.model.LocalVar;
+import ch.unibe.scg.nullSpy.instrumentor.model.Variable;
 
 /**
  * Looks for local variable assignments, extracts information about the

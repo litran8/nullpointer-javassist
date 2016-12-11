@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation;
+package ch.unibe.scg.nullSpy.instrumentor.controller.methodInvocation;
 
 import java.io.FileWriter;
 import java.io.IOException;

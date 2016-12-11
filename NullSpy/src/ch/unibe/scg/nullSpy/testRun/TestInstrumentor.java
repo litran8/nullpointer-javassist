@@ -3,7 +3,7 @@ package ch.unibe.scg.nullSpy.testRun;
 import javassist.ClassPool;
 import javassist.Loader;
 import javassist.Translator;
-import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.CsvFileCreator;
+import ch.unibe.scg.nullSpy.instrumentor.controller.methodInvocation.CsvFileCreator;
 
 public class TestInstrumentor {
 	// public static String className =

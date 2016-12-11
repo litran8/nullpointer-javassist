@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation;
+package ch.unibe.scg.nullSpy.instrumentor.controller.methodInvocation;
 
 import java.util.ArrayList;
 import java.util.Collections;

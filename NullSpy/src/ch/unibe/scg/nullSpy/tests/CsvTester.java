@@ -3,7 +3,7 @@ package ch.unibe.scg.nullSpy.tests;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.CsvFileCreator;
+import ch.unibe.scg.nullSpy.instrumentor.controller.methodInvocation.CsvFileCreator;
 
 public class CsvTester {
 

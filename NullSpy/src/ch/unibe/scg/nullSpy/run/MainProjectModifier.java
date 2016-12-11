@@ -11,8 +11,8 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.bytecode.ClassFile;
-import ch.unibe.scg.nullSpy.instrumentator.controller.ClassAdapter;
-import ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation.CsvFileCreator;
+import ch.unibe.scg.nullSpy.instrumentor.controller.ClassAdapter;
+import ch.unibe.scg.nullSpy.instrumentor.controller.methodInvocation.CsvFileCreator;
 
 public class MainProjectModifier {
 
@@ -113,7 +113,7 @@ public class MainProjectModifier {
 		// only copy package ch.unibe.scg.nullSpy.runtimeSupporter
 		String srcName = src.getName();
 		if (isOwnProject
-				&& (srcName.equals("run") || srcName.equals("instrumentator")
+				&& (srcName.equals("run") || srcName.equals("instrumentor")
 						|| srcName.equals("model") || srcName.equals("testRun")
 						|| srcName.equals("tests")
 						|| srcName.equals("isFieldOrLocalVariableNullExample") || srcName

@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.model;
+package ch.unibe.scg.nullSpy.instrumentor.model;
 
 /**
  * Stores information of a field which can be written for instrumentation after

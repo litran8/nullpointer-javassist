@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.controller.methodInvocation;
+package ch.unibe.scg.nullSpy.instrumentor.controller.methodInvocation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import javassist.bytecode.Descriptor;
 import javassist.bytecode.LineNumberAttribute;
 import javassist.bytecode.Mnemonic;
 import javassist.bytecode.Opcode;
-import ch.unibe.scg.nullSpy.instrumentator.controller.Analyzer;
+import ch.unibe.scg.nullSpy.instrumentor.controller.Analyzer;
 import ch.unibe.scg.nullSpy.run.MainProjectModifier;
 
 public class MethodInvocationAnalyzer extends Analyzer {

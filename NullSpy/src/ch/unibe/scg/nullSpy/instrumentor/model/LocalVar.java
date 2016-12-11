@@ -1,4 +1,4 @@
-package ch.unibe.scg.nullSpy.instrumentator.model;
+package ch.unibe.scg.nullSpy.instrumentor.model;
 
 import javassist.CtBehavior;
 import javassist.CtClass;
